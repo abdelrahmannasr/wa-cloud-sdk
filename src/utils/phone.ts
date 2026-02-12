@@ -19,7 +19,7 @@ export function validatePhoneNumber(phone: string): string {
 
   if (!PHONE_REGEX.test(cleaned)) {
     throw new ValidationError(
-      `Invalid phone number: "${phone}". Must be 7-15 digits in E.164 format.`,
+      `Invalid phone number: "${phone}". Must be 7-15 digits (international format without +).`,
       'phone',
     );
   }

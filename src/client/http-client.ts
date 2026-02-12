@@ -49,13 +49,8 @@ export class HttpClient {
       this.rateLimiter = null;
     }
 
-    // Store retry config
-    this.retryConfig = {
-      maxRetries: config.retryConfig?.maxRetries,
-      baseDelayMs: config.retryConfig?.baseDelayMs,
-      maxDelayMs: config.retryConfig?.maxDelayMs,
-      jitterFactor: config.retryConfig?.jitterFactor,
-    };
+    // Store retry config (pass through only if provided — avoids undefined overriding defaults)
+    this.retryConfig = config.retryConfig ?? {};
   }
 
   /**
@@ -67,69 +62,25 @@ export class HttpClient {
     body?: unknown,
     options?: RequestOptions,
   ): Promise<ApiResponse<T>> {
-    // Rate limiting
-    if (!options?.skipRateLimit && this.rateLimiter) {
-      await this.rateLimiter.acquire();
-    }
-
     const url = this.buildUrl(path, options?.params);
     const headers = this.buildHeaders(options);
 
-    const executeRequest = async (): Promise<ApiResponse<T>> => {
-      const controller = new AbortController();
-      const timeout = options?.timeoutMs ?? this.timeoutMs;
-
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, timeout);
-
-      // Merge user signal with timeout signal
-      if (options?.signal) {
-        options.signal.addEventListener('abort', () => {
-          controller.abort(options.signal?.reason);
-        });
-      }
-
-      try {
-        this.logger.debug(`${method} ${url}`);
-
-        const fetchOptions: RequestInit = {
-          method,
-          headers,
-          signal: controller.signal,
-        };
-
-        if (body !== undefined && method !== 'GET') {
-          fetchOptions.body = JSON.stringify(body);
-          (fetchOptions.headers as Record<string, string>)['Content-Type'] = 'application/json';
-        }
-
-        const response = await fetch(url, fetchOptions);
-
-        if (!response.ok) {
-          const errorBody = (await response.json()) as MetaApiErrorResponse;
-          this.parseErrorResponse(response.status, errorBody, response.headers);
-        }
-
-        const data = (await response.json()) as T;
-
-        this.logger.debug(`${method} ${url} -> ${response.status}`);
-
-        return {
-          data,
-          status: response.status,
-          headers: response.headers,
-        };
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    };
-
-    if (options?.skipRetry) {
-      return executeRequest();
+    if (body !== undefined && method !== 'GET') {
+      headers['Content-Type'] = 'application/json';
     }
 
-    return withRetry(executeRequest, this.retryConfig);
+    return this.executeWithLifecycle<T>(
+      (signal) => {
+        const fetchOptions: RequestInit = { method, headers, signal };
+        if (body !== undefined && method !== 'GET') {
+          fetchOptions.body = JSON.stringify(body);
+        }
+        this.logger.debug(`${method} ${url}`);
+        return fetch(url, fetchOptions);
+      },
+      (response) => response.json() as Promise<T>,
+      options,
+    );
   }
 
   /** Convenience: GET request. */
@@ -156,61 +107,24 @@ export class HttpClient {
     formData: FormData,
     options?: RequestOptions,
   ): Promise<ApiResponse<T>> {
-    if (!options?.skipRateLimit && this.rateLimiter) {
-      await this.rateLimiter.acquire();
-    }
-
     const url = this.buildUrl(path, options?.params);
 
-    const executeUpload = async (): Promise<ApiResponse<T>> => {
-      const controller = new AbortController();
-      const timeout = options?.timeoutMs ?? this.timeoutMs;
-
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, timeout);
-
-      if (options?.signal) {
-        options.signal.addEventListener('abort', () => {
-          controller.abort(options.signal?.reason);
-        });
-      }
-
-      try {
+    return this.executeWithLifecycle<T>(
+      (signal) => {
         this.logger.debug(`POST (upload) ${url}`);
-
-        const response = await fetch(url, {
+        return fetch(url, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
             ...options?.headers,
           },
           body: formData,
-          signal: controller.signal,
+          signal,
         });
-
-        if (!response.ok) {
-          const errorBody = (await response.json()) as MetaApiErrorResponse;
-          this.parseErrorResponse(response.status, errorBody, response.headers);
-        }
-
-        const data = (await response.json()) as T;
-
-        return {
-          data,
-          status: response.status,
-          headers: response.headers,
-        };
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    };
-
-    if (options?.skipRetry) {
-      return executeUpload();
-    }
-
-    return withRetry(executeUpload, this.retryConfig);
+      },
+      (response) => response.json() as Promise<T>,
+      options,
+    );
   }
 
   /**
@@ -218,11 +132,43 @@ export class HttpClient {
    * The URL must include the full path (not relative to the base URL).
    */
   async downloadMedia(url: string, options?: RequestOptions): Promise<ApiResponse<ArrayBuffer>> {
+    return this.executeWithLifecycle<ArrayBuffer>(
+      (signal) => {
+        this.logger.debug(`GET (download) ${url}`);
+        return fetch(url, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            ...options?.headers,
+          },
+          signal,
+        });
+      },
+      (response) => response.arrayBuffer(),
+      options,
+    );
+  }
+
+  /** Destroy the client, cleaning up rate limiter timers. */
+  destroy(): void {
+    this.rateLimiter?.destroy();
+  }
+
+  /**
+   * Shared lifecycle for all request types: rate limit, timeout, signal forwarding,
+   * error parsing, and retry.
+   */
+  private async executeWithLifecycle<T>(
+    executeFn: (signal: AbortSignal) => Promise<Response>,
+    extractData: (response: Response) => Promise<T>,
+    options?: RequestOptions,
+  ): Promise<ApiResponse<T>> {
+    // Rate limiting (once per logical request, not per retry)
     if (!options?.skipRateLimit && this.rateLimiter) {
       await this.rateLimiter.acquire();
     }
 
-    const executeDownload = async (): Promise<ApiResponse<ArrayBuffer>> => {
+    const execute = async (): Promise<ApiResponse<T>> => {
       const controller = new AbortController();
       const timeout = options?.timeoutMs ?? this.timeoutMs;
 
@@ -230,30 +176,25 @@ export class HttpClient {
         controller.abort();
       }, timeout);
 
+      // Forward external abort signal (with { once: true } to prevent listener leaks)
       if (options?.signal) {
-        options.signal.addEventListener('abort', () => {
-          controller.abort(options.signal?.reason);
-        });
+        options.signal.addEventListener(
+          'abort',
+          () => {
+            controller.abort(options.signal?.reason);
+          },
+          { once: true },
+        );
       }
 
       try {
-        this.logger.debug(`GET (download) ${url}`);
-
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-            ...options?.headers,
-          },
-          signal: controller.signal,
-        });
+        const response = await executeFn(controller.signal);
 
         if (!response.ok) {
-          const errorBody = (await response.json()) as MetaApiErrorResponse;
-          this.parseErrorResponse(response.status, errorBody, response.headers);
+          await this.handleErrorResponse(response);
         }
 
-        const data = await response.arrayBuffer();
+        const data = await extractData(response);
 
         return {
           data,
@@ -266,15 +207,24 @@ export class HttpClient {
     };
 
     if (options?.skipRetry) {
-      return executeDownload();
+      return execute();
     }
 
-    return withRetry(executeDownload, this.retryConfig);
+    return withRetry(execute, this.retryConfig);
   }
 
-  /** Destroy the client, cleaning up rate limiter timers. */
-  destroy(): void {
-    this.rateLimiter?.destroy();
+  /**
+   * Parse error body from a failed response. Wraps response.json() in try/catch
+   * to handle non-JSON error bodies (e.g., 502 proxy errors, 503 load balancer).
+   */
+  private async handleErrorResponse(response: Response): Promise<never> {
+    let errorBody: MetaApiErrorResponse | undefined;
+    try {
+      errorBody = (await response.json()) as MetaApiErrorResponse;
+    } catch {
+      throw new ApiError(`HTTP ${response.status} error`, response.status, 'UnknownError');
+    }
+    this.parseErrorResponse(response.status, errorBody, response.headers);
   }
 
   private buildUrl(path: string, params?: Record<string, string>): string {
@@ -302,11 +252,11 @@ export class HttpClient {
     headers: Headers,
   ): never {
     const errorData = body.error;
-    const message = errorData.message;
-    const errorType = errorData.type;
-    const errorCode = errorData.code;
-    const errorSubcode = errorData.error_subcode;
-    const fbTraceId = errorData.fbtrace_id;
+    const message = errorData?.message ?? `HTTP ${status} error`;
+    const errorType = errorData?.type ?? 'UnknownError';
+    const errorCode = errorData?.code;
+    const errorSubcode = errorData?.error_subcode;
+    const fbTraceId = errorData?.fbtrace_id;
 
     // Authentication error (401 or error code 190)
     if (status === 401 || errorCode === 190) {

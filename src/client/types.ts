@@ -1,13 +1,5 @@
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export enum LogLevel {
-  NONE = 0,
-  ERROR = 1,
-  WARN = 2,
-  INFO = 3,
-  DEBUG = 4,
-}
-
 export interface Logger {
   debug(message: string, ...args: unknown[]): void;
   info(message: string, ...args: unknown[]): void;
@@ -28,8 +20,6 @@ export interface WhatsAppConfig {
   readonly baseUrl?: string;
   /** Logger instance */
   readonly logger?: Logger;
-  /** Log level (default: LogLevel.NONE) */
-  readonly logLevel?: LogLevel;
   /** Rate limiter configuration */
   readonly rateLimitConfig?: {
     readonly maxTokens?: number;
@@ -75,12 +65,12 @@ export interface ApiResponse<T> {
   readonly headers: Headers;
 }
 
-/** Meta API error response shape */
+/** Meta API error response shape (fields optional to handle malformed responses) */
 export interface MetaApiErrorResponse {
-  readonly error: {
-    readonly message: string;
-    readonly type: string;
-    readonly code: number;
+  readonly error?: {
+    readonly message?: string;
+    readonly type?: string;
+    readonly code?: number;
     readonly error_subcode?: number;
     readonly fbtrace_id?: string;
   };

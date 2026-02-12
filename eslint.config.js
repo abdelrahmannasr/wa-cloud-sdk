@@ -28,6 +28,13 @@ export default tseslint.config(
     },
   },
   {
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+    },
+  },
+  {
     ignores: ['dist/', 'coverage/', 'node_modules/', '*.config.*', '*.config.ts'],
   },
 );

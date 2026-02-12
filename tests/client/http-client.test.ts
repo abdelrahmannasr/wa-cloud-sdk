@@ -75,7 +75,7 @@ describe('HttpClient', () => {
 
       await client.get('path', { params: { limit: '10', offset: '5' } });
 
-      const calledUrl = mockFetch.mock.calls[0][0] as string;
+      const calledUrl = mockFetch.mock.calls[0]![0] as string;
       const url = new URL(calledUrl);
       expect(url.searchParams.get('limit')).toBe('10');
       expect(url.searchParams.get('offset')).toBe('5');
@@ -90,7 +90,7 @@ describe('HttpClient', () => {
 
       await client.get('test');
 
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.headers).toEqual(
         expect.objectContaining({
           Authorization: 'Bearer test-token',
@@ -105,7 +105,7 @@ describe('HttpClient', () => {
 
       await client.get('test', { headers: { 'X-Custom': 'value' } });
 
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.headers).toEqual(
         expect.objectContaining({
           Authorization: 'Bearer test-token',
@@ -123,7 +123,7 @@ describe('HttpClient', () => {
 
       const result = await client.get<{ id: string }>('test');
 
-      expect(mockFetch.mock.calls[0][1]).toEqual(expect.objectContaining({ method: 'GET' }));
+      expect(mockFetch.mock.calls[0]![1]).toEqual(expect.objectContaining({ method: 'GET' }));
       expect(result.data).toEqual({ id: '1' });
       expect(result.status).toBe(200);
       client.destroy();
@@ -136,7 +136,7 @@ describe('HttpClient', () => {
 
       await client.post('123/messages', body);
 
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.method).toBe('POST');
       expect(calledOptions.body).toBe(JSON.stringify(body));
       expect(calledOptions.headers).toEqual(
@@ -153,7 +153,7 @@ describe('HttpClient', () => {
 
       await client.delete('media/123');
 
-      expect(mockFetch.mock.calls[0][1]).toEqual(expect.objectContaining({ method: 'DELETE' }));
+      expect(mockFetch.mock.calls[0]![1]).toEqual(expect.objectContaining({ method: 'DELETE' }));
       client.destroy();
     });
 
@@ -163,7 +163,7 @@ describe('HttpClient', () => {
 
       await client.request('GET', 'test', { ignored: true });
 
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.body).toBeUndefined();
       client.destroy();
     });
@@ -209,6 +209,7 @@ describe('HttpClient', () => {
     });
 
     it('should throw RateLimitError on 429', async () => {
+      expect.assertions(2);
       mockFetch.mockResolvedValue(
         createMockResponse(
           {
@@ -253,6 +254,7 @@ describe('HttpClient', () => {
     });
 
     it('should throw ApiError on other error status codes', async () => {
+      expect.assertions(5);
       mockFetch.mockResolvedValue(
         createMockResponse(
           {
@@ -279,6 +281,41 @@ describe('HttpClient', () => {
         expect(apiError.errorSubcode).toBe(33);
         expect(apiError.fbTraceId).toBe('trace123');
       }
+      client.destroy();
+    });
+
+    it('should throw ApiError with UnknownError type on non-JSON error body', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 502,
+        headers: new Headers(),
+        json: vi.fn().mockRejectedValue(new SyntaxError('Unexpected token')),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.get('test')).rejects.toThrow(ApiError);
+      await expect(
+        client.get('test'),
+      ).rejects.toMatchObject({
+        message: 'HTTP 502 error',
+        statusCode: 502,
+        errorType: 'UnknownError',
+      });
+      client.destroy();
+    });
+
+    it('should handle malformed error response without error field', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse({}, 500),
+      );
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.get('test')).rejects.toThrow(ApiError);
+      await expect(client.get('test')).rejects.toMatchObject({
+        message: 'HTTP 500 error',
+        errorType: 'UnknownError',
+      });
       client.destroy();
     });
 
@@ -314,7 +351,7 @@ describe('HttpClient', () => {
       const result = await client.upload<{ id: string }>('123/media', formData);
 
       expect(result.data).toEqual({ id: 'media_123' });
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.method).toBe('POST');
       expect(calledOptions.body).toBe(formData);
       expect(calledOptions.headers).toEqual(
@@ -341,7 +378,7 @@ describe('HttpClient', () => {
 
       expect(result.data).toBeInstanceOf(ArrayBuffer);
       expect(result.data.byteLength).toBe(16);
-      const calledOptions = mockFetch.mock.calls[0][1] as RequestInit;
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.headers).toEqual(
         expect.objectContaining({ Authorization: 'Bearer test-token' }),
       );

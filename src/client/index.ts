@@ -7,4 +7,3 @@ export type {
   Logger,
   MetaApiErrorResponse,
 } from './types.js';
-export { LogLevel } from './types.js';

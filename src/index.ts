@@ -7,7 +7,6 @@ export type {
   HttpMethod,
   Logger,
 } from './client/index.js';
-export { LogLevel } from './client/index.js';
 
 // Errors
 export {

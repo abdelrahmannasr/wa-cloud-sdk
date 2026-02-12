@@ -1,5 +1,5 @@
 {
-  "name": "@anthropic-wa/cloud-api",
+  "name": "@abdelrahmannasr-wa/cloud-api",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
@@ -14,68 +14,68 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "main": "./dist/cjs/index.cjs",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "require": {
-        "types": "./dist/cjs/index.d.cts",
-        "default": "./dist/cjs/index.cjs"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./messages": {
       "import": {
-        "types": "./dist/esm/messages/index.d.ts",
-        "default": "./dist/esm/messages/index.js"
+        "types": "./dist/messages/index.d.ts",
+        "default": "./dist/messages/index.js"
       },
       "require": {
-        "types": "./dist/cjs/messages/index.d.cts",
-        "default": "./dist/cjs/messages/index.cjs"
+        "types": "./dist/messages/index.d.cts",
+        "default": "./dist/messages/index.cjs"
       }
     },
     "./webhooks": {
       "import": {
-        "types": "./dist/esm/webhooks/index.d.ts",
-        "default": "./dist/esm/webhooks/index.js"
+        "types": "./dist/webhooks/index.d.ts",
+        "default": "./dist/webhooks/index.js"
       },
       "require": {
-        "types": "./dist/cjs/webhooks/index.d.cts",
-        "default": "./dist/cjs/webhooks/index.cjs"
+        "types": "./dist/webhooks/index.d.cts",
+        "default": "./dist/webhooks/index.cjs"
       }
     },
     "./media": {
       "import": {
-        "types": "./dist/esm/media/index.d.ts",
-        "default": "./dist/esm/media/index.js"
+        "types": "./dist/media/index.d.ts",
+        "default": "./dist/media/index.js"
       },
       "require": {
-        "types": "./dist/cjs/media/index.d.cts",
-        "default": "./dist/cjs/media/index.cjs"
+        "types": "./dist/media/index.d.cts",
+        "default": "./dist/media/index.cjs"
       }
     },
     "./templates": {
       "import": {
-        "types": "./dist/esm/templates/index.d.ts",
-        "default": "./dist/esm/templates/index.js"
+        "types": "./dist/templates/index.d.ts",
+        "default": "./dist/templates/index.js"
       },
       "require": {
-        "types": "./dist/cjs/templates/index.d.cts",
-        "default": "./dist/cjs/templates/index.cjs"
+        "types": "./dist/templates/index.d.cts",
+        "default": "./dist/templates/index.cjs"
       }
     },
     "./errors": {
       "import": {
-        "types": "./dist/esm/errors/index.d.ts",
-        "default": "./dist/esm/errors/index.js"
+        "types": "./dist/errors/index.d.ts",
+        "default": "./dist/errors/index.js"
       },
       "require": {
-        "types": "./dist/cjs/errors/index.d.cts",
-        "default": "./dist/cjs/errors/index.cjs"
+        "types": "./dist/errors/index.d.cts",
+        "default": "./dist/errors/index.cjs"
       }
     }
   },
@@ -102,6 +102,7 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/coverage-v8": "^3.0.0",
+    "@eslint/js": "^9.0.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "prettier": "^3.2.0",
