@@ -393,7 +393,13 @@ describe('Messages', () => {
 
   describe('markAsRead', () => {
     it('should send mark-as-read payload', async () => {
-      await messages.markAsRead({ messageId: 'wamid.abc123' });
+      postSpy.mockResolvedValueOnce({
+        data: { success: true },
+        status: 200,
+        headers: new Headers(),
+      });
+
+      const result = await messages.markAsRead({ messageId: 'wamid.abc123' });
 
       expect(postSpy).toHaveBeenCalledWith(
         `${PHONE_NUMBER_ID}/messages`,
@@ -404,6 +410,7 @@ describe('Messages', () => {
         },
         undefined,
       );
+      expect(result.data.success).toBe(true);
     });
 
     it('should NOT include to, type, or recipient_type', async () => {

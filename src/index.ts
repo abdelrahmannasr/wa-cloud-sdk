@@ -30,6 +30,7 @@ export { validatePhoneNumber, isValidPhoneNumber } from './utils/index.js';
 export { Messages } from './messages/index.js';
 export type {
   MessageResponse,
+  MarkAsReadResponse,
   MessageResponseContact,
   MessageResponseMessage,
   MediaSource,

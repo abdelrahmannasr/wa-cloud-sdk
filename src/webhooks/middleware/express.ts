@@ -24,7 +24,7 @@ export function createExpressMiddleware(
 ): (req: WebhookRequest, res: WebhookResponse, next: WebhookNextFunction) => void {
   const handler = createWebhookHandler(config, callbacks);
 
-  return (req, res, _next) => {
+  return (req, res, next) => {
     if (req.method === 'GET') {
       const result = handler.handleGet(req.query);
       res.status(result.statusCode).send(result.body);
@@ -32,16 +32,25 @@ export function createExpressMiddleware(
     }
 
     if (req.method === 'POST') {
+      if (!req.rawBody) {
+        res
+          .status(500)
+          .send(
+            'Raw body is required for signature verification. ' +
+              'Configure body-parser with a verify callback that sets req.rawBody.',
+          );
+        return;
+      }
+
       const signature = extractHeader(req.headers, 'x-hub-signature-256');
-      const rawBody = req.rawBody ?? JSON.stringify(req.body);
 
       handler
-        .handlePost(rawBody, req.body as WebhookPayload, signature)
+        .handlePost(req.rawBody, req.body as WebhookPayload, signature)
         .then((result) => {
           res.status(result.statusCode).send(result.body);
         })
-        .catch(() => {
-          res.status(500).send('Internal Server Error');
+        .catch((error: unknown) => {
+          next(error);
         });
       return;
     }

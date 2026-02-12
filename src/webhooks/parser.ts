@@ -52,8 +52,7 @@ function extractMessageEvents(
     return;
   }
 
-  let index = 0;
-  for (const message of value.messages) {
+  for (const [index, message] of value.messages.entries()) {
     const contact = value.contacts?.[index];
 
     events.push({
@@ -66,8 +65,6 @@ function extractMessageEvents(
       message,
       timestamp: new Date(parseInt(message.timestamp, 10) * 1000),
     });
-
-    index++;
   }
 }
 

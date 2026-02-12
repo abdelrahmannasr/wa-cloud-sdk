@@ -27,6 +27,11 @@ export interface WebhookHandler {
 /**
  * Create a webhook handler with verification and typed event dispatching.
  *
+ * Callbacks are awaited sequentially per event. If a callback throws, the error
+ * propagates immediately and remaining events in the same payload are skipped.
+ * For Express middleware this means the error is forwarded via `next(error)`;
+ * for Next.js handlers it results in a 500 response.
+ *
  * @param config - App secret and verify token
  * @param callbacks - Event handlers for messages, statuses, and errors
  */

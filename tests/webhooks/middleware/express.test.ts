@@ -27,9 +27,8 @@ function createMockRes(): WebhookResponse & { statusCode: number; body: unknown 
 }
 
 describe('createExpressMiddleware', () => {
-  const next: WebhookNextFunction = vi.fn();
-
   it('should handle valid GET verification', () => {
+    const next: WebhookNextFunction = vi.fn();
     const middleware = createExpressMiddleware(CONFIG, {});
 
     const req: WebhookRequest = {
@@ -51,6 +50,7 @@ describe('createExpressMiddleware', () => {
   });
 
   it('should return 403 on invalid GET verification', () => {
+    const next: WebhookNextFunction = vi.fn();
     const middleware = createExpressMiddleware(CONFIG, {});
 
     const req: WebhookRequest = {
@@ -71,6 +71,7 @@ describe('createExpressMiddleware', () => {
   });
 
   it('should process valid POST webhook', async () => {
+    const next: WebhookNextFunction = vi.fn();
     const onMessage = vi.fn();
     const middleware = createExpressMiddleware(CONFIG, { onMessage });
 
@@ -108,14 +109,14 @@ describe('createExpressMiddleware', () => {
 
     middleware(req, res, next);
 
-    // Wait for async handler
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(res.statusCode).toBe(200);
+    await vi.waitFor(() => {
+      expect(res.statusCode).toBe(200);
+    });
     expect(onMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('should use JSON.stringify fallback when rawBody is absent', async () => {
+  it('should return 500 when rawBody is absent', () => {
+    const next: WebhookNextFunction = vi.fn();
     const middleware = createExpressMiddleware(CONFIG, {});
 
     const payload = {
@@ -134,12 +135,13 @@ describe('createExpressMiddleware', () => {
     const res = createMockRes();
 
     middleware(req, res, next);
-    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toContain('Raw body is required');
   });
 
   it('should return 405 for non-GET/POST methods', () => {
+    const next: WebhookNextFunction = vi.fn();
     const middleware = createExpressMiddleware(CONFIG, {});
 
     const req: WebhookRequest = {
@@ -155,8 +157,10 @@ describe('createExpressMiddleware', () => {
     expect(res.statusCode).toBe(405);
   });
 
-  it('should return 500 on unhandled callback error', async () => {
-    const onMessage = vi.fn().mockRejectedValue(new Error('fail'));
+  it('should forward callback errors via next()', async () => {
+    const next: WebhookNextFunction = vi.fn();
+    const callbackError = new Error('callback fail');
+    const onMessage = vi.fn().mockRejectedValue(callbackError);
     const middleware = createExpressMiddleware(CONFIG, { onMessage });
 
     const payload = {
@@ -192,8 +196,34 @@ describe('createExpressMiddleware', () => {
     const res = createMockRes();
 
     middleware(req, res, next);
-    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(res.statusCode).toBe(500);
+    await vi.waitFor(() => {
+      expect(next).toHaveBeenCalledWith(callbackError);
+    });
+  });
+
+  it('should return 403 when signature header is missing', async () => {
+    const next: WebhookNextFunction = vi.fn();
+    const middleware = createExpressMiddleware(CONFIG, {});
+
+    const payload = {
+      object: 'whatsapp_business_account',
+      entry: [],
+    };
+
+    const req: WebhookRequest = {
+      method: 'POST',
+      query: {},
+      body: payload,
+      headers: {},
+      rawBody: JSON.stringify(payload),
+    };
+    const res = createMockRes();
+
+    middleware(req, res, next);
+
+    await vi.waitFor(() => {
+      expect(res.statusCode).toBe(403);
+    });
   });
 });

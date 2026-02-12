@@ -60,16 +60,17 @@ export function verifySignature(
 
   const expectedHex = signature.slice('sha256='.length);
 
+  // Validate hex format explicitly — Buffer.from(str, 'hex') silently ignores non-hex chars
+  if (!/^[0-9a-f]{64}$/i.test(expectedHex)) {
+    throw new WebhookVerificationError('Webhook signature verification failed');
+  }
+
   const hmac = createHmac('sha256', appSecret);
   hmac.update(rawBody);
   const computedHex = hmac.digest('hex');
 
   const expectedBuffer = Buffer.from(expectedHex, 'hex');
   const computedBuffer = Buffer.from(computedHex, 'hex');
-
-  if (expectedBuffer.length !== computedBuffer.length) {
-    throw new WebhookVerificationError('Webhook signature verification failed');
-  }
 
   if (!timingSafeEqual(expectedBuffer, computedBuffer)) {
     throw new WebhookVerificationError('Webhook signature verification failed');

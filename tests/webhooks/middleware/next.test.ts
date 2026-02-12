@@ -98,6 +98,19 @@ describe('createNextRouteHandler', () => {
       expect(response.status).toBe(403);
     });
 
+    it('should return 403 when signature header is missing', async () => {
+      const { POST } = createNextRouteHandler(CONFIG, {});
+
+      const bodyStr = '{"object":"whatsapp_business_account","entry":[]}';
+      const request = new Request('https://example.com/api/webhook', {
+        method: 'POST',
+        body: bodyStr,
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(403);
+    });
+
     it('should return 400 on invalid JSON body', async () => {
       const { POST } = createNextRouteHandler(CONFIG, {});
 

@@ -3,6 +3,7 @@ import type { RequestOptions, ApiResponse } from '../client/types.js';
 import { validatePhoneNumber } from '../utils/phone.js';
 import type {
   MessageResponse,
+  MarkAsReadResponse,
   TextMessageOptions,
   ImageMessageOptions,
   VideoMessageOptions,
@@ -162,22 +163,15 @@ export class Messages {
     options: InteractiveButtonMessageOptions,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
-    const interactive: Record<string, unknown> = {
-      type: 'button',
-      body: { text: options.body },
-      action: { buttons: options.buttons },
-    };
-
-    if (options.header !== undefined) {
-      interactive['header'] = options.header;
-    }
-    if (options.footer !== undefined) {
-      interactive['footer'] = { text: options.footer };
-    }
-
     const payload = {
       ...this.buildBasePayload(options.to, 'interactive'),
-      interactive,
+      interactive: {
+        type: 'button',
+        body: { text: options.body },
+        action: { buttons: options.buttons },
+        ...(options.header !== undefined && { header: options.header }),
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
     };
     return this.send(payload, requestOptions);
   }
@@ -187,25 +181,18 @@ export class Messages {
     options: InteractiveListMessageOptions,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
-    const interactive: Record<string, unknown> = {
-      type: 'list',
-      body: { text: options.body },
-      action: {
-        button: options.buttonText,
-        sections: options.sections,
-      },
-    };
-
-    if (options.header !== undefined) {
-      interactive['header'] = { type: 'text', text: options.header };
-    }
-    if (options.footer !== undefined) {
-      interactive['footer'] = { text: options.footer };
-    }
-
     const payload = {
       ...this.buildBasePayload(options.to, 'interactive'),
-      interactive,
+      interactive: {
+        type: 'list',
+        body: { text: options.body },
+        action: {
+          button: options.buttonText,
+          sections: options.sections,
+        },
+        ...(options.header !== undefined && { header: { type: 'text', text: options.header } }),
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
     };
     return this.send(payload, requestOptions);
   }
@@ -215,18 +202,13 @@ export class Messages {
     options: TemplateMessageOptions,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
-    const template: Record<string, unknown> = {
-      name: options.templateName,
-      language: { code: options.language },
-    };
-
-    if (options.components !== undefined) {
-      template['components'] = options.components;
-    }
-
     const payload = {
       ...this.buildBasePayload(options.to, 'template'),
-      template,
+      template: {
+        name: options.templateName,
+        language: { code: options.language },
+        ...(options.components !== undefined && { components: options.components }),
+      },
     };
     return this.send(payload, requestOptions);
   }
@@ -235,13 +217,13 @@ export class Messages {
   async markAsRead(
     options: MarkAsReadOptions,
     requestOptions?: RequestOptions,
-  ): Promise<ApiResponse<MessageResponse>> {
+  ): Promise<ApiResponse<MarkAsReadResponse>> {
     const payload = {
       messaging_product: 'whatsapp',
       status: 'read',
       message_id: options.messageId,
     };
-    return this.send(payload, requestOptions);
+    return this.send<MarkAsReadResponse>(payload, requestOptions);
   }
 
   // ── Private helpers ──
@@ -266,11 +248,11 @@ export class Messages {
     return { link: media.link };
   }
 
-  private async send(
+  private async send<T = MessageResponse>(
     payload: Record<string, unknown>,
     requestOptions?: RequestOptions,
-  ): Promise<ApiResponse<MessageResponse>> {
-    return this.client.post<MessageResponse>(
+  ): Promise<ApiResponse<T>> {
+    return this.client.post<T>(
       `${this.phoneNumberId}/messages`,
       payload,
       requestOptions,

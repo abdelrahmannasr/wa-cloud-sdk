@@ -1,6 +1,7 @@
 export { Messages } from './messages.js';
 export type {
   MessageResponse,
+  MarkAsReadResponse,
   MessageResponseContact,
   MessageResponseMessage,
   MediaSource,

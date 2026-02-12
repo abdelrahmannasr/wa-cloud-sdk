@@ -38,6 +38,14 @@ export interface WebhookContact {
   readonly wa_id: string;
 }
 
+/**
+ * Raw incoming webhook message from Meta.
+ *
+ * This interface uses a flat structure with optional fields per message type,
+ * mirroring Meta's JSON exactly. A discriminated union per type would prevent
+ * accessing type-specific fields when the type is only known at runtime —
+ * the flat shape allows `message.text?.body` regardless of `message.type`.
+ */
 export interface WebhookMessage {
   readonly from: string;
   readonly id: string;

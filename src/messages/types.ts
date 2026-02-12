@@ -17,6 +17,11 @@ export interface MessageResponseMessage {
   readonly message_status?: string;
 }
 
+/** Response from POST /{phone_number_id}/messages with status: 'read' */
+export interface MarkAsReadResponse {
+  readonly success: boolean;
+}
+
 // ── Media source (by ID or link) ──
 
 export interface MediaId {
@@ -168,13 +173,11 @@ export interface InteractiveReplyButton {
   };
 }
 
-export interface InteractiveHeader {
-  readonly type: 'text' | 'image' | 'video' | 'document';
-  readonly text?: string;
-  readonly image?: MediaSource;
-  readonly video?: MediaSource;
-  readonly document?: MediaSource;
-}
+export type InteractiveHeader =
+  | { readonly type: 'text'; readonly text: string }
+  | { readonly type: 'image'; readonly image: MediaSource }
+  | { readonly type: 'video'; readonly video: MediaSource }
+  | { readonly type: 'document'; readonly document: MediaSource };
 
 export interface InteractiveButtonMessageOptions {
   readonly to: string;

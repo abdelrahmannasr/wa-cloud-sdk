@@ -119,5 +119,8 @@ describe('verifySignature', () => {
     expect(() => verifySignature(body, truncated, APP_SECRET)).toThrow(
       WebhookVerificationError,
     );
+    expect(() => verifySignature(body, truncated, APP_SECRET)).toThrow(
+      'Webhook signature verification failed',
+    );
   });
 });
