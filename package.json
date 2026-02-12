@@ -37,6 +37,26 @@
         "types": "./dist/errors/index.d.cts",
         "default": "./dist/errors/index.cjs"
       }
+    },
+    "./messages": {
+      "import": {
+        "types": "./dist/messages/index.d.ts",
+        "default": "./dist/messages/index.js"
+      },
+      "require": {
+        "types": "./dist/messages/index.d.cts",
+        "default": "./dist/messages/index.cjs"
+      }
+    },
+    "./webhooks": {
+      "import": {
+        "types": "./dist/webhooks/index.d.ts",
+        "default": "./dist/webhooks/index.js"
+      },
+      "require": {
+        "types": "./dist/webhooks/index.d.cts",
+        "default": "./dist/webhooks/index.cjs"
+      }
     }
   },
   "files": [
