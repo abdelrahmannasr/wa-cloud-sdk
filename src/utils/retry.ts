@@ -24,7 +24,7 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
  * Calculate delay with exponential backoff and jitter.
  * Formula: min(baseDelay * 2^attempt, maxDelay) * (1 + random * jitterFactor)
  */
-export function calculateDelay(attempt: number, config: RetryConfig): number {
+function calculateDelay(attempt: number, config: RetryConfig): number {
   const exponentialDelay = config.baseDelayMs * Math.pow(2, attempt);
   const clampedDelay = Math.min(exponentialDelay, config.maxDelayMs);
   const jitter = clampedDelay * config.jitterFactor * Math.random();

@@ -1,41 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withRetry, calculateDelay, DEFAULT_RETRY_CONFIG } from '../../src/utils/retry.js';
+import { withRetry } from '../../src/utils/retry.js';
 import { ApiError, RateLimitError, ValidationError } from '../../src/errors/errors.js';
-
-describe('calculateDelay', () => {
-  it('should apply exponential backoff', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-
-    const config = { ...DEFAULT_RETRY_CONFIG, jitterFactor: 0 };
-    expect(calculateDelay(0, config)).toBe(1000); // 1000 * 2^0
-    expect(calculateDelay(1, config)).toBe(2000); // 1000 * 2^1
-    expect(calculateDelay(2, config)).toBe(4000); // 1000 * 2^2
-    expect(calculateDelay(3, config)).toBe(8000); // 1000 * 2^3
-
-    vi.restoreAllMocks();
-  });
-
-  it('should clamp to maxDelayMs', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-
-    const config = { ...DEFAULT_RETRY_CONFIG, maxDelayMs: 5000, jitterFactor: 0 };
-    expect(calculateDelay(0, config)).toBe(1000);
-    expect(calculateDelay(3, config)).toBe(5000); // clamped
-    expect(calculateDelay(10, config)).toBe(5000); // clamped
-
-    vi.restoreAllMocks();
-  });
-
-  it('should add jitter within bounds', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(1);
-
-    const config = { ...DEFAULT_RETRY_CONFIG, jitterFactor: 0.2 };
-    // delay = 1000 + 1000 * 0.2 * 1 = 1200
-    expect(calculateDelay(0, config)).toBe(1200);
-
-    vi.restoreAllMocks();
-  });
-});
 
 describe('withRetry', () => {
   beforeEach(() => {

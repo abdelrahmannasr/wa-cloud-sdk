@@ -52,6 +52,7 @@ describe('validatePhoneNumber', () => {
   });
 
   it('should throw with field set to "phone"', () => {
+    expect.assertions(2);
     try {
       validatePhoneNumber('abc');
     } catch (error) {

@@ -130,6 +130,10 @@ export class HttpClient {
   /**
    * Download binary data from a URL (for media downloads).
    * The URL must include the full path (not relative to the base URL).
+   *
+   * @remarks The bearer token is sent to the provided URL. Callers should
+   * validate that the URL originates from a trusted source (e.g., Meta's CDN)
+   * to avoid leaking credentials to untrusted hosts.
    */
   async downloadMedia(url: string, options?: RequestOptions): Promise<ApiResponse<ArrayBuffer>> {
     return this.executeWithLifecycle<ArrayBuffer>(
@@ -157,6 +161,11 @@ export class HttpClient {
   /**
    * Shared lifecycle for all request types: rate limit, timeout, signal forwarding,
    * error parsing, and retry.
+   *
+   * Rate limiting is applied once per logical request, not per retry attempt.
+   * This models user-initiated throughput (e.g., "80 messages/second") rather than
+   * raw HTTP calls. Retries from transient failures should not penalize the caller's
+   * rate budget.
    */
   private async executeWithLifecycle<T>(
     executeFn: (signal: AbortSignal) => Promise<Response>,
@@ -176,15 +185,19 @@ export class HttpClient {
         controller.abort();
       }, timeout);
 
-      // Forward external abort signal (with { once: true } to prevent listener leaks)
+      // Forward external abort signal (handle already-aborted + { once: true } to prevent leaks)
       if (options?.signal) {
-        options.signal.addEventListener(
-          'abort',
-          () => {
-            controller.abort(options.signal?.reason);
-          },
-          { once: true },
-        );
+        if (options.signal.aborted) {
+          controller.abort(options.signal.reason);
+        } else {
+          options.signal.addEventListener(
+            'abort',
+            () => {
+              controller.abort(options.signal?.reason);
+            },
+            { once: true },
+          );
+        }
       }
 
       try {

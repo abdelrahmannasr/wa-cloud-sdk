@@ -28,46 +28,6 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./messages": {
-      "import": {
-        "types": "./dist/messages/index.d.ts",
-        "default": "./dist/messages/index.js"
-      },
-      "require": {
-        "types": "./dist/messages/index.d.cts",
-        "default": "./dist/messages/index.cjs"
-      }
-    },
-    "./webhooks": {
-      "import": {
-        "types": "./dist/webhooks/index.d.ts",
-        "default": "./dist/webhooks/index.js"
-      },
-      "require": {
-        "types": "./dist/webhooks/index.d.cts",
-        "default": "./dist/webhooks/index.cjs"
-      }
-    },
-    "./media": {
-      "import": {
-        "types": "./dist/media/index.d.ts",
-        "default": "./dist/media/index.js"
-      },
-      "require": {
-        "types": "./dist/media/index.d.cts",
-        "default": "./dist/media/index.cjs"
-      }
-    },
-    "./templates": {
-      "import": {
-        "types": "./dist/templates/index.d.ts",
-        "default": "./dist/templates/index.js"
-      },
-      "require": {
-        "types": "./dist/templates/index.d.cts",
-        "default": "./dist/templates/index.cjs"
-      }
-    },
     "./errors": {
       "import": {
         "types": "./dist/errors/index.d.ts",
@@ -95,7 +55,7 @@
     "lint:fix": "eslint src/ tests/ --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "prepublishOnly": "npm run typecheck && npm run build && npm run test"
+    "prepublishOnly": "pnpm run typecheck && pnpm run build && pnpm run test"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

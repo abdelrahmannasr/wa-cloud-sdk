@@ -4,13 +4,7 @@ export default defineConfig({
   tsconfig: 'tsconfig.build.json',
   entry: {
     index: 'src/index.ts',
-    'messages/index': 'src/messages/index.ts',
-    'webhooks/index': 'src/webhooks/index.ts',
-    'media/index': 'src/media/index.ts',
-    'templates/index': 'src/templates/index.ts',
     'errors/index': 'src/errors/index.ts',
-    'client/index': 'src/client/index.ts',
-    'multi-account/index': 'src/multi-account/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,

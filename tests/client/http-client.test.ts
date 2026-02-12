@@ -466,6 +466,27 @@ describe('HttpClient', () => {
     });
   });
 
+  describe('Abort signal', () => {
+    it('should abort immediately when passed an already-aborted signal', async () => {
+      mockFetch.mockImplementation((_url: string, init?: RequestInit) => {
+        if (init?.signal?.aborted) {
+          return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'));
+        }
+        return Promise.resolve(createMockResponse({ success: true }));
+      });
+      const client = new HttpClient(BASE_CONFIG);
+
+      const controller = new AbortController();
+      controller.abort('cancelled');
+
+      await expect(
+        client.get('test', { signal: controller.signal }),
+      ).rejects.toThrow();
+
+      client.destroy();
+    });
+  });
+
   describe('Destroy', () => {
     it('should clean up rate limiter on destroy', () => {
       const client = new HttpClient({
