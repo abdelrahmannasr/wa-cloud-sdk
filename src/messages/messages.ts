@@ -4,6 +4,7 @@ import { validatePhoneNumber } from '../utils/phone.js';
 import type {
   MessageResponse,
   MarkAsReadResponse,
+  MessageType,
   TextMessageOptions,
   ImageMessageOptions,
   VideoMessageOptions,
@@ -230,7 +231,7 @@ export class Messages {
 
   private buildBasePayload(
     to: string,
-    type: string,
+    type: MessageType,
   ): Record<string, unknown> {
     const validatedTo = validatePhoneNumber(to);
     return {

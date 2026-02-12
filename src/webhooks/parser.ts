@@ -52,8 +52,8 @@ function extractMessageEvents(
     return;
   }
 
-  for (const [index, message] of value.messages.entries()) {
-    const contact = value.contacts?.[index];
+  for (const message of value.messages) {
+    const contact = value.contacts?.find(c => c.wa_id === message.from);
 
     events.push({
       type: 'message',

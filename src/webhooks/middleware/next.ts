@@ -1,5 +1,5 @@
 import { createWebhookHandler } from '../handler.js';
-import type { WebhookConfig, WebhookHandlerCallbacks, WebhookPayload } from '../types.js';
+import type { WebhookConfig, WebhookHandlerCallbacks } from '../types.js';
 
 /**
  * Create Next.js App Router route handlers for WhatsApp webhooks.
@@ -42,19 +42,8 @@ export function createNextRouteHandler(
       const rawBody = await request.text();
       const signature = request.headers.get('x-hub-signature-256') ?? undefined;
 
-      let body: WebhookPayload;
-      try {
-        body = JSON.parse(rawBody) as WebhookPayload;
-      } catch {
-        return new Response('Invalid JSON', { status: 400 });
-      }
-
-      try {
-        const result = await handler.handlePost(rawBody, body, signature);
-        return new Response(String(result.body), { status: result.statusCode });
-      } catch {
-        return new Response('Internal Server Error', { status: 500 });
-      }
+      const result = await handler.handlePost(rawBody, signature);
+      return new Response(String(result.body), { status: result.statusCode });
     },
   };
 }

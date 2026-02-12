@@ -114,17 +114,18 @@ describe('createNextRouteHandler', () => {
     it('should return 400 on invalid JSON body', async () => {
       const { POST } = createNextRouteHandler(CONFIG, {});
 
+      const rawBody = 'not json{{{';
       const request = new Request('https://example.com/api/webhook', {
         method: 'POST',
-        headers: { 'x-hub-signature-256': 'sha256=abc' },
-        body: 'not json{{{',
+        headers: { 'x-hub-signature-256': signBody(rawBody) },
+        body: rawBody,
       });
 
       const response = await POST(request);
       expect(response.status).toBe(400);
     });
 
-    it('should return 500 on callback error', async () => {
+    it('should propagate callback errors to framework', async () => {
       const onMessage = vi.fn().mockRejectedValue(new Error('fail'));
       const { POST } = createNextRouteHandler(CONFIG, { onMessage });
 
@@ -157,8 +158,7 @@ describe('createNextRouteHandler', () => {
         body: bodyStr,
       });
 
-      const response = await POST(request);
-      expect(response.status).toBe(500);
+      await expect(POST(request)).rejects.toThrow('fail');
     });
   });
 });

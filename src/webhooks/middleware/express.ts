@@ -1,11 +1,11 @@
 import { createWebhookHandler } from '../handler.js';
+import { extractFirstValue } from '../utils.js';
 import type {
   WebhookConfig,
   WebhookHandlerCallbacks,
   WebhookRequest,
   WebhookResponse,
   WebhookNextFunction,
-  WebhookPayload,
 } from '../types.js';
 
 /**
@@ -42,10 +42,10 @@ export function createExpressMiddleware(
         return;
       }
 
-      const signature = extractHeader(req.headers, 'x-hub-signature-256');
+      const signature = extractFirstValue(req.headers, 'x-hub-signature-256');
 
       handler
-        .handlePost(req.rawBody, req.body as WebhookPayload, signature)
+        .handlePost(req.rawBody, signature)
         .then((result) => {
           res.status(result.statusCode).send(result.body);
         })
@@ -57,15 +57,4 @@ export function createExpressMiddleware(
 
     res.status(405).send('Method Not Allowed');
   };
-}
-
-function extractHeader(
-  headers: Record<string, string | string[] | undefined>,
-  name: string,
-): string | undefined {
-  const value = headers[name];
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
 }

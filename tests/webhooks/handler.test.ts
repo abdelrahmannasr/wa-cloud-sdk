@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { createWebhookHandler } from '../../src/webhooks/handler.js';
-import type { WebhookPayload, MessageEvent, StatusEvent, ErrorEvent } from '../../src/webhooks/types.js';
+import type { MessageEvent, StatusEvent, ErrorEvent } from '../../src/webhooks/types.js';
 
 const APP_SECRET = 'test_secret';
 const VERIFY_TOKEN = 'test_verify';
@@ -10,8 +10,8 @@ function signBody(body: string): string {
   return `sha256=${createHmac('sha256', APP_SECRET).update(body).digest('hex')}`;
 }
 
-function createTextPayload(): WebhookPayload {
-  return {
+function createTextPayloadBody(): string {
+  return JSON.stringify({
     object: 'whatsapp_business_account',
     entry: [
       {
@@ -37,7 +37,7 @@ function createTextPayload(): WebhookPayload {
         ],
       },
     ],
-  };
+  });
 }
 
 describe('createWebhookHandler', () => {
@@ -74,23 +74,32 @@ describe('createWebhookHandler', () => {
   describe('handlePost', () => {
     it('should return 403 on invalid signature', async () => {
       const handler = createWebhookHandler(config, {});
-      const body = JSON.stringify(createTextPayload());
+      const body = createTextPayloadBody();
 
-      const result = await handler.handlePost(body, createTextPayload(), 'sha256=invalid');
+      const result = await handler.handlePost(body, 'sha256=invalid');
 
       expect(result.statusCode).toBe(403);
       expect(result.body).toBe('Invalid signature');
+    });
+
+    it('should return 400 on invalid JSON body', async () => {
+      const handler = createWebhookHandler(config, {});
+      const rawBody = 'not json{{{';
+
+      const result = await handler.handlePost(rawBody, signBody(rawBody));
+
+      expect(result.statusCode).toBe(400);
+      expect(result.body).toBe('Invalid JSON');
     });
 
     it('should call onMessage callback for message events', async () => {
       const onMessage = vi.fn();
       const handler = createWebhookHandler(config, { onMessage });
 
-      const payload = createTextPayload();
-      const body = JSON.stringify(payload);
+      const body = createTextPayloadBody();
       const signature = signBody(body);
 
-      const result = await handler.handlePost(body, payload, signature);
+      const result = await handler.handlePost(body, signature);
 
       expect(result.statusCode).toBe(200);
       expect(onMessage).toHaveBeenCalledTimes(1);
@@ -103,7 +112,7 @@ describe('createWebhookHandler', () => {
       const onStatus = vi.fn();
       const handler = createWebhookHandler(config, { onStatus });
 
-      const payload: WebhookPayload = {
+      const body = JSON.stringify({
         object: 'whatsapp_business_account',
         entry: [
           {
@@ -127,10 +136,9 @@ describe('createWebhookHandler', () => {
             ],
           },
         ],
-      };
+      });
 
-      const body = JSON.stringify(payload);
-      await handler.handlePost(body, payload, signBody(body));
+      await handler.handlePost(body, signBody(body));
 
       expect(onStatus).toHaveBeenCalledTimes(1);
       const event = onStatus.mock.calls[0]![0] as StatusEvent;
@@ -141,7 +149,7 @@ describe('createWebhookHandler', () => {
       const onError = vi.fn();
       const handler = createWebhookHandler(config, { onError });
 
-      const payload: WebhookPayload = {
+      const body = JSON.stringify({
         object: 'whatsapp_business_account',
         entry: [
           {
@@ -158,10 +166,9 @@ describe('createWebhookHandler', () => {
             ],
           },
         ],
-      };
+      });
 
-      const body = JSON.stringify(payload);
-      await handler.handlePost(body, payload, signBody(body));
+      await handler.handlePost(body, signBody(body));
 
       expect(onError).toHaveBeenCalledTimes(1);
       const event = onError.mock.calls[0]![0] as ErrorEvent;
@@ -170,10 +177,9 @@ describe('createWebhookHandler', () => {
 
     it('should return 200 when no callbacks are defined', async () => {
       const handler = createWebhookHandler(config, {});
-      const payload = createTextPayload();
-      const body = JSON.stringify(payload);
+      const body = createTextPayloadBody();
 
-      const result = await handler.handlePost(body, payload, signBody(body));
+      const result = await handler.handlePost(body, signBody(body));
       expect(result.statusCode).toBe(200);
     });
 
@@ -185,10 +191,9 @@ describe('createWebhookHandler', () => {
       });
 
       const handler = createWebhookHandler(config, { onMessage });
-      const payload = createTextPayload();
-      const body = JSON.stringify(payload);
+      const body = createTextPayloadBody();
 
-      await handler.handlePost(body, payload, signBody(body));
+      await handler.handlePost(body, signBody(body));
 
       expect(order).toEqual(['message']);
     });
@@ -196,10 +201,9 @@ describe('createWebhookHandler', () => {
     it('should propagate callback errors', async () => {
       const onMessage = vi.fn().mockRejectedValue(new Error('DB write failed'));
       const handler = createWebhookHandler(config, { onMessage });
-      const payload = createTextPayload();
-      const body = JSON.stringify(payload);
+      const body = createTextPayloadBody();
 
-      await expect(handler.handlePost(body, payload, signBody(body))).rejects.toThrow(
+      await expect(handler.handlePost(body, signBody(body))).rejects.toThrow(
         'DB write failed',
       );
     });

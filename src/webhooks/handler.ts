@@ -16,10 +16,9 @@ export interface WebhookHandler {
   /** Handle GET verification challenge. */
   handleGet(params: Record<string, string | string[] | undefined>): WebhookHandlerResult;
 
-  /** Handle POST webhook notification. */
+  /** Handle POST webhook notification. Verifies signature, parses JSON, then dispatches events. */
   handlePost(
     rawBody: Buffer | string,
-    body: WebhookPayload,
     signature: string | undefined,
   ): Promise<WebhookHandlerResult>;
 }
@@ -27,10 +26,14 @@ export interface WebhookHandler {
 /**
  * Create a webhook handler with verification and typed event dispatching.
  *
+ * The POST handler performs steps in this order: (1) verify HMAC signature,
+ * (2) parse JSON body, (3) dispatch to callbacks. No processing occurs on
+ * unverified payloads.
+ *
  * Callbacks are awaited sequentially per event. If a callback throws, the error
  * propagates immediately and remaining events in the same payload are skipped.
  * For Express middleware this means the error is forwarded via `next(error)`;
- * for Next.js handlers it results in a 500 response.
+ * for Next.js handlers the error propagates to the framework.
  *
  * @param config - App secret and verify token
  * @param callbacks - Event handlers for messages, statuses, and errors
@@ -52,7 +55,7 @@ export function createWebhookHandler(
       }
     },
 
-    async handlePost(rawBody, body, signature): Promise<WebhookHandlerResult> {
+    async handlePost(rawBody, signature): Promise<WebhookHandlerResult> {
       try {
         verifySignature(rawBody, signature, config.appSecret);
       } catch (error: unknown) {
@@ -60,6 +63,14 @@ export function createWebhookHandler(
           return { statusCode: 403, body: 'Invalid signature' };
         }
         throw error;
+      }
+
+      let body: WebhookPayload;
+      try {
+        const text = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf-8');
+        body = JSON.parse(text) as WebhookPayload;
+      } catch {
+        return { statusCode: 400, body: 'Invalid JSON' };
       }
 
       const events = parseWebhookPayload(body);

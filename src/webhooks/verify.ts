@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { WebhookVerificationError } from '../errors/errors.js';
+import { extractFirstValue } from './utils.js';
 
 /**
  * Verify a webhook subscription challenge (GET request).
@@ -13,9 +14,9 @@ export function verifyWebhook(
   params: Record<string, string | string[] | undefined>,
   expectedToken: string,
 ): string {
-  const mode = extractParam(params, 'hub.mode');
-  const token = extractParam(params, 'hub.verify_token');
-  const challenge = extractParam(params, 'hub.challenge');
+  const mode = extractFirstValue(params, 'hub.mode');
+  const token = extractFirstValue(params, 'hub.verify_token');
+  const challenge = extractFirstValue(params, 'hub.challenge');
 
   if (mode !== 'subscribe') {
     throw new WebhookVerificationError(
@@ -79,14 +80,3 @@ export function verifySignature(
   return true;
 }
 
-/** Extract a single value from a query parameter (handles arrays). */
-function extractParam(
-  params: Record<string, string | string[] | undefined>,
-  key: string,
-): string | undefined {
-  const value = params[key];
-  if (Array.isArray(value)) {
-    return value[0];
-  }
-  return value;
-}

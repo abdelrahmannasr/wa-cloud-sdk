@@ -22,6 +22,21 @@ export interface MarkAsReadResponse {
   readonly success: boolean;
 }
 
+// ── Message type (outgoing) ──
+
+export type MessageType =
+  | 'text'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'document'
+  | 'sticker'
+  | 'location'
+  | 'contacts'
+  | 'reaction'
+  | 'interactive'
+  | 'template';
+
 // ── Media source (by ID or link) ──
 
 export interface MediaId {
