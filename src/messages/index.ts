@@ -35,4 +35,5 @@ export type {
   TemplateComponent,
   TemplateMessageOptions,
   MarkAsReadOptions,
+  MessageType,
 } from './types.js';

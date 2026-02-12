@@ -64,6 +64,7 @@ export type {
   TemplateComponent,
   TemplateMessageOptions,
   MarkAsReadOptions,
+  MessageType,
 } from './messages/index.js';
 
 // Webhooks
