@@ -14,6 +14,7 @@ This is the foundation package for the Khalsa platform (a trust-based distribute
 - `pnpm lint` — ESLint check
 - `pnpm lint:fix` — ESLint auto-fix
 - `pnpm format` — Prettier formatting
+- `pnpm format:check` — Prettier check (no write)
 - `pnpm typecheck` — TypeScript type check (no emit)
 - `pnpm clean` — Remove dist/
 
@@ -39,38 +40,30 @@ NEVER import axios, node-fetch, got, superagent, or any HTTP library.
 ### Module Structure
 ```
 src/
-├── index.ts              # Main barrel export — exports WhatsApp class + all types
-├── whatsapp.ts           # Main WhatsApp class (constructor, module wiring)
+├── index.ts              # Main barrel export — re-exports all modules
 ├── client/               # Core HTTP client
 │   ├── types.ts          # WhatsAppConfig, RequestOptions, ApiResponse interfaces
 │   ├── http-client.ts    # HTTP client with auth, rate limiting, retry
 │   └── index.ts          # Barrel export
 ├── messages/             # Message sending
-│   ├── types.ts          # All message type interfaces
+│   ├── types.ts          # All message type interfaces + MessageType enum
 │   ├── messages.ts       # Messages class with sendText, sendImage, sendTemplate, etc.
 │   └── index.ts
 ├── webhooks/             # Incoming webhook handling
 │   ├── types.ts          # WebhookEvent, MessageEvent, StatusEvent interfaces
 │   ├── parser.ts         # Parse raw webhook payloads into typed events
-│   ├── verify.ts         # Signature verification (X-Hub-Signature-256)
-│   ├── handler.ts        # createHandler with typed callbacks
+│   ├── verify.ts         # Signature verification (X-Hub-Signature-256 + timingSafeEqual)
+│   ├── handler.ts        # createWebhookHandler with typed callbacks
+│   ├── utils.ts          # Helper for extracting values from query params/headers
 │   ├── middleware/
 │   │   ├── next.ts       # Next.js App Router middleware factory
 │   │   └── express.ts    # Express middleware factory
 │   └── index.ts
-├── media/                # Media upload/download
-│   ├── types.ts
-│   ├── media.ts          # Media class with upload, download, getUrl, delete
+├── media/                # Media upload/download (stub — not yet implemented)
 │   └── index.ts
-├── templates/            # Template CRUD
-│   ├── types.ts
-│   ├── templates.ts      # Templates class with create, list, get, update, delete
-│   ├── builder.ts        # Fluent builder API
+├── templates/            # Template CRUD (stub — not yet implemented)
 │   └── index.ts
-├── multi-account/        # Multi-WABA management
-│   ├── types.ts
-│   ├── manager.ts        # MultiAccountManager class
-│   ├── strategies.ts     # Distribution strategies (round-robin, capacity, sticky)
+├── multi-account/        # Multi-WABA management (stub — not yet implemented)
 │   └── index.ts
 ├── errors/               # Typed error classes
 │   ├── errors.ts         # WhatsAppError, ApiError, RateLimitError, AuthenticationError, etc.
@@ -82,6 +75,11 @@ src/
     └── index.ts
 ```
 
+### Implementation Status
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware)
+- **Stub only:** media, templates, multi-account (empty `index.ts` placeholders)
+- **Planned:** `whatsapp.ts` main class to wire all modules under `new WhatsApp(config)`
+
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
 - All public APIs must have TSDoc comments with @example blocks
@@ -89,13 +87,17 @@ src/
 - Prefer `unknown` over `any` — narrow types explicitly
 - NO default exports — always use named exports
 - File naming: kebab-case (e.g., `rate-limiter.ts`, `http-client.ts`)
-- All classes accept HttpClient via constructor injection (except WhatsApp which creates it)
+- All classes accept HttpClient via constructor injection
 - Every method that calls the API returns Promise<ApiResponse<T>> or a typed result
 - Error handling: throw typed error classes, never throw plain strings or Error()
 
 ### API Design Patterns
-- Constructor-based: `new WhatsApp(config)` creates the client
-- Module access via properties: `wa.messages.sendText(...)`, `wa.webhooks.parse(...)`
+- **Current:** Import `HttpClient` and module classes directly, wire via constructor injection
+  ```ts
+  const client = new HttpClient(config);
+  const messages = new Messages(client);
+  ```
+- **Planned:** `new WhatsApp(config)` constructor that wires all modules, accessed via `wa.messages.sendText(...)`
 - Methods with >2 params use a config object (not positional args)
 - All optional params use `?` — never `undefined` as default
 - Method overloads: use union types in a single signature, not TypeScript overloads
