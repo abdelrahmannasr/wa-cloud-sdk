@@ -136,3 +136,10 @@ src/
 - Do NOT console.log — use the configurable logger from client config
 - Do NOT hardcode API version — always use config.apiVersion
 - Do NOT throw plain Error() — always use typed error classes from errors/
+
+## Active Technologies
+- TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3 (001-sdk-core-foundation)
+- N/A (stateless SDK library) (001-sdk-core-foundation)
+
+## Recent Changes
+- 001-sdk-core-foundation: Added TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3
