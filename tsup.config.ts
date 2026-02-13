@@ -5,6 +5,8 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'errors/index': 'src/errors/index.ts',
+    'messages/index': 'src/messages/index.ts',
+    'webhooks/index': 'src/webhooks/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,
