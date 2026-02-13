@@ -78,7 +78,16 @@ export function createWebhookHandler(
       let body: WebhookPayload;
       try {
         const text = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf-8');
-        body = JSON.parse(text) as WebhookPayload;
+        const parsed: unknown = JSON.parse(text);
+        if (
+          typeof parsed !== 'object' ||
+          parsed === null ||
+          !('object' in parsed) ||
+          !('entry' in parsed)
+        ) {
+          return { statusCode: 400, body: 'Invalid webhook payload structure' };
+        }
+        body = parsed as WebhookPayload;
       } catch {
         return { statusCode: 400, body: 'Invalid JSON' };
       }

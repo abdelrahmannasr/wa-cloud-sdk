@@ -72,6 +72,8 @@ describe('createWebhookHandler', () => {
   });
 
   describe('handlePost', () => {
+    // Uses 'sha256=invalid' which is not 64 hex chars — exercises hex format
+    // validation in verifySignature, not the HMAC comparison path.
     it('should return 403 on invalid signature', async () => {
       const handler = createWebhookHandler(config, {});
       const body = createTextPayloadBody();
@@ -206,6 +208,16 @@ describe('createWebhookHandler', () => {
       await expect(handler.handlePost(body, signBody(body))).rejects.toThrow(
         'DB write failed',
       );
+    });
+
+    it('should return 400 on valid JSON that is not a webhook payload', async () => {
+      const handler = createWebhookHandler(config, {});
+      const rawBody = JSON.stringify({ foo: 'bar' });
+
+      const result = await handler.handlePost(rawBody, signBody(rawBody));
+
+      expect(result.statusCode).toBe(400);
+      expect(result.body).toBe('Invalid webhook payload structure');
     });
   });
 });

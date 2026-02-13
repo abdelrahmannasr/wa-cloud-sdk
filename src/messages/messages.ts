@@ -376,7 +376,12 @@ export class Messages {
   private buildBasePayload(
     to: string,
     type: MessageType,
-  ): Record<string, unknown> {
+  ): {
+    messaging_product: 'whatsapp';
+    recipient_type: 'individual';
+    to: string;
+    type: MessageType;
+  } {
     const validatedTo = validatePhoneNumber(to);
     return {
       messaging_product: 'whatsapp',
@@ -386,7 +391,7 @@ export class Messages {
     };
   }
 
-  private resolveMedia(media: MediaSource): Record<string, string> {
+  private resolveMedia(media: MediaSource): { id: string } | { link: string } {
     if ('id' in media) {
       return { id: media.id };
     }

@@ -125,7 +125,7 @@ describe('createNextRouteHandler', () => {
       expect(response.status).toBe(400);
     });
 
-    it('should propagate callback errors to framework', async () => {
+    it('should return 500 when callback throws', async () => {
       const onMessage = vi.fn().mockRejectedValue(new Error('fail'));
       const { POST } = createNextRouteHandler(CONFIG, { onMessage });
 
@@ -158,7 +158,10 @@ describe('createNextRouteHandler', () => {
         body: bodyStr,
       });
 
-      await expect(POST(request)).rejects.toThrow('fail');
+      const response = await POST(request);
+      expect(response.status).toBe(500);
+      const text = await response.text();
+      expect(text).toBe('Internal Server Error');
     });
   });
 });

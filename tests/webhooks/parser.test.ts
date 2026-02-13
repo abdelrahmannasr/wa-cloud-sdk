@@ -30,7 +30,7 @@ function createPayload(
         ],
       },
     ],
-  } as WebhookPayload;
+  };
 }
 
 describe('parseWebhookPayload', () => {

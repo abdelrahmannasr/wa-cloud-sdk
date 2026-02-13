@@ -28,7 +28,12 @@ export function verifyWebhook(
     throw new WebhookVerificationError('Invalid hub.mode');
   }
 
-  if (token !== expectedToken) {
+  const tokenBuffer = Buffer.from(token ?? '');
+  const expectedBuffer = Buffer.from(expectedToken);
+  if (
+    tokenBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(tokenBuffer, expectedBuffer)
+  ) {
     throw new WebhookVerificationError('Verify token mismatch');
   }
 
@@ -89,4 +94,3 @@ export function verifySignature(
 
   return true;
 }
-
