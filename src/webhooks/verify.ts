@@ -9,6 +9,12 @@ import { extractFirstValue } from './utils.js';
  * @param expectedToken - The verify token configured in your app
  * @returns The challenge string that must be returned in the response body
  * @throws WebhookVerificationError if mode is not 'subscribe' or token doesn't match
+ *
+ * @example
+ * ```ts
+ * const challenge = verifyWebhook(req.query, 'my_verify_token');
+ * res.status(200).send(challenge);
+ * ```
  */
 export function verifyWebhook(
   params: Record<string, string | string[] | undefined>,
@@ -19,9 +25,7 @@ export function verifyWebhook(
   const challenge = extractFirstValue(params, 'hub.challenge');
 
   if (mode !== 'subscribe') {
-    throw new WebhookVerificationError(
-      `Invalid hub.mode: expected "subscribe", got "${String(mode)}"`,
-    );
+    throw new WebhookVerificationError('Invalid hub.mode');
   }
 
   if (token !== expectedToken) {
@@ -43,6 +47,12 @@ export function verifyWebhook(
  * @param appSecret - Your Meta app secret
  * @returns true if signature is valid
  * @throws WebhookVerificationError if signature is missing, malformed, or invalid
+ *
+ * @example
+ * ```ts
+ * const signature = req.headers['x-hub-signature-256'];
+ * verifySignature(req.rawBody, signature, process.env.APP_SECRET!);
+ * ```
  */
 export function verifySignature(
   rawBody: Buffer | string,

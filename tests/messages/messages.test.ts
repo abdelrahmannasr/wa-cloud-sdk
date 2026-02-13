@@ -296,6 +296,48 @@ describe('Messages', () => {
       expect(interactive['header']).toEqual({ type: 'text', text: 'Header Text' });
       expect(interactive['footer']).toEqual({ text: 'Footer text' });
     });
+
+    it('should include image media header', async () => {
+      await messages.sendInteractiveButtons({
+        to: '15551234567',
+        body: 'Choose:',
+        buttons: [{ type: 'reply', reply: { id: 'btn1', title: 'OK' } }],
+        header: { type: 'image', image: { id: 'img_123' } },
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['header']).toEqual({ type: 'image', image: { id: 'img_123' } });
+    });
+
+    it('should include video media header', async () => {
+      await messages.sendInteractiveButtons({
+        to: '15551234567',
+        body: 'Choose:',
+        buttons: [{ type: 'reply', reply: { id: 'btn1', title: 'OK' } }],
+        header: { type: 'video', video: { link: 'https://example.com/video.mp4' } },
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['header']).toEqual({
+        type: 'video',
+        video: { link: 'https://example.com/video.mp4' },
+      });
+    });
+
+    it('should include document media header', async () => {
+      await messages.sendInteractiveButtons({
+        to: '15551234567',
+        body: 'Choose:',
+        buttons: [{ type: 'reply', reply: { id: 'btn1', title: 'OK' } }],
+        header: { type: 'document', document: { id: 'doc_123' } },
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['header']).toEqual({ type: 'document', document: { id: 'doc_123' } });
+    });
   });
 
   describe('sendInteractiveList', () => {
@@ -388,6 +430,103 @@ describe('Messages', () => {
           parameters: [{ type: 'text', text: 'ORDER-123' }],
         },
       ]);
+    });
+
+    it('should pass through currency parameter type', async () => {
+      await messages.sendTemplate({
+        to: '15551234567',
+        templateName: 'payment_update',
+        language: 'en_US',
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'currency', currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 } },
+            ],
+          },
+        ],
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const template = payload['template'] as Record<string, unknown>;
+      const components = template['components'] as Array<Record<string, unknown>>;
+      expect(components[0]!['parameters']).toEqual([
+        { type: 'currency', currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 } },
+      ]);
+    });
+
+    it('should pass through date_time parameter type', async () => {
+      await messages.sendTemplate({
+        to: '15551234567',
+        templateName: 'appointment',
+        language: 'en_US',
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'date_time', date_time: { fallback_value: 'February 13, 2026' } },
+            ],
+          },
+        ],
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const template = payload['template'] as Record<string, unknown>;
+      const components = template['components'] as Array<Record<string, unknown>>;
+      expect(components[0]!['parameters']).toEqual([
+        { type: 'date_time', date_time: { fallback_value: 'February 13, 2026' } },
+      ]);
+    });
+
+    it('should pass through image and document header parameters', async () => {
+      await messages.sendTemplate({
+        to: '15551234567',
+        templateName: 'promo',
+        language: 'en_US',
+        components: [
+          {
+            type: 'header',
+            parameters: [{ type: 'image', image: { link: 'https://example.com/img.jpg' } }],
+          },
+          {
+            type: 'body',
+            parameters: [{ type: 'text', text: 'Hello' }],
+          },
+        ],
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const template = payload['template'] as Record<string, unknown>;
+      const components = template['components'] as Array<Record<string, unknown>>;
+      expect(components[0]!['parameters']).toEqual([
+        { type: 'image', image: { link: 'https://example.com/img.jpg' } },
+      ]);
+    });
+
+    it('should pass through quick_reply button component', async () => {
+      await messages.sendTemplate({
+        to: '15551234567',
+        templateName: 'feedback',
+        language: 'en_US',
+        components: [
+          {
+            type: 'button',
+            sub_type: 'quick_reply',
+            index: 0,
+            parameters: [{ type: 'payload', payload: 'btn_yes_payload' }],
+          },
+        ],
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const template = payload['template'] as Record<string, unknown>;
+      const components = template['components'] as Array<Record<string, unknown>>;
+      expect(components[0]).toEqual({
+        type: 'button',
+        sub_type: 'quick_reply',
+        index: 0,
+        parameters: [{ type: 'payload', payload: 'btn_yes_payload' }],
+      });
     });
   });
 

@@ -30,7 +30,18 @@ export class Messages {
     this.phoneNumberId = phoneNumberId;
   }
 
-  /** Send a text message. */
+  /**
+   * Send a text message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendText({
+   *   to: '+1234567890',
+   *   body: 'Hello from the SDK!',
+   *   previewUrl: true,
+   * });
+   * ```
+   */
   async sendText(
     options: TextMessageOptions,
     requestOptions?: RequestOptions,
@@ -45,7 +56,18 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send an image message (by media ID or URL). */
+  /**
+   * Send an image message (by media ID or URL).
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendImage({
+   *   to: '+1234567890',
+   *   media: { link: 'https://example.com/image.jpg' },
+   *   caption: 'Check this out',
+   * });
+   * ```
+   */
   async sendImage(
     options: ImageMessageOptions,
     requestOptions?: RequestOptions,
@@ -60,7 +82,18 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a video message. */
+  /**
+   * Send a video message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendVideo({
+   *   to: '+1234567890',
+   *   media: { id: 'media_id_123' },
+   *   caption: 'Watch this',
+   * });
+   * ```
+   */
   async sendVideo(
     options: VideoMessageOptions,
     requestOptions?: RequestOptions,
@@ -75,7 +108,17 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send an audio message. */
+  /**
+   * Send an audio message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendAudio({
+   *   to: '+1234567890',
+   *   media: { id: 'media_id_123' },
+   * });
+   * ```
+   */
   async sendAudio(
     options: AudioMessageOptions,
     requestOptions?: RequestOptions,
@@ -87,7 +130,19 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a document message. */
+  /**
+   * Send a document message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendDocument({
+   *   to: '+1234567890',
+   *   media: { link: 'https://example.com/report.pdf' },
+   *   filename: 'report.pdf',
+   *   caption: 'Monthly report',
+   * });
+   * ```
+   */
   async sendDocument(
     options: DocumentMessageOptions,
     requestOptions?: RequestOptions,
@@ -103,7 +158,17 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a sticker message. */
+  /**
+   * Send a sticker message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendSticker({
+   *   to: '+1234567890',
+   *   media: { id: 'media_id_123' },
+   * });
+   * ```
+   */
   async sendSticker(
     options: StickerMessageOptions,
     requestOptions?: RequestOptions,
@@ -115,7 +180,20 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a location message. */
+  /**
+   * Send a location message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendLocation({
+   *   to: '+1234567890',
+   *   longitude: -122.4194,
+   *   latitude: 37.7749,
+   *   name: 'San Francisco',
+   *   address: 'San Francisco, CA',
+   * });
+   * ```
+   */
   async sendLocation(
     options: LocationMessageOptions,
     requestOptions?: RequestOptions,
@@ -132,7 +210,17 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a contacts card message. */
+  /**
+   * Send a contacts card message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendContacts({
+   *   to: '+1234567890',
+   *   contacts: [{ name: { formatted_name: 'Jane Doe' }, phones: [{ phone: '+0987654321' }] }],
+   * });
+   * ```
+   */
   async sendContacts(
     options: ContactsMessageOptions,
     requestOptions?: RequestOptions,
@@ -144,7 +232,18 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a reaction to an existing message. */
+  /**
+   * Send a reaction to an existing message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendReaction({
+   *   to: '+1234567890',
+   *   messageId: 'wamid.abc123',
+   *   emoji: '\ud83d\udc4d',
+   * });
+   * ```
+   */
   async sendReaction(
     options: ReactionMessageOptions,
     requestOptions?: RequestOptions,
@@ -159,7 +258,21 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send an interactive button message (up to 3 buttons). */
+  /**
+   * Send an interactive button message (up to 3 buttons).
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendInteractiveButtons({
+   *   to: '+1234567890',
+   *   body: 'Choose an option:',
+   *   buttons: [
+   *     { type: 'reply', reply: { id: 'btn_yes', title: 'Yes' } },
+   *     { type: 'reply', reply: { id: 'btn_no', title: 'No' } },
+   *   ],
+   * });
+   * ```
+   */
   async sendInteractiveButtons(
     options: InteractiveButtonMessageOptions,
     requestOptions?: RequestOptions,
@@ -177,7 +290,19 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send an interactive list message. */
+  /**
+   * Send an interactive list message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendInteractiveList({
+   *   to: '+1234567890',
+   *   body: 'Select a product:',
+   *   buttonText: 'View options',
+   *   sections: [{ title: 'Products', rows: [{ id: 'p1', title: 'Widget' }] }],
+   * });
+   * ```
+   */
   async sendInteractiveList(
     options: InteractiveListMessageOptions,
     requestOptions?: RequestOptions,
@@ -198,7 +323,19 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Send a pre-approved template message. */
+  /**
+   * Send a pre-approved template message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendTemplate({
+   *   to: '+1234567890',
+   *   templateName: 'hello_world',
+   *   language: 'en_US',
+   *   components: [{ type: 'body', parameters: [{ type: 'text', text: 'John' }] }],
+   * });
+   * ```
+   */
   async sendTemplate(
     options: TemplateMessageOptions,
     requestOptions?: RequestOptions,
@@ -214,7 +351,14 @@ export class Messages {
     return this.send(payload, requestOptions);
   }
 
-  /** Mark a message as read (sends "read" receipt). */
+  /**
+   * Mark a message as read (sends "read" receipt).
+   *
+   * @example
+   * ```ts
+   * const response = await messages.markAsRead({ messageId: 'wamid.abc123' });
+   * ```
+   */
   async markAsRead(
     options: MarkAsReadOptions,
     requestOptions?: RequestOptions,

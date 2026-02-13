@@ -10,6 +10,14 @@ import type {
  *
  * @param payload - The raw JSON body from the webhook POST
  * @returns Array of parsed WebhookEvent objects (may be empty if no recognized events)
+ *
+ * @example
+ * ```ts
+ * const events = parseWebhookPayload(JSON.parse(rawBody));
+ * for (const event of events) {
+ *   if (event.type === 'message') console.log(event.message);
+ * }
+ * ```
  */
 export function parseWebhookPayload(payload: WebhookPayload): WebhookEvent[] {
   if (payload.object !== 'whatsapp_business_account') {

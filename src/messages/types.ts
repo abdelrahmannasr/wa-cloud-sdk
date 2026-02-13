@@ -220,6 +220,7 @@ export interface InteractiveListMessageOptions {
   readonly body: string;
   readonly buttonText: string;
   readonly sections: readonly InteractiveListSection[];
+  /** Text-only header. Meta's API only supports text headers for list messages (unlike button messages which also support image/video/document headers). */
   readonly header?: string;
   readonly footer?: string;
 }

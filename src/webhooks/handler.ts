@@ -37,6 +37,16 @@ export interface WebhookHandler {
  *
  * @param config - App secret and verify token
  * @param callbacks - Event handlers for messages, statuses, and errors
+ *
+ * @example
+ * ```ts
+ * const handler = createWebhookHandler(
+ *   { appSecret: process.env.APP_SECRET!, verifyToken: process.env.VERIFY_TOKEN! },
+ *   { onMessage: (event) => console.log(event.message) },
+ * );
+ * const result = handler.handleGet(req.query);
+ * res.status(result.statusCode).send(result.body);
+ * ```
  */
 export function createWebhookHandler(
   config: WebhookConfig,

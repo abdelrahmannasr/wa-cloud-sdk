@@ -11,11 +11,20 @@ import type {
 /**
  * Create Express-compatible middleware for WhatsApp webhooks.
  *
- * Requires raw body access for signature verification. Configure body-parser with:
- * ```
+ * Requires raw body access for signature verification.
+ *
+ * @example
+ * ```ts
+ * // Configure body-parser to capture raw body
  * app.use('/webhook', express.json({
  *   verify: (req, _res, buf) => { (req as any).rawBody = buf; },
  * }));
+ *
+ * // Mount the middleware
+ * app.use('/webhook', createExpressMiddleware(
+ *   { appSecret: process.env.APP_SECRET!, verifyToken: process.env.VERIFY_TOKEN! },
+ *   { onMessage: async (event) => console.log(event.message) },
+ * ));
  * ```
  */
 export function createExpressMiddleware(

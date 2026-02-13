@@ -4,6 +4,11 @@ import type { WebhookConfig, WebhookHandlerCallbacks } from '../types.js';
 /**
  * Create Next.js App Router route handlers for WhatsApp webhooks.
  *
+ * Unlike the Express middleware which forwards callback errors via `next(error)`,
+ * errors thrown by callbacks in the POST handler propagate directly to Next.js.
+ * Next.js will catch these and return a 500 response automatically. To handle
+ * callback errors yourself, wrap your callback logic in try/catch.
+ *
  * @returns Object with GET and POST handler functions for use in route.ts
  *
  * @example
