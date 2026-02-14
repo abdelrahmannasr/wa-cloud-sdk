@@ -159,7 +159,7 @@ src/
 - TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
 
 ## Recent Changes
-- 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility
+- 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility; extracted requireWebhookConfig() private helper with per-field validation errors; shallow copy config for runtime immutability; hardened test assertions with expect.fail pattern
 - 003-template-management: Added Templates class with list, get, create, update, delete; TemplateBuilder fluent API with client-side validation (name format, text lengths, button counts); uses businessAccountId (WABA ID) instead of phoneNumberId
 - 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class
 - 001-sdk-core-foundation: Added TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3
