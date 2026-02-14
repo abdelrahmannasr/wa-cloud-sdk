@@ -59,7 +59,9 @@ src/
 │   │   ├── next.ts       # Next.js App Router middleware factory
 │   │   └── express.ts    # Express middleware factory
 │   └── index.ts
-├── media/                # Media upload/download (stub — not yet implemented)
+├── media/                # Media upload/download/management
+│   ├── types.ts          # MediaCategory, MEDIA_CONSTRAINTS, upload/url/delete response types
+│   ├── media.ts          # Media class with upload, getUrl, download, delete
 │   └── index.ts
 ├── templates/            # Template CRUD (stub — not yet implemented)
 │   └── index.ts
@@ -95,7 +97,8 @@ src/
 - **Current:** Import `HttpClient` and module classes directly, wire via constructor injection
   ```ts
   const client = new HttpClient(config);
-  const messages = new Messages(client);
+  const messages = new Messages(client, phoneNumberId);
+  const media = new Media(client, phoneNumberId);
   ```
 - **Planned:** `new WhatsApp(config)` constructor that wires all modules, accessed via `wa.messages.sendText(...)`
 - Methods with >2 params use a config object (not positional args)
@@ -142,4 +145,5 @@ src/
 - N/A (stateless SDK library) (001-sdk-core-foundation)
 
 ## Recent Changes
+- 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class
 - 001-sdk-core-foundation: Added TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3
