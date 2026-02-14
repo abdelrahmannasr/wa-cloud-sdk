@@ -63,7 +63,10 @@ src/
 │   ├── types.ts          # MediaCategory, MEDIA_CONSTRAINTS, upload/url/delete response types
 │   ├── media.ts          # Media class with upload, getUrl, download, delete
 │   └── index.ts
-├── templates/            # Template CRUD (stub — not yet implemented)
+├── templates/            # Template CRUD + fluent TemplateBuilder
+│   ├── types.ts          # TemplateCategory, TemplateStatus, CreateTemplateRequest, validation constants
+│   ├── templates.ts      # Templates class with list, get, create, update, delete
+│   ├── builder.ts        # TemplateBuilder fluent API with client-side validation
 │   └── index.ts
 ├── multi-account/        # Multi-WABA management (stub — not yet implemented)
 │   └── index.ts
@@ -78,8 +81,8 @@ src/
 ```
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware), media (upload, download, getUrl, delete with client-side validation)
-- **Stub only:** templates, multi-account (empty `index.ts` placeholders)
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation)
+- **Stub only:** multi-account (empty `index.ts` placeholder)
 - **Planned:** `whatsapp.ts` main class to wire all modules under `new WhatsApp(config)`
 
 ### Code Conventions
@@ -99,6 +102,7 @@ src/
   const client = new HttpClient(config);
   const messages = new Messages(client, phoneNumberId);
   const media = new Media(client, phoneNumberId);
+  const templates = new Templates(client, businessAccountId);
   ```
 - **Planned:** `new WhatsApp(config)` constructor that wires all modules, accessed via `wa.messages.sendText(...)`
 - Methods with >2 params use a config object (not positional args)
@@ -143,7 +147,9 @@ src/
 ## Active Technologies
 - TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3 (001-sdk-core-foundation)
 - N/A (stateless SDK library) (001-sdk-core-foundation)
+- TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
 
 ## Recent Changes
+- 003-template-management: Added Templates class with list, get, create, update, delete; TemplateBuilder fluent API with client-side validation (name format, text lengths, button counts); uses businessAccountId (WABA ID) instead of phoneNumberId
 - 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class
 - 001-sdk-core-foundation: Added TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3
