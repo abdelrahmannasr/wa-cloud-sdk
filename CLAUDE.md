@@ -143,6 +143,7 @@ src/
 ## Active Technologies
 - TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3 (001-sdk-core-foundation)
 - N/A (stateless SDK library) (001-sdk-core-foundation)
+- TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
 
 ## Recent Changes
 - 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class

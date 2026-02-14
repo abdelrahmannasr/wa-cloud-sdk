@@ -80,6 +80,37 @@ export type {
 } from './media/index.js';
 export { MEDIA_CONSTRAINTS } from './media/index.js';
 
+// Templates
+export { Templates, TemplateBuilder } from './templates/index.js';
+export type {
+  Template,
+  TemplateCategory,
+  TemplateStatus,
+  QualityScore,
+  TemplateComponentResponse,
+  ButtonResponse,
+  CreateTemplateRequest,
+  CreateTemplateComponent,
+  CreateTemplateButton,
+  CreateTemplateResponse,
+  TemplateDeleteResponse,
+  TemplateDeleteOptions,
+  PagingInfo,
+  TemplateListParams,
+  TemplateListResponse,
+  TemplateGetOptions,
+} from './templates/index.js';
+export {
+  TEMPLATE_NAME_PATTERN,
+  MAX_BODY_LENGTH,
+  MAX_HEADER_TEXT_LENGTH,
+  MAX_FOOTER_LENGTH,
+  MAX_BUTTON_TEXT_LENGTH,
+  MAX_QUICK_REPLY_BUTTONS,
+  MAX_URL_BUTTONS,
+  MAX_PHONE_NUMBER_BUTTONS,
+} from './templates/index.js';
+
 // Webhooks
 export { parseWebhookPayload, verifyWebhook, verifySignature, createWebhookHandler } from './webhooks/index.js';
 export { createExpressMiddleware, createNextRouteHandler } from './webhooks/index.js';
