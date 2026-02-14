@@ -67,6 +67,19 @@ export type {
   MessageType,
 } from './messages/index.js';
 
+// Media
+export { Media } from './media/index.js';
+export type {
+  MediaCategory,
+  StickerSubtype,
+  MediaConstraint,
+  MediaUploadOptions,
+  MediaUploadResponse,
+  MediaUrlResponse,
+  MediaDeleteResponse,
+} from './media/index.js';
+export { MEDIA_CONSTRAINTS } from './media/index.js';
+
 // Webhooks
 export { parseWebhookPayload, verifyWebhook, verifySignature, createWebhookHandler } from './webhooks/index.js';
 export { createExpressMiddleware, createNextRouteHandler } from './webhooks/index.js';
