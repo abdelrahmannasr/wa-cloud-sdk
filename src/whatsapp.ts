@@ -65,7 +65,7 @@ export class WhatsApp {
       throw new ValidationError('phoneNumberId is required', 'phoneNumberId');
     }
 
-    this.config = config;
+    this.config = { ...config };
 
     // Create shared HTTP client
     this._client = new HttpClient(config);

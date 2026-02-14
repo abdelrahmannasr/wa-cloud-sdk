@@ -89,10 +89,10 @@ describe('Webhooks', () => {
 
       try {
         webhooks.verify(params);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('webhookVerifyToken');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('webhookVerifyToken');
       }
     });
   });
@@ -123,10 +123,10 @@ describe('Webhooks', () => {
 
       try {
         webhooks.verifySignature(rawBody, signature);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('appSecret');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('appSecret');
       }
     });
   });
@@ -175,7 +175,7 @@ describe('Webhooks', () => {
       expect(result).toBe(mockHandler);
     });
 
-    it('throws ValidationError when appSecret missing', () => {
+    it('throws ValidationError with field "appSecret" when appSecret missing', () => {
       const webhooks = new Webhooks(configWithoutAppSecret);
       const callbacks = {
         onMessage: vi.fn(),
@@ -183,19 +183,19 @@ describe('Webhooks', () => {
 
       expect(() => webhooks.createHandler(callbacks)).toThrow(ValidationError);
       expect(() => webhooks.createHandler(callbacks)).toThrow(
-        'appSecret and webhookVerifyToken are required',
+        'appSecret is required for webhook handler creation',
       );
 
       try {
         webhooks.createHandler(callbacks);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('appSecret');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('appSecret');
       }
     });
 
-    it('throws ValidationError when webhookVerifyToken missing', () => {
+    it('throws ValidationError with field "webhookVerifyToken" when webhookVerifyToken missing', () => {
       const webhooks = new Webhooks(configWithoutWebhookToken);
       const callbacks = {
         onMessage: vi.fn(),
@@ -203,15 +203,15 @@ describe('Webhooks', () => {
 
       expect(() => webhooks.createHandler(callbacks)).toThrow(ValidationError);
       expect(() => webhooks.createHandler(callbacks)).toThrow(
-        'appSecret and webhookVerifyToken are required',
+        'webhookVerifyToken is required for webhook handler creation',
       );
 
       try {
         webhooks.createHandler(callbacks);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('appSecret');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('webhookVerifyToken');
       }
     });
   });
@@ -239,7 +239,7 @@ describe('Webhooks', () => {
       expect(result).toBe(mockMiddleware);
     });
 
-    it('throws ValidationError when config missing', () => {
+    it('throws ValidationError with field "appSecret" when config missing', () => {
       const webhooks = new Webhooks(minimalConfig);
       const callbacks = {
         onMessage: vi.fn(),
@@ -247,15 +247,15 @@ describe('Webhooks', () => {
 
       expect(() => webhooks.createExpressMiddleware(callbacks)).toThrow(ValidationError);
       expect(() => webhooks.createExpressMiddleware(callbacks)).toThrow(
-        'appSecret and webhookVerifyToken are required',
+        'appSecret is required for webhook handler creation',
       );
 
       try {
         webhooks.createExpressMiddleware(callbacks);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('appSecret');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('appSecret');
       }
     });
   });
@@ -286,7 +286,7 @@ describe('Webhooks', () => {
       expect(result).toBe(mockHandlers);
     });
 
-    it('throws ValidationError when config missing', () => {
+    it('throws ValidationError with field "appSecret" when config missing', () => {
       const webhooks = new Webhooks(minimalConfig);
       const callbacks = {
         onMessage: vi.fn(),
@@ -294,15 +294,15 @@ describe('Webhooks', () => {
 
       expect(() => webhooks.createNextRouteHandler(callbacks)).toThrow(ValidationError);
       expect(() => webhooks.createNextRouteHandler(callbacks)).toThrow(
-        'appSecret and webhookVerifyToken are required',
+        'appSecret is required for webhook handler creation',
       );
 
       try {
         webhooks.createNextRouteHandler(callbacks);
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('appSecret');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('appSecret');
       }
     });
   });

@@ -47,10 +47,10 @@ describe('WhatsApp', () => {
 
       try {
         new WhatsApp({ accessToken: '', phoneNumberId: 'test-phone-id' });
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('accessToken');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('accessToken');
       }
     });
 
@@ -61,10 +61,10 @@ describe('WhatsApp', () => {
 
       try {
         new WhatsApp({ accessToken: '   ', phoneNumberId: 'test-phone-id' });
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('accessToken');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('accessToken');
       }
     });
 
@@ -78,10 +78,10 @@ describe('WhatsApp', () => {
 
       try {
         new WhatsApp({ accessToken: 'test-token', phoneNumberId: '' });
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('phoneNumberId');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('phoneNumberId');
       }
     });
 
@@ -92,10 +92,10 @@ describe('WhatsApp', () => {
 
       try {
         new WhatsApp({ accessToken: 'test-token', phoneNumberId: '   ' });
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('phoneNumberId');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('phoneNumberId');
       }
     });
   });
@@ -159,10 +159,10 @@ describe('WhatsApp', () => {
 
       try {
         void wa.templates;
+        expect.fail('Expected ValidationError to be thrown');
       } catch (error) {
-        if (error instanceof ValidationError) {
-          expect(error.field).toBe('businessAccountId');
-        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('businessAccountId');
       }
     });
 
