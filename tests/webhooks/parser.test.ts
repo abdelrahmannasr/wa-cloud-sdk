@@ -7,9 +7,7 @@ import type {
   ErrorEvent,
 } from '../../src/webhooks/types.js';
 
-function createPayload(
-  value: Record<string, unknown>,
-): WebhookPayload {
+function createPayload(value: Record<string, unknown>): WebhookPayload {
   return {
     object: 'whatsapp_business_account',
     entry: [
@@ -113,7 +111,12 @@ describe('parseWebhookPayload', () => {
             id: 'wamid.doc123',
             timestamp: '1700000000',
             type: 'document',
-            document: { id: 'doc_id', mime_type: 'application/pdf', sha256: 'def', filename: 'report.pdf' },
+            document: {
+              id: 'doc_id',
+              mime_type: 'application/pdf',
+              sha256: 'def',
+              filename: 'report.pdf',
+            },
           },
         ],
       });
@@ -170,9 +173,7 @@ describe('parseWebhookPayload', () => {
   describe('error events', () => {
     it('should parse webhook errors into ErrorEvent', () => {
       const payload = createPayload({
-        errors: [
-          { code: 130429, title: 'Rate limit hit', message: 'Too many messages' },
-        ],
+        errors: [{ code: 130429, title: 'Rate limit hit', message: 'Too many messages' }],
       });
 
       const events = parseWebhookPayload(payload);
@@ -220,8 +221,20 @@ describe('parseWebhookPayload', () => {
           { profile: { name: 'Bob' }, wa_id: '15552222222' },
         ],
         messages: [
-          { from: '15551111111', id: 'wamid.1', timestamp: '1700000000', type: 'text', text: { body: 'Hi' } },
-          { from: '15552222222', id: 'wamid.2', timestamp: '1700000001', type: 'text', text: { body: 'Hey' } },
+          {
+            from: '15551111111',
+            id: 'wamid.1',
+            timestamp: '1700000000',
+            type: 'text',
+            text: { body: 'Hi' },
+          },
+          {
+            from: '15552222222',
+            id: 'wamid.2',
+            timestamp: '1700000001',
+            type: 'text',
+            text: { body: 'Hey' },
+          },
         ],
       });
 

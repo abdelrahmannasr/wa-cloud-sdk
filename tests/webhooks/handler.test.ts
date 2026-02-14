@@ -205,9 +205,7 @@ describe('createWebhookHandler', () => {
       const handler = createWebhookHandler(config, { onMessage });
       const body = createTextPayloadBody();
 
-      await expect(handler.handlePost(body, signBody(body))).rejects.toThrow(
-        'DB write failed',
-      );
+      await expect(handler.handlePost(body, signBody(body))).rejects.toThrow('DB write failed');
     });
 
     it('should return 400 on valid JSON that is not a webhook payload', async () => {

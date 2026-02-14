@@ -236,11 +236,7 @@ export class Templates {
     components: readonly CreateTemplateComponent[],
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<CreateTemplateResponse>> {
-    return this.client.post<CreateTemplateResponse>(
-      templateId,
-      { components },
-      requestOptions,
-    );
+    return this.client.post<CreateTemplateResponse>(templateId, { components }, requestOptions);
   }
 
   /**

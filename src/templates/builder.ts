@@ -367,10 +367,7 @@ export class TemplateBuilder {
     // Validate body component exists
     const bodyComponent = this.components.find((c) => c.type === 'BODY');
     if (!bodyComponent) {
-      throw new ValidationError(
-        'Template must have a body component (use addBody)',
-        'body',
-      );
+      throw new ValidationError('Template must have a body component (use addBody)', 'body');
     }
 
     // Validate name format
@@ -422,13 +419,9 @@ export class TemplateBuilder {
         }
 
         // Count button types
-        const quickReplyCount = component.buttons.filter(
-          (b) => b.type === 'QUICK_REPLY',
-        ).length;
+        const quickReplyCount = component.buttons.filter((b) => b.type === 'QUICK_REPLY').length;
         const urlCount = component.buttons.filter((b) => b.type === 'URL').length;
-        const phoneCount = component.buttons.filter(
-          (b) => b.type === 'PHONE_NUMBER',
-        ).length;
+        const phoneCount = component.buttons.filter((b) => b.type === 'PHONE_NUMBER').length;
 
         if (quickReplyCount > MAX_QUICK_REPLY_BUTTONS) {
           throw new ValidationError(

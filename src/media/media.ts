@@ -40,15 +40,9 @@ export class Media {
     const { file, mimeType, category, stickerType } = options;
 
     // Check file is not empty
-    const fileSize =
-      file instanceof Blob
-        ? file.size
-        : file.byteLength;
+    const fileSize = file instanceof Blob ? file.size : file.byteLength;
     if (fileSize === 0) {
-      throw new MediaError(
-        'File must not be empty (0 bytes)',
-        category,
-      );
+      throw new MediaError('File must not be empty (0 bytes)', category);
     }
 
     // For stickers, require stickerType
@@ -137,9 +131,7 @@ export class Media {
     formData.append('messaging_product', 'whatsapp');
 
     // Convert file to Blob if it's a Buffer
-    const blob = file instanceof Buffer
-      ? new Blob([file], { type: mimeType })
-      : file;
+    const blob = file instanceof Buffer ? new Blob([file], { type: mimeType }) : file;
 
     // Append file with optional filename
     if (filename) {

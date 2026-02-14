@@ -1,9 +1,4 @@
-import type {
-  WebhookPayload,
-  WebhookEvent,
-  WebhookChangeValue,
-  EventMetadata,
-} from './types.js';
+import type { WebhookPayload, WebhookEvent, WebhookChangeValue, EventMetadata } from './types.js';
 
 /**
  * Parse a raw webhook payload from Meta into an array of typed events.
@@ -61,7 +56,7 @@ function extractMessageEvents(
   }
 
   for (const message of value.messages) {
-    const contact = value.contacts?.find(c => c.wa_id === message.from);
+    const contact = value.contacts?.find((c) => c.wa_id === message.from);
 
     events.push({
       type: 'message',

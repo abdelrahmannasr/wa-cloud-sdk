@@ -18,12 +18,7 @@
  * });
  * ```
  */
-export type MediaCategory =
-  | 'image'
-  | 'video'
-  | 'audio'
-  | 'document'
-  | 'sticker';
+export type MediaCategory = 'image' | 'video' | 'audio' | 'document' | 'sticker';
 
 /**
  * Sticker subtype for determining size limits
@@ -92,13 +87,7 @@ export const MEDIA_CONSTRAINTS = {
     maxSizeBytes: 16_777_216, // 16 MB
   },
   audio: {
-    mimeTypes: new Set([
-      'audio/aac',
-      'audio/mp4',
-      'audio/mpeg',
-      'audio/amr',
-      'audio/ogg',
-    ]),
+    mimeTypes: new Set(['audio/aac', 'audio/mp4', 'audio/mpeg', 'audio/amr', 'audio/ogg']),
     maxSizeBytes: 16_777_216, // 16 MB
   },
   document: {

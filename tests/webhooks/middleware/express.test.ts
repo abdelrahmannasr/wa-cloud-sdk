@@ -1,7 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { createExpressMiddleware } from '../../../src/webhooks/middleware/express.js';
-import type { WebhookRequest, WebhookResponse, WebhookNextFunction } from '../../../src/webhooks/types.js';
+import type {
+  WebhookRequest,
+  WebhookResponse,
+  WebhookNextFunction,
+} from '../../../src/webhooks/types.js';
 
 const APP_SECRET = 'test_secret';
 const VERIFY_TOKEN = 'test_verify';
@@ -87,7 +91,13 @@ describe('createExpressMiddleware', () => {
                 metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
                 contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
                 messages: [
-                  { from: '15559876543', id: 'wamid.1', timestamp: '1700000000', type: 'text', text: { body: 'Hi' } },
+                  {
+                    from: '15559876543',
+                    id: 'wamid.1',
+                    timestamp: '1700000000',
+                    type: 'text',
+                    text: { body: 'Hi' },
+                  },
                 ],
               },
               field: 'messages',
@@ -175,7 +185,13 @@ describe('createExpressMiddleware', () => {
                 metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
                 contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
                 messages: [
-                  { from: '15559876543', id: 'wamid.1', timestamp: '1700000000', type: 'text', text: { body: 'Hi' } },
+                  {
+                    from: '15559876543',
+                    id: 'wamid.1',
+                    timestamp: '1700000000',
+                    type: 'text',
+                    text: { body: 'Hi' },
+                  },
                 ],
               },
               field: 'messages',

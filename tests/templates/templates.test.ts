@@ -67,18 +67,14 @@ describe('Templates', () => {
     });
 
     it('should throw ValidationError when businessAccountId is undefined', () => {
-      expect(() => new Templates(client, undefined as unknown as string)).toThrow(
-        ValidationError,
-      );
+      expect(() => new Templates(client, undefined as unknown as string)).toThrow(ValidationError);
       expect(() => new Templates(client, undefined as unknown as string)).toThrow(
         'businessAccountId is required and cannot be empty',
       );
     });
 
     it('should throw ValidationError when businessAccountId is null', () => {
-      expect(() => new Templates(client, null as unknown as string)).toThrow(
-        ValidationError,
-      );
+      expect(() => new Templates(client, null as unknown as string)).toThrow(ValidationError);
       expect(() => new Templates(client, null as unknown as string)).toThrow(
         'businessAccountId is required and cannot be empty',
       );
@@ -105,10 +101,7 @@ describe('Templates', () => {
 
       await templates.list();
 
-      expect(getSpy).toHaveBeenCalledWith(
-        `${BUSINESS_ACCOUNT_ID}/message_templates`,
-        undefined,
-      );
+      expect(getSpy).toHaveBeenCalledWith(`${BUSINESS_ACCOUNT_ID}/message_templates`, undefined);
     });
 
     it('should pass pagination params (limit, after, before) as query params', async () => {
@@ -482,11 +475,7 @@ describe('Templates', () => {
 
       await templates.update('123456', components);
 
-      expect(postSpy).toHaveBeenCalledWith(
-        '123456',
-        { components },
-        undefined,
-      );
+      expect(postSpy).toHaveBeenCalledWith('123456', { components }, undefined);
     });
 
     it('should return typed CreateTemplateResponse', async () => {
@@ -541,11 +530,7 @@ describe('Templates', () => {
 
       await templates.update('123456', components, requestOptions);
 
-      expect(postSpy).toHaveBeenCalledWith(
-        '123456',
-        { components },
-        requestOptions,
-      );
+      expect(postSpy).toHaveBeenCalledWith('123456', { components }, requestOptions);
     });
   });
 

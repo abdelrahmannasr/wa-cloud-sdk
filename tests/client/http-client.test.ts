@@ -295,9 +295,7 @@ describe('HttpClient', () => {
       const client = new HttpClient(BASE_CONFIG);
 
       await expect(client.get('test')).rejects.toThrow(ApiError);
-      await expect(
-        client.get('test'),
-      ).rejects.toMatchObject({
+      await expect(client.get('test')).rejects.toMatchObject({
         message: 'HTTP 502 error',
         statusCode: 502,
         errorType: 'UnknownError',
@@ -306,9 +304,7 @@ describe('HttpClient', () => {
     });
 
     it('should handle malformed error response without error field', async () => {
-      mockFetch.mockResolvedValue(
-        createMockResponse({}, 500),
-      );
+      mockFetch.mockResolvedValue(createMockResponse({}, 500));
       const client = new HttpClient(BASE_CONFIG);
 
       await expect(client.get('test')).rejects.toThrow(ApiError);
@@ -479,9 +475,7 @@ describe('HttpClient', () => {
       const controller = new AbortController();
       controller.abort('cancelled');
 
-      await expect(
-        client.get('test', { signal: controller.signal }),
-      ).rejects.toThrow();
+      await expect(client.get('test', { signal: controller.signal })).rejects.toThrow();
 
       client.destroy();
     });

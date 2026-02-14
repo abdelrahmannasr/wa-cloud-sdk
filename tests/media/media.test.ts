@@ -471,7 +471,9 @@ describe('Media', () => {
       const result = await media.getUrl('media123');
 
       expect(result.data.id).toBe('media123');
-      expect(result.data.url).toBe('https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=123&ext=abc');
+      expect(result.data.url).toBe(
+        'https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=123&ext=abc',
+      );
       expect(result.data.mime_type).toBe('image/jpeg');
       expect(result.data.file_size).toBe(1048576);
 
@@ -535,13 +537,13 @@ describe('Media', () => {
     });
 
     it('should reject non-HTTPS URLs to prevent credential leakage', async () => {
-      await expect(
-        media.download('http://insecure-url.example.com/media'),
-      ).rejects.toThrow(MediaError);
+      await expect(media.download('http://insecure-url.example.com/media')).rejects.toThrow(
+        MediaError,
+      );
 
-      await expect(
-        media.download('http://insecure-url.example.com/media'),
-      ).rejects.toThrow('Media download URL must use HTTPS');
+      await expect(media.download('http://insecure-url.example.com/media')).rejects.toThrow(
+        'Media download URL must use HTTPS',
+      );
 
       expect(downloadMediaSpy).not.toHaveBeenCalled();
     });

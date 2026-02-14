@@ -402,10 +402,6 @@ export class Messages {
     payload: Record<string, unknown>,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<T>> {
-    return this.client.post<T>(
-      `${this.phoneNumberId}/messages`,
-      payload,
-      requestOptions,
-    );
+    return this.client.post<T>(`${this.phoneNumberId}/messages`, payload, requestOptions);
   }
 }

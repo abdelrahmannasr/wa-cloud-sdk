@@ -1,11 +1,7 @@
 import { parseWebhookPayload } from './parser.js';
 import { verifyWebhook, verifySignature } from './verify.js';
 import { WebhookVerificationError } from '../errors/errors.js';
-import type {
-  WebhookConfig,
-  WebhookHandlerCallbacks,
-  WebhookPayload,
-} from './types.js';
+import type { WebhookConfig, WebhookHandlerCallbacks, WebhookPayload } from './types.js';
 
 export interface WebhookHandlerResult {
   readonly statusCode: number;
