@@ -62,7 +62,13 @@ describe('createNextRouteHandler', () => {
                   metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
                   contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
                   messages: [
-                    { from: '15559876543', id: 'wamid.1', timestamp: '1700000000', type: 'text', text: { body: 'Hi' } },
+                    {
+                      from: '15559876543',
+                      id: 'wamid.1',
+                      timestamp: '1700000000',
+                      type: 'text',
+                      text: { body: 'Hi' },
+                    },
                   ],
                 },
                 field: 'messages',
@@ -141,7 +147,13 @@ describe('createNextRouteHandler', () => {
                   metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
                   contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
                   messages: [
-                    { from: '15559876543', id: 'wamid.1', timestamp: '1700000000', type: 'text', text: { body: 'Hi' } },
+                    {
+                      from: '15559876543',
+                      id: 'wamid.1',
+                      timestamp: '1700000000',
+                      type: 'text',
+                      text: { body: 'Hi' },
+                    },
                   ],
                 },
                 field: 'messages',

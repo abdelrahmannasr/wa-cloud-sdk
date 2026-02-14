@@ -1,3 +1,6 @@
+// Unified client
+export { WhatsApp } from './whatsapp.js';
+
 // Core client
 export { HttpClient } from './client/index.js';
 export type {
@@ -112,7 +115,13 @@ export {
 } from './templates/index.js';
 
 // Webhooks
-export { parseWebhookPayload, verifyWebhook, verifySignature, createWebhookHandler } from './webhooks/index.js';
+export { Webhooks } from './webhooks/index.js';
+export {
+  parseWebhookPayload,
+  verifyWebhook,
+  verifySignature,
+  createWebhookHandler,
+} from './webhooks/index.js';
 export { createExpressMiddleware, createNextRouteHandler } from './webhooks/index.js';
 export type {
   WebhookHandler,

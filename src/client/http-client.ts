@@ -259,11 +259,7 @@ export class HttpClient {
     };
   }
 
-  private parseErrorResponse(
-    status: number,
-    body: MetaApiErrorResponse,
-    headers: Headers,
-  ): never {
+  private parseErrorResponse(status: number, body: MetaApiErrorResponse, headers: Headers): never {
     const errorData = body.error;
     const message = errorData?.message ?? `HTTP ${status} error`;
     const errorType = errorData?.type ?? 'UnknownError';

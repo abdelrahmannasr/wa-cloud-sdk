@@ -69,9 +69,7 @@ export function verifySignature(
   }
 
   if (!signature.startsWith('sha256=')) {
-    throw new WebhookVerificationError(
-      'Invalid signature format: expected "sha256=<hex>"',
-    );
+    throw new WebhookVerificationError('Invalid signature format: expected "sha256=<hex>"');
   }
 
   const expectedHex = signature.slice('sha256='.length);

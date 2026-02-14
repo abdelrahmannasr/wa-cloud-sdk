@@ -49,7 +49,11 @@ describe('Messages', () => {
     });
 
     it('should set preview_url when specified', async () => {
-      await messages.sendText({ to: '15551234567', body: 'Check https://example.com', previewUrl: true });
+      await messages.sendText({
+        to: '15551234567',
+        body: 'Check https://example.com',
+        previewUrl: true,
+      });
 
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       expect(payload['text']).toEqual({ preview_url: true, body: 'Check https://example.com' });
@@ -94,7 +98,10 @@ describe('Messages', () => {
     });
 
     it('should send image by link', async () => {
-      await messages.sendImage({ to: '15551234567', media: { link: 'https://example.com/img.jpg' } });
+      await messages.sendImage({
+        to: '15551234567',
+        media: { link: 'https://example.com/img.jpg' },
+      });
 
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       expect(payload['image']).toEqual({ link: 'https://example.com/img.jpg' });
@@ -129,7 +136,10 @@ describe('Messages', () => {
 
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       expect(payload['type']).toBe('video');
-      expect(payload['video']).toEqual({ link: 'https://example.com/video.mp4', caption: 'Watch this' });
+      expect(payload['video']).toEqual({
+        link: 'https://example.com/video.mp4',
+        caption: 'Watch this',
+      });
     });
   });
 
@@ -162,7 +172,10 @@ describe('Messages', () => {
     });
 
     it('should send document with media only', async () => {
-      await messages.sendDocument({ to: '15551234567', media: { link: 'https://example.com/doc.pdf' } });
+      await messages.sendDocument({
+        to: '15551234567',
+        media: { link: 'https://example.com/doc.pdf' },
+      });
 
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       expect(payload['document']).toEqual({ link: 'https://example.com/doc.pdf' });
@@ -441,7 +454,10 @@ describe('Messages', () => {
           {
             type: 'body',
             parameters: [
-              { type: 'currency', currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 } },
+              {
+                type: 'currency',
+                currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 },
+              },
             ],
           },
         ],
@@ -451,7 +467,10 @@ describe('Messages', () => {
       const template = payload['template'] as Record<string, unknown>;
       const components = template['components'] as Array<Record<string, unknown>>;
       expect(components[0]!['parameters']).toEqual([
-        { type: 'currency', currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 } },
+        {
+          type: 'currency',
+          currency: { fallback_value: '$100.00', code: 'USD', amount_1000: 100000 },
+        },
       ]);
     });
 
@@ -463,9 +482,7 @@ describe('Messages', () => {
         components: [
           {
             type: 'body',
-            parameters: [
-              { type: 'date_time', date_time: { fallback_value: 'February 13, 2026' } },
-            ],
+            parameters: [{ type: 'date_time', date_time: { fallback_value: 'February 13, 2026' } }],
           },
         ],
       });
@@ -564,15 +581,15 @@ describe('Messages', () => {
 
   describe('phone validation', () => {
     it('should throw ValidationError for empty phone on sendImage', async () => {
-      await expect(
-        messages.sendImage({ to: '', media: { id: 'media_123' } }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendImage({ to: '', media: { id: 'media_123' } })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw ValidationError for too-short phone on sendLocation', async () => {
-      await expect(
-        messages.sendLocation({ to: '123', longitude: 0, latitude: 0 }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendLocation({ to: '123', longitude: 0, latitude: 0 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 

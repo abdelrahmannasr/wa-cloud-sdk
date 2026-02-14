@@ -123,19 +123,11 @@ describe('TemplateBuilder', () => {
   describe('validation tests', () => {
     it('should throw ValidationError when name is missing', () => {
       expect(() => {
-        new TemplateBuilder()
-          .setLanguage('en_US')
-          .setCategory('UTILITY')
-          .addBody('Test')
-          .build();
+        new TemplateBuilder().setLanguage('en_US').setCategory('UTILITY').addBody('Test').build();
       }).toThrow(ValidationError);
 
       try {
-        new TemplateBuilder()
-          .setLanguage('en_US')
-          .setCategory('UTILITY')
-          .addBody('Test')
-          .build();
+        new TemplateBuilder().setLanguage('en_US').setCategory('UTILITY').addBody('Test').build();
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
         expect((error as ValidationError).field).toBe('name');
@@ -166,19 +158,11 @@ describe('TemplateBuilder', () => {
 
     it('should throw ValidationError when category is missing', () => {
       expect(() => {
-        new TemplateBuilder()
-          .setName('test_template')
-          .setLanguage('en_US')
-          .addBody('Test')
-          .build();
+        new TemplateBuilder().setName('test_template').setLanguage('en_US').addBody('Test').build();
       }).toThrow(ValidationError);
 
       try {
-        new TemplateBuilder()
-          .setName('test_template')
-          .setLanguage('en_US')
-          .addBody('Test')
-          .build();
+        new TemplateBuilder().setName('test_template').setLanguage('en_US').addBody('Test').build();
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
         expect((error as ValidationError).field).toBe('category');

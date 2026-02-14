@@ -86,18 +86,14 @@ describe('verifySignature', () => {
   });
 
   it('should throw when signature header is missing', () => {
-    expect(() => verifySignature(body, undefined, APP_SECRET)).toThrow(
-      WebhookVerificationError,
-    );
+    expect(() => verifySignature(body, undefined, APP_SECRET)).toThrow(WebhookVerificationError);
     expect(() => verifySignature(body, undefined, APP_SECRET)).toThrow(
       'Missing X-Hub-Signature-256 header',
     );
   });
 
   it('should throw when signature does not start with sha256=', () => {
-    expect(() => verifySignature(body, 'md5=abc123', APP_SECRET)).toThrow(
-      WebhookVerificationError,
-    );
+    expect(() => verifySignature(body, 'md5=abc123', APP_SECRET)).toThrow(WebhookVerificationError);
     expect(() => verifySignature(body, 'md5=abc123', APP_SECRET)).toThrow(
       'Invalid signature format',
     );
@@ -116,9 +112,7 @@ describe('verifySignature', () => {
 
   it('should throw for truncated signature hex', () => {
     const truncated = 'sha256=abcdef';
-    expect(() => verifySignature(body, truncated, APP_SECRET)).toThrow(
-      WebhookVerificationError,
-    );
+    expect(() => verifySignature(body, truncated, APP_SECRET)).toThrow(WebhookVerificationError);
     expect(() => verifySignature(body, truncated, APP_SECRET)).toThrow(
       'Webhook signature verification failed',
     );
