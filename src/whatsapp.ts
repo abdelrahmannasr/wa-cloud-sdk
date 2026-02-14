@@ -4,6 +4,7 @@ import { Messages } from './messages/messages.js';
 import { Media } from './media/media.js';
 import { Templates } from './templates/templates.js';
 import { Webhooks } from './webhooks/webhooks.js';
+import { PhoneNumbers } from './phone-numbers/phone-numbers.js';
 import { ValidationError } from './errors/errors.js';
 
 /**
@@ -41,6 +42,7 @@ export class WhatsApp {
   private readonly _media: Media;
   private _templates?: Templates;
   private _webhooks?: Webhooks;
+  private _phoneNumbers?: PhoneNumbers;
 
   /**
    * Creates a unified WhatsApp Cloud API client.
@@ -148,6 +150,31 @@ export class WhatsApp {
       this._webhooks = new Webhooks(this.config);
     }
     return this._webhooks;
+  }
+
+  /**
+   * Phone number management operations (list, get, register, business profiles).
+   *
+   * @throws ValidationError if businessAccountId was not provided in config
+   *
+   * @example
+   * ```typescript
+   * const phones = await wa.phoneNumbers.list();
+   * const profile = await wa.phoneNumbers.getBusinessProfile('PHONE_NUMBER_ID');
+   * ```
+   */
+  get phoneNumbers(): PhoneNumbers {
+    if (!this._phoneNumbers) {
+      // Lazy initialization with validation
+      if (!this.config.businessAccountId || this.config.businessAccountId.trim() === '') {
+        throw new ValidationError(
+          'businessAccountId is required for phone number operations. Provide it in the WhatsApp constructor config.',
+          'businessAccountId',
+        );
+      }
+      this._phoneNumbers = new PhoneNumbers(this._client, this.config.businessAccountId);
+    }
+    return this._phoneNumbers;
   }
 
   /**
