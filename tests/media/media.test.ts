@@ -533,6 +533,18 @@ describe('Media', () => {
       await expect(media.download(url)).rejects.toThrow(ApiError);
       await expect(media.download(url)).rejects.toThrow('URL expired');
     });
+
+    it('should reject non-HTTPS URLs to prevent credential leakage', async () => {
+      await expect(
+        media.download('http://insecure-url.example.com/media'),
+      ).rejects.toThrow(MediaError);
+
+      await expect(
+        media.download('http://insecure-url.example.com/media'),
+      ).rejects.toThrow('Media download URL must use HTTPS');
+
+      expect(downloadMediaSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {

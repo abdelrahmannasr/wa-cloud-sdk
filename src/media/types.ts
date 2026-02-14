@@ -121,11 +121,11 @@ export const MEDIA_CONSTRAINTS = {
   sticker: {
     static: {
       mimeTypes: new Set(['image/webp']),
-      maxSizeBytes: 512_000, // 500 KB
+      maxSizeBytes: 512_000, // 500 KiB (500 × 1024)
     },
     animated: {
       mimeTypes: new Set(['image/webp']),
-      maxSizeBytes: 1_048_576, // 1 MB
+      maxSizeBytes: 1_048_576, // 1 MiB (1024 × 1024)
     },
   },
 } as const;

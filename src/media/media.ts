@@ -41,9 +41,9 @@ export class Media {
 
     // Check file is not empty
     const fileSize =
-      file instanceof Buffer
-        ? file.byteLength
-        : (file as Blob).size;
+      file instanceof Blob
+        ? file.size
+        : file.byteLength;
     if (fileSize === 0) {
       throw new MediaError(
         'File must not be empty (0 bytes)',
@@ -200,6 +200,15 @@ export class Media {
     mediaUrl: string,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<ArrayBuffer>> {
+    // Validate URL to prevent credential leakage to untrusted hosts
+    const parsed = new URL(mediaUrl);
+    if (parsed.protocol !== 'https:') {
+      throw new MediaError(
+        `Media download URL must use HTTPS, got "${parsed.protocol}"`,
+        'document',
+      );
+    }
+
     return this.client.downloadMedia(mediaUrl, requestOptions);
   }
 

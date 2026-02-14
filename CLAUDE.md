@@ -76,8 +76,8 @@ src/
 ```
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware)
-- **Stub only:** media, templates, multi-account (empty `index.ts` placeholders)
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware), media (upload, download, getUrl, delete with client-side validation)
+- **Stub only:** templates, multi-account (empty `index.ts` placeholders)
 - **Planned:** `whatsapp.ts` main class to wire all modules under `new WhatsApp(config)`
 
 ### Code Conventions
