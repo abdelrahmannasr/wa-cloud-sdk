@@ -41,6 +41,7 @@ NEVER import axios, node-fetch, got, superagent, or any HTTP library.
 ```
 src/
 ├── index.ts              # Main barrel export — re-exports all modules
+├── whatsapp.ts           # Unified client — single entry point for all SDK operations
 ├── client/               # Core HTTP client
 │   ├── types.ts          # WhatsAppConfig, RequestOptions, ApiResponse interfaces
 │   ├── http-client.ts    # HTTP client with auth, rate limiting, retry
@@ -54,6 +55,7 @@ src/
 │   ├── parser.ts         # Parse raw webhook payloads into typed events
 │   ├── verify.ts         # Signature verification (X-Hub-Signature-256 + timingSafeEqual)
 │   ├── handler.ts        # createWebhookHandler with typed callbacks
+│   ├── webhooks.ts       # Webhooks class — wraps standalone functions with pre-bound config
 │   ├── utils.ts          # Helper for extracting values from query params/headers
 │   ├── middleware/
 │   │   ├── next.ts       # Next.js App Router middleware factory
@@ -96,14 +98,22 @@ src/
 - Error handling: throw typed error classes, never throw plain strings or Error()
 
 ### API Design Patterns
-- **Current:** Import `HttpClient` and module classes directly, wire via constructor injection
+- **Preferred:** Unified client — single constructor wires all modules with shared HttpClient
+  ```ts
+  const wa = new WhatsApp({ accessToken, phoneNumberId, businessAccountId });
+  await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+  await wa.media.upload({ file, mimeType, filename });
+  const templates = await wa.templates.list({ limit: 10 });
+  const events = wa.webhooks.parse(payload);
+  wa.destroy(); // clean up rate limiter intervals
+  ```
+- **Direct imports:** Still supported for advanced use cases or gradual migration
   ```ts
   const client = new HttpClient(config);
   const messages = new Messages(client, phoneNumberId);
   const media = new Media(client, phoneNumberId);
   const templates = new Templates(client, businessAccountId);
   ```
-- **Planned:** `new WhatsApp(config)` constructor that wires all modules, accessed via `wa.messages.sendText(...)`
 - Methods with >2 params use a config object (not positional args)
 - All optional params use `?` — never `undefined` as default
 - Method overloads: use union types in a single signature, not TypeScript overloads
@@ -149,6 +159,7 @@ src/
 - TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
 
 ## Recent Changes
+- 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility
 - 003-template-management: Added Templates class with list, get, create, update, delete; TemplateBuilder fluent API with client-side validation (name format, text lengths, button counts); uses businessAccountId (WABA ID) instead of phoneNumberId
 - 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class
 - 001-sdk-core-foundation: Added TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3
