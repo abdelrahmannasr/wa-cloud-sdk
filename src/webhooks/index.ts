@@ -4,6 +4,9 @@ export { verifyWebhook, verifySignature } from './verify.js';
 export { createWebhookHandler } from './handler.js';
 export type { WebhookHandler, WebhookHandlerResult } from './handler.js';
 
+// Wrapper class
+export { Webhooks } from './webhooks.js';
+
 // Middleware
 export { createExpressMiddleware } from './middleware/express.js';
 export { createNextRouteHandler } from './middleware/next.js';
