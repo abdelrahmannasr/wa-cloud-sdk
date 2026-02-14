@@ -1,14 +1,11 @@
 import type { WhatsAppConfig } from '../client/types.js';
 import { ValidationError } from '../errors/errors.js';
-import {
-  verifyWebhook,
-  verifySignature as verifySignatureUtil,
-  parseWebhookPayload,
-  createWebhookHandler,
-  createExpressMiddleware as createExpressMiddlewareUtil,
-  createNextRouteHandler as createNextRouteHandlerUtil,
-} from './index.js';
-import type { WebhookHandler } from './index.js';
+import { verifyWebhook, verifySignature as verifySignatureUtil } from './verify.js';
+import { parseWebhookPayload } from './parser.js';
+import { createWebhookHandler } from './handler.js';
+import type { WebhookHandler } from './handler.js';
+import { createExpressMiddleware as createExpressMiddlewareUtil } from './middleware/express.js';
+import { createNextRouteHandler as createNextRouteHandlerUtil } from './middleware/next.js';
 import type {
   WebhookPayload,
   WebhookEvent,
@@ -76,7 +73,7 @@ export class Webhooks {
    * ```
    */
   verify(params: Record<string, string | string[] | undefined>): string {
-    if (!this.config.webhookVerifyToken) {
+    if (!this.config.webhookVerifyToken || this.config.webhookVerifyToken.trim() === '') {
       throw new ValidationError(
         'webhookVerifyToken is required for webhook verification. Provide it in the WhatsApp constructor config.',
         'webhookVerifyToken',
@@ -103,7 +100,7 @@ export class Webhooks {
    * ```
    */
   verifySignature(rawBody: Buffer | string, signature: string | undefined): boolean {
-    if (!this.config.appSecret) {
+    if (!this.config.appSecret || this.config.appSecret.trim() === '') {
       throw new ValidationError(
         'appSecret is required for webhook signature verification. Provide it in the WhatsApp constructor config.',
         'appSecret',
@@ -153,7 +150,12 @@ export class Webhooks {
    * ```
    */
   createHandler(callbacks: WebhookHandlerCallbacks): WebhookHandler {
-    if (!this.config.appSecret || !this.config.webhookVerifyToken) {
+    if (
+      !this.config.appSecret ||
+      this.config.appSecret.trim() === '' ||
+      !this.config.webhookVerifyToken ||
+      this.config.webhookVerifyToken.trim() === ''
+    ) {
       throw new ValidationError(
         'appSecret and webhookVerifyToken are required for webhook handler creation. Provide them in the WhatsApp constructor config.',
         'appSecret',
@@ -192,7 +194,12 @@ export class Webhooks {
   createExpressMiddleware(
     callbacks: WebhookHandlerCallbacks,
   ): (req: WebhookRequest, res: WebhookResponse, next: WebhookNextFunction) => void {
-    if (!this.config.appSecret || !this.config.webhookVerifyToken) {
+    if (
+      !this.config.appSecret ||
+      this.config.appSecret.trim() === '' ||
+      !this.config.webhookVerifyToken ||
+      this.config.webhookVerifyToken.trim() === ''
+    ) {
       throw new ValidationError(
         'appSecret and webhookVerifyToken are required for webhook handler creation. Provide them in the WhatsApp constructor config.',
         'appSecret',
@@ -230,7 +237,12 @@ export class Webhooks {
     GET: (request: Request) => Response;
     POST: (request: Request) => Promise<Response>;
   } {
-    if (!this.config.appSecret || !this.config.webhookVerifyToken) {
+    if (
+      !this.config.appSecret ||
+      this.config.appSecret.trim() === '' ||
+      !this.config.webhookVerifyToken ||
+      this.config.webhookVerifyToken.trim() === ''
+    ) {
       throw new ValidationError(
         'appSecret and webhookVerifyToken are required for webhook handler creation. Provide them in the WhatsApp constructor config.',
         'appSecret',

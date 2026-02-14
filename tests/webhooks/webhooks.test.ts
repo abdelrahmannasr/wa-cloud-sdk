@@ -3,25 +3,30 @@ import { Webhooks } from '../../src/webhooks/webhooks.js';
 import { ValidationError } from '../../src/errors/errors.js';
 import type { WhatsAppConfig } from '../../src/client/types.js';
 
-// Mock all the standalone webhook functions
-vi.mock('../../src/webhooks/index.js', () => ({
+// Mock the standalone webhook functions at their source modules
+vi.mock('../../src/webhooks/verify.js', () => ({
   verifyWebhook: vi.fn(),
   verifySignature: vi.fn(),
+}));
+vi.mock('../../src/webhooks/parser.js', () => ({
   parseWebhookPayload: vi.fn(),
+}));
+vi.mock('../../src/webhooks/handler.js', () => ({
   createWebhookHandler: vi.fn(),
+}));
+vi.mock('../../src/webhooks/middleware/express.js', () => ({
   createExpressMiddleware: vi.fn(),
+}));
+vi.mock('../../src/webhooks/middleware/next.js', () => ({
   createNextRouteHandler: vi.fn(),
 }));
 
-// Import the mocked functions
-import {
-  verifyWebhook,
-  verifySignature,
-  parseWebhookPayload,
-  createWebhookHandler,
-  createExpressMiddleware as createExpressMiddlewareUtil,
-  createNextRouteHandler as createNextRouteHandlerUtil,
-} from '../../src/webhooks/index.js';
+// Import the mocked functions from their source modules
+import { verifyWebhook, verifySignature } from '../../src/webhooks/verify.js';
+import { parseWebhookPayload } from '../../src/webhooks/parser.js';
+import { createWebhookHandler } from '../../src/webhooks/handler.js';
+import { createExpressMiddleware as createExpressMiddlewareUtil } from '../../src/webhooks/middleware/express.js';
+import { createNextRouteHandler as createNextRouteHandlerUtil } from '../../src/webhooks/middleware/next.js';
 
 describe('Webhooks', () => {
   const fullConfig: WhatsAppConfig = {

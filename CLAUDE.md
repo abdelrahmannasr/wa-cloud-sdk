@@ -81,9 +81,8 @@ src/
 ```
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation)
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization)
 - **Stub only:** multi-account (empty `index.ts` placeholder)
-- **Planned:** `whatsapp.ts` main class to wire all modules under `new WhatsApp(config)`
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
