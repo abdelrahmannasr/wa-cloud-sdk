@@ -1,25 +1,6 @@
 import type { Logger } from '../client/types.js';
 
 /**
- * Rate limiter configuration
- */
-export interface RateLimitConfig {
-  readonly maxTokens?: number;
-  readonly refillRate?: number;
-  readonly enabled?: boolean;
-}
-
-/**
- * Retry configuration
- */
-export interface RetryConfig {
-  readonly maxRetries?: number;
-  readonly baseDelayMs?: number;
-  readonly maxDelayMs?: number;
-  readonly jitterFactor?: number;
-}
-
-/**
  * Configuration for a single managed account
  */
 export interface AccountConfig {
@@ -38,9 +19,18 @@ export interface AccountConfig {
   /** Logger override */
   readonly logger?: Logger;
   /** Rate limiter configuration override */
-  readonly rateLimitConfig?: RateLimitConfig;
+  readonly rateLimitConfig?: {
+    readonly maxTokens?: number;
+    readonly refillRate?: number;
+    readonly enabled?: boolean;
+  };
   /** Retry configuration override */
-  readonly retryConfig?: RetryConfig;
+  readonly retryConfig?: {
+    readonly maxRetries?: number;
+    readonly baseDelayMs?: number;
+    readonly maxDelayMs?: number;
+    readonly jitterFactor?: number;
+  };
   /** Request timeout override */
   readonly timeoutMs?: number;
   /** App secret for webhook signature verification */
@@ -62,9 +52,18 @@ export interface MultiAccountConfig {
   /** Shared base logger */
   readonly logger?: Logger;
   /** Shared base rate limiter configuration */
-  readonly rateLimitConfig?: RateLimitConfig;
+  readonly rateLimitConfig?: {
+    readonly maxTokens?: number;
+    readonly refillRate?: number;
+    readonly enabled?: boolean;
+  };
   /** Shared base retry configuration */
-  readonly retryConfig?: RetryConfig;
+  readonly retryConfig?: {
+    readonly maxRetries?: number;
+    readonly baseDelayMs?: number;
+    readonly maxDelayMs?: number;
+    readonly jitterFactor?: number;
+  };
   /** Shared base request timeout in ms (default: 30000) */
   readonly timeoutMs?: number;
 }

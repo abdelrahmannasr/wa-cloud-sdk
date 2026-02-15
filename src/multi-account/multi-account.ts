@@ -301,10 +301,7 @@ export class WhatsAppMultiAccount {
       throw new ValidationError(`account not found: ${name}`, 'name');
     }
 
-    const config = this.accountConfigs.get(name);
-    if (!config) {
-      throw new ValidationError(`account configuration not found: ${name}`, 'name');
-    }
+    const config = this.accountConfigs.get(name)!;
 
     // Destroy instance if it was created
     const instance = this.instances.get(name);
