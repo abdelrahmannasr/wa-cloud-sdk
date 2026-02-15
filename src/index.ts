@@ -160,3 +160,32 @@ export type {
   WebhookResponse,
   WebhookNextFunction,
 } from './webhooks/index.js';
+
+// Phone Numbers
+export { PhoneNumbers } from './phone-numbers/index.js';
+export type {
+  PhoneNumber,
+  BusinessProfile,
+  BusinessProfileUpdate,
+  PhoneNumberListParams,
+  PhoneNumberListResponse,
+  BusinessProfileResponse,
+  VerificationCodeRequest,
+  VerifyCodeRequest,
+  RegisterRequest,
+  SuccessResponse,
+  Throughput,
+  QualityRating,
+  CodeVerificationStatus,
+  NameStatus,
+  PlatformType,
+  ThroughputLevel,
+  AccountMode,
+  MessagingLimitTier,
+  CodeMethod,
+  BusinessVertical,
+} from './phone-numbers/index.js';
+
+// Multi-Account
+export { WhatsAppMultiAccount } from './multi-account/index.js';
+export type { AccountConfig, MultiAccountConfig } from './multi-account/index.js';
