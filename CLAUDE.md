@@ -70,7 +70,13 @@ src/
 │   ├── templates.ts      # Templates class with list, get, create, update, delete
 │   ├── builder.ts        # TemplateBuilder fluent API with client-side validation
 │   └── index.ts
-├── multi-account/        # Multi-WABA management (stub — not yet implemented)
+├── phone-numbers/        # Phone number management
+│   ├── types.ts          # PhoneNumber, BusinessProfile, request/response types
+│   ├── phone-numbers.ts  # PhoneNumbers class with list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister
+│   └── index.ts
+├── multi-account/        # Multi-WABA management
+│   ├── types.ts          # AccountConfig, MultiAccountConfig interfaces
+│   ├── multi-account.ts  # WhatsAppMultiAccount class with lazy client instantiation, dynamic account management
 │   └── index.ts
 ├── errors/               # Typed error classes
 │   ├── errors.ts         # WhatsAppError, ApiError, RateLimitError, AuthenticationError, etc.
@@ -83,8 +89,7 @@ src/
 ```
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization)
-- **Stub only:** multi-account (empty `index.ts` placeholder)
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId)
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
