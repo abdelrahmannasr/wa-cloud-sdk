@@ -15,7 +15,7 @@ A comprehensive, zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp
 - **Templates** — Create, list, update, and delete message templates with a fluent TemplateBuilder API
 - **Webhooks** — Parse incoming events, verify signatures, and integrate with Express or Next.js App Router
 - **Phone Numbers** — List, manage business profiles, request verification codes, and register/deregister numbers
-- **Multi-Account** — Manage multiple WhatsApp Business Accounts with lazy client instantiation and dynamic account management
+- **Multi-Account** — Manage multiple WABAs with distribution strategies (round-robin, weighted, sticky), broadcast messaging with concurrency control, and dynamic account management
 
 ## Installation
 
@@ -315,6 +315,124 @@ const client2 = multiAccount.get(process.env.ACCOUNT2_PHONE_NUMBER_ID!);
 multiAccount.destroy();
 ```
 
+### Distribution Strategies
+
+Automatically distribute sends across accounts using built-in strategies:
+
+```typescript
+import {
+  WhatsAppMultiAccount,
+  RoundRobinStrategy,
+} from '@abdelrahmannasr-wa/cloud-api';
+
+const manager = new WhatsAppMultiAccount({
+  strategy: new RoundRobinStrategy(),
+  accounts: [
+    { name: 'account-a', accessToken: 'TOKEN_A', phoneNumberId: 'PHONE_A' },
+    { name: 'account-b', accessToken: 'TOKEN_B', phoneNumberId: 'PHONE_B' },
+    { name: 'account-c', accessToken: 'TOKEN_C', phoneNumberId: 'PHONE_C' },
+  ],
+});
+
+// Each call cycles: A → B → C → A → B → ...
+const wa = manager.getNext();
+await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+```
+
+### Weighted Distribution
+
+Route traffic proportionally based on per-account weights:
+
+```typescript
+import {
+  WhatsAppMultiAccount,
+  WeightedStrategy,
+} from '@abdelrahmannasr-wa/cloud-api';
+
+const manager = new WhatsAppMultiAccount({
+  strategy: new WeightedStrategy(
+    new Map([
+      ['enterprise', 80],  // gets ~80% of traffic
+      ['business-1', 10],  // gets ~10% of traffic
+      ['business-2', 10],  // gets ~10% of traffic
+    ]),
+  ),
+  accounts: [
+    { name: 'enterprise', accessToken: 'TOKEN_E', phoneNumberId: 'PHONE_E' },
+    { name: 'business-1', accessToken: 'TOKEN_1', phoneNumberId: 'PHONE_1' },
+    { name: 'business-2', accessToken: 'TOKEN_2', phoneNumberId: 'PHONE_2' },
+  ],
+});
+
+const wa = manager.getNext();
+await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+```
+
+### Sticky Routing
+
+Ensure the same recipient always routes to the same account for conversation continuity:
+
+```typescript
+import {
+  WhatsAppMultiAccount,
+  StickyStrategy,
+} from '@abdelrahmannasr-wa/cloud-api';
+
+const manager = new WhatsAppMultiAccount({
+  strategy: new StickyStrategy(),
+  accounts: [
+    { name: 'account-a', accessToken: 'TOKEN_A', phoneNumberId: 'PHONE_A' },
+    { name: 'account-b', accessToken: 'TOKEN_B', phoneNumberId: 'PHONE_B' },
+  ],
+});
+
+// Same recipient always routes to the same account
+const wa = manager.getNext('1234567890');
+await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+```
+
+### Broadcast
+
+Send a message to many recipients in parallel, distributed across accounts:
+
+```typescript
+const recipients = ['1111111111', '2222222222', '3333333333', '4444444444'];
+
+const result = await manager.broadcast(
+  recipients,
+  async (wa, to) => wa.messages.sendText({ to, body: 'Campaign message!' }),
+  { concurrency: 10 }, // limit to 10 concurrent sends
+);
+
+console.log(`Sent: ${result.successes.length}, Failed: ${result.failures.length}`);
+
+for (const failure of result.failures) {
+  console.error(`Failed to send to ${failure.recipient}:`, failure.error);
+}
+```
+
+### Custom Strategy
+
+Implement the `DistributionStrategy` interface for custom routing logic:
+
+```typescript
+import type { DistributionStrategy } from '@abdelrahmannasr-wa/cloud-api';
+
+class PriorityStrategy implements DistributionStrategy {
+  select(accountNames: readonly string[]): string {
+    return accountNames[0]!; // Always prefer the first account
+  }
+}
+
+const manager = new WhatsAppMultiAccount({
+  strategy: new PriorityStrategy(),
+  accounts: [
+    { name: 'primary', accessToken: 'TOKEN_P', phoneNumberId: 'PHONE_P' },
+    { name: 'fallback', accessToken: 'TOKEN_F', phoneNumberId: 'PHONE_F' },
+  ],
+});
+```
+
 ## Examples
 
 Complete, runnable examples are available in the [`examples/`](./examples) directory. Each example demonstrates a specific feature with inline documentation and environment variable setup:
@@ -325,7 +443,7 @@ Complete, runnable examples are available in the [`examples/`](./examples) direc
 - **[webhooks-express.ts](./examples/webhooks-express.ts)** — Complete Express server with webhook middleware (GET verification, POST event handling)
 - **[webhooks-nextjs.ts](./examples/webhooks-nextjs.ts)** — Next.js App Router webhook handler (app/api/webhook/route.ts structure)
 - **[phone-numbers.ts](./examples/phone-numbers.ts)** — List phone numbers, manage business profile, request/verify verification code
-- **[multi-account.ts](./examples/multi-account.ts)** — Manage multiple WhatsApp Business Accounts with shared base config and per-account overrides
+- **[multi-account.ts](./examples/multi-account.ts)** — Manage multiple WABAs with distribution strategies (round-robin, weighted, sticky), broadcast messaging, and dynamic account management
 
 Run any example with:
 
