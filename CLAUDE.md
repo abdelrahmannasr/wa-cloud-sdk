@@ -88,6 +88,8 @@ src/
     └── index.ts
 ```
 
+**Subpath exports:** `./errors`, `./messages`, `./webhooks` have dedicated subpath exports in package.json. All other modules (media, templates, phone-numbers, multi-account) are accessible via the main `.` export only.
+
 ### Implementation Status
 - **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId)
 
@@ -142,7 +144,16 @@ src/
 - Media delete: `DELETE /{media_id}`
 - Templates list: `GET /{waba_id}/message_templates`
 - Template create: `POST /{waba_id}/message_templates`
+- Template update: `POST /{template_id}`
 - Template delete: `DELETE /{waba_id}/message_templates?name={name}`
+- Phone numbers list: `GET /{waba_id}/phone_numbers`
+- Phone number get: `GET /{phone_number_id}`
+- Register phone: `POST /{phone_number_id}/register`
+- Deregister phone: `POST /{phone_number_id}/deregister`
+- Request verification code: `POST /{phone_number_id}/request_code`
+- Verify code: `POST /{phone_number_id}/verify_code`
+- Business profile get: `GET /{phone_number_id}/whatsapp_business_profile`
+- Business profile update: `POST /{phone_number_id}/whatsapp_business_profile`
 - Webhook verification: `GET /webhook` with hub.mode, hub.verify_token, hub.challenge
 - Webhook events: `POST /webhook` with X-Hub-Signature-256 header
 - All message sends require body: `{ messaging_product: "whatsapp", to, type, [type_data] }`
@@ -159,13 +170,12 @@ src/
 - Do NOT throw plain Error() — always use typed error classes from errors/
 
 ## Active Technologies
-- TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies. Dev: tsup 8, vitest 3, eslint 9, prettier 3 (001-sdk-core-foundation)
-- N/A (stateless SDK library) (001-sdk-core-foundation)
-- TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
-- TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies (Node.js built-in APIs only) (005-multi-account-management)
-- TypeScript 5.3+ with strict mode + Zero runtime dependencies (devDependencies only: tsup 8, vitest 3, eslint 9, prettier 3) (006-sdk-documentation)
+- TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only)
+- Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
 
 ## Recent Changes
+- 006-sdk-documentation: Added comprehensive README with install, config, all modules, error handling, advanced usage; 7 runnable examples; TSDoc on all public APIs
+- 005-multi-account-management: Added WhatsAppMultiAccount class with lazy client instantiation, dynamic account add/remove, dual lookup by name or phoneNumberId; integrated phoneNumbers module into unified WhatsApp client with lazy init
 - 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility; extracted requireWebhookConfig() private helper with per-field validation errors; shallow copy config for runtime immutability; hardened test assertions with expect.fail pattern
 - 003-template-management: Added Templates class with list, get, create, update, delete; TemplateBuilder fluent API with client-side validation (name format, text lengths, button counts); uses businessAccountId (WABA ID) instead of phoneNumberId
 - 002-media-upload-download: Added Media class with upload, download, getUrl, delete; client-side validation (MIME type, file size); HttpClient upload/downloadMedia/destroy methods; MediaError class
