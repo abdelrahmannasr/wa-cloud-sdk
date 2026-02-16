@@ -120,9 +120,9 @@ for (const failure of result2.failures) {
 import type { DistributionStrategy } from '@abdelrahmannasr-wa/cloud-api';
 
 class PriorityStrategy implements DistributionStrategy {
-  select(accountNames: readonly string[]): string {
+  select(accountNames: readonly string[], _recipient?: string): string {
     // Always prefer the first account; fall back to others
-    return accountNames[0]!;
+    return accountNames[0];
   }
 }
 

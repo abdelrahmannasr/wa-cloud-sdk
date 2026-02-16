@@ -48,8 +48,11 @@ export interface AccountConfig {
  * @example
  * ```typescript
  * class PriorityStrategy implements DistributionStrategy {
- *   select(accountNames: readonly string[]): string {
- *     return accountNames[0]!; // Always use first account
+ *   select(accountNames: readonly string[], _recipient?: string): string {
+ *     if (accountNames.length === 0) {
+ *       throw new ValidationError('Cannot select from empty account list', 'accountNames');
+ *     }
+ *     return accountNames[0]; // Always use first account
  *   }
  * }
  * ```

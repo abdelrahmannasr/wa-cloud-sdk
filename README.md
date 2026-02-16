@@ -419,8 +419,8 @@ Implement the `DistributionStrategy` interface for custom routing logic:
 import type { DistributionStrategy } from '@abdelrahmannasr-wa/cloud-api';
 
 class PriorityStrategy implements DistributionStrategy {
-  select(accountNames: readonly string[]): string {
-    return accountNames[0]!; // Always prefer the first account
+  select(accountNames: readonly string[], _recipient?: string): string {
+    return accountNames[0]; // Always prefer the first account
   }
 }
 

@@ -456,7 +456,7 @@ export class WhatsAppMultiAccount {
       throw new ValidationError('concurrency must be a positive integer', 'concurrency');
     }
 
-    // Results are collected as sends complete — ordering is non-deterministic
+    // Output arrays are ordered by completion time, not by input order
     const successes: BroadcastSuccess[] = [];
     const failures: BroadcastFailure[] = [];
 
