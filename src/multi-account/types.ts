@@ -1,5 +1,4 @@
-import type { ApiResponse } from '../client/types.js';
-import type { Logger } from '../client/types.js';
+import type { ApiResponse, Logger } from '../client/types.js';
 import type { MessageResponse } from '../messages/types.js';
 import type { WhatsApp } from '../whatsapp.js';
 

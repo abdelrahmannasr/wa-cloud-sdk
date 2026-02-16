@@ -60,6 +60,7 @@ export class WhatsAppMultiAccount {
   private readonly phoneNumberIdToName: Map<string, string>;
   private readonly instances: Map<string, WhatsApp>;
   private readonly strategy: DistributionStrategy | null;
+  private accountNamesCache: string[] | null = null;
   private destroyed = false;
 
   /**
@@ -294,6 +295,7 @@ export class WhatsAppMultiAccount {
     // Store config and lookup mappings
     this.accountConfigs.set(config.name, config);
     this.phoneNumberIdToName.set(config.phoneNumberId, config.name);
+    this.accountNamesCache = null;
   }
 
   /**
@@ -325,6 +327,7 @@ export class WhatsAppMultiAccount {
     // Remove from all maps
     this.accountConfigs.delete(name);
     this.phoneNumberIdToName.delete(config.phoneNumberId);
+    this.accountNamesCache = null;
   }
 
   /**
@@ -387,8 +390,8 @@ export class WhatsAppMultiAccount {
       throw new ValidationError('cannot call getNext() with zero accounts registered', 'accounts');
     }
 
-    // Get ordered account names
-    const accountNames = Array.from(this.accountConfigs.keys());
+    // Get ordered account names (cached to avoid allocation on every call)
+    const accountNames = this.getAccountNames();
 
     // Delegate to strategy
     const selectedName = this.strategy.select(accountNames, recipient);
@@ -449,55 +452,45 @@ export class WhatsAppMultiAccount {
 
     // Validate concurrency
     const concurrency = options?.concurrency ?? Infinity;
-    if (concurrency < 1) {
-      throw new ValidationError('concurrency must be >= 1', 'concurrency');
+    if (concurrency !== Infinity && (!Number.isInteger(concurrency) || concurrency < 1)) {
+      throw new ValidationError('concurrency must be a positive integer', 'concurrency');
     }
 
-    // Results
+    // Results are collected as sends complete — ordering is non-deterministic
     const successes: BroadcastSuccess[] = [];
     const failures: BroadcastFailure[] = [];
 
-    // Pool-based concurrency control
-    let activePromises = 0;
-    let nextIndex = 0;
+    // Promise-based concurrency pool
+    const results: Promise<void>[] = [];
+    const executing = new Set<Promise<void>>();
 
-    const sendNext = (): void => {
-      // Check if manager was destroyed during broadcast
-      if (this.destroyed) {
-        return; // Don't initiate new sends
-      }
+    for (const recipient of recipients) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can change during async iteration
+      if (this.destroyed) break;
 
-      while (nextIndex < recipients.length && activePromises < concurrency) {
-        const recipient = recipients[nextIndex];
-        if (!recipient) {
-          break; // No more recipients
+      const p = (async () => {
+        try {
+          const wa = this.getNext(recipient);
+          const response = await factory(wa, recipient);
+          successes.push({ recipient, response });
+        } catch (error) {
+          failures.push({ recipient, error });
         }
-        nextIndex++;
-        activePromises++;
+      })();
 
-        // Execute send (do not await here to allow parallel execution)
-        void (async () => {
-          try {
-            const wa = this.getNext(recipient);
-            const response = await factory(wa, recipient);
-            successes.push({ recipient, response });
-          } catch (error) {
-            failures.push({ recipient, error });
-          } finally {
-            activePromises--;
-            sendNext(); // Start next send (synchronous call)
-          }
-        })();
+      results.push(p);
+      executing.add(p);
+      const cleanup = () => {
+        executing.delete(p);
+      };
+      p.then(cleanup, cleanup);
+
+      if (executing.size >= concurrency) {
+        await Promise.race(executing);
       }
-    };
-
-    // Start initial batch
-    sendNext();
-
-    // Wait for all active sends to complete
-    while (activePromises > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
     }
+
+    await Promise.all(results);
 
     return { successes, failures, total: recipients.length };
   }
@@ -524,8 +517,16 @@ export class WhatsAppMultiAccount {
     this.instances.clear();
     this.accountConfigs.clear();
     this.phoneNumberIdToName.clear();
+    this.accountNamesCache = null;
 
     // Mark as destroyed
     this.destroyed = true;
+  }
+
+  private getAccountNames(): readonly string[] {
+    if (!this.accountNamesCache) {
+      this.accountNamesCache = Array.from(this.accountConfigs.keys());
+    }
+    return this.accountNamesCache;
   }
 }

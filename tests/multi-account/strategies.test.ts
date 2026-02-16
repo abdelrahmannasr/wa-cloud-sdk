@@ -164,6 +164,27 @@ describe('WeightedStrategy', () => {
     expect(() => strategy.select([])).toThrow(ValidationError);
     expect(() => strategy.select([])).toThrow('Cannot select from empty account list');
   });
+
+  it('should throw ValidationError for negative weight', () => {
+    expect(
+      () =>
+        new WeightedStrategy(
+          new Map([
+            ['account-a', 80],
+            ['account-b', -10],
+          ]),
+        ),
+    ).toThrow(ValidationError);
+    expect(
+      () =>
+        new WeightedStrategy(
+          new Map([
+            ['account-a', 80],
+            ['account-b', -10],
+          ]),
+        ),
+    ).toThrow('weight for account "account-b" must be non-negative, got -10');
+  });
 });
 
 describe('StickyStrategy', () => {
@@ -218,6 +239,16 @@ describe('StickyStrategy', () => {
 
     expect(strategy.select(accounts)).toBe('account-a');
     expect(strategy.select(accounts, undefined)).toBe('account-a');
+  });
+
+  it('should hash empty string instead of falling back to first account', () => {
+    const strategy = new StickyStrategy();
+    const accounts = ['account-a', 'account-b', 'account-c'];
+
+    // Empty string should be hashed deterministically, not fall back to first account
+    const result1 = strategy.select(accounts, '');
+    const result2 = strategy.select(accounts, '');
+    expect(result1).toBe(result2); // Deterministic
   });
 
   it('should throw ValidationError for empty account list', () => {

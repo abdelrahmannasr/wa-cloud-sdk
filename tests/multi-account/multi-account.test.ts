@@ -829,7 +829,61 @@ describe('WhatsAppMultiAccount', () => {
       ).rejects.toThrow(ValidationError);
       await expect(
         manager.broadcast(['1111111111'], mockFactory, { concurrency: 0 }),
-      ).rejects.toThrow('concurrency must be >= 1');
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for NaN concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: NaN }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for fractional concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 0.5 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 1.7 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for negative concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: -1 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
     });
   });
 });

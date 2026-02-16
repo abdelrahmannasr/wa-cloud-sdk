@@ -59,7 +59,16 @@ export class WeightedStrategy implements DistributionStrategy {
   /**
    * @param weights - Map of account name → weight (default: 1, 0 = excluded)
    */
-  constructor(private readonly weights: ReadonlyMap<string, number>) {}
+  constructor(private readonly weights: ReadonlyMap<string, number>) {
+    for (const [name, weight] of weights) {
+      if (weight < 0) {
+        throw new ValidationError(
+          `weight for account "${name}" must be non-negative, got ${weight}`,
+          'weights',
+        );
+      }
+    }
+  }
 
   /**
    * Select an account using weighted random selection.
@@ -141,11 +150,11 @@ export class StickyStrategy implements DistributionStrategy {
       throw new ValidationError('Cannot select from empty account list', 'accountNames');
     }
 
-    // If no recipient, fall back to first account
-    if (!recipient) {
+    // If no recipient provided, fall back to first account
+    if (recipient === undefined) {
       const firstAccount = accountNames[0];
       if (!firstAccount) {
-        throw new ValidationError('Cannot select from empty account list', 'accountNames');
+        throw new ValidationError('Account selection failed', 'accountNames');
       }
       return firstAccount;
     }
