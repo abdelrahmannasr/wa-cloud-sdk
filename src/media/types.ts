@@ -179,7 +179,7 @@ export interface MediaUploadOptions {
  * // Use the media ID in a message
  * await messages.sendImage({
  *   to: '1234567890',
- *   mediaId: result.data.id,
+ *   media: { id: result.data.id },
  * });
  * ```
  */

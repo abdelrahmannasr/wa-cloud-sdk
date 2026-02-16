@@ -28,7 +28,7 @@ import { ValidationError } from './errors/errors.js';
  * // Send a message
  * await wa.messages.sendText({
  *   to: '1234567890',
- *   text: 'Hello from the unified client!',
+ *   body: 'Hello from the unified client!',
  * });
  *
  * // Clean up when done
@@ -84,7 +84,7 @@ export class WhatsApp {
    * ```typescript
    * await wa.messages.sendText({
    *   to: '1234567890',
-   *   text: 'Hello!',
+   *   body: 'Hello!',
    * });
    * ```
    */
@@ -100,6 +100,7 @@ export class WhatsApp {
    * const upload = await wa.media.upload({
    *   file: buffer,
    *   mimeType: 'image/png',
+   *   category: 'image',
    *   filename: 'photo.png',
    * });
    * ```

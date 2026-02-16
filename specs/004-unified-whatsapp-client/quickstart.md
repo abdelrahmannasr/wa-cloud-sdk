@@ -22,7 +22,7 @@ const wa = new WhatsApp({
 ```typescript
 const result = await wa.messages.sendText({
   to: '1234567890',
-  text: 'Hello from the unified client!',
+  body: 'Hello from the unified client!',
 });
 console.log('Message ID:', result.data.messages[0].id);
 ```
@@ -32,7 +32,7 @@ console.log('Message ID:', result.data.messages[0].id);
 ```typescript
 await wa.messages.sendImage({
   to: '1234567890',
-  image: { link: 'https://example.com/photo.jpg' },
+  media: { link: 'https://example.com/photo.jpg' },
   caption: 'Check this out!',
 });
 ```
@@ -43,12 +43,13 @@ await wa.messages.sendImage({
 const upload = await wa.media.upload({
   file: Buffer.from('...'),
   mimeType: 'image/png',
+  category: 'image',
   filename: 'photo.png',
 });
 
 await wa.messages.sendImage({
   to: '1234567890',
-  image: { id: upload.data.id },
+  media: { id: upload.data.id },
 });
 ```
 
@@ -185,7 +186,7 @@ const messages = new Messages(client, 'phone123');
 const media = new Media(client, 'phone123');
 const templates = new Templates(client, 'waba456');
 
-await messages.sendText({ to: '1234567890', text: 'Hello!' });
+await messages.sendText({ to: '1234567890', body: 'Hello!' });
 ```
 
 ### After (unified client)
@@ -199,5 +200,5 @@ const wa = new WhatsApp({
   businessAccountId: 'waba456',
 });
 
-await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 ```

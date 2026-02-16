@@ -106,8 +106,8 @@ src/
 - **Preferred:** Unified client — single constructor wires all modules with shared HttpClient
   ```ts
   const wa = new WhatsApp({ accessToken, phoneNumberId, businessAccountId });
-  await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
-  await wa.media.upload({ file, mimeType, filename });
+  await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+  await wa.media.upload({ file, mimeType, category: 'image', filename });
   const templates = await wa.templates.list({ limit: 10 });
   const events = wa.webhooks.parse(payload);
   wa.destroy(); // clean up rate limiter intervals
@@ -163,6 +163,7 @@ src/
 - N/A (stateless SDK library) (001-sdk-core-foundation)
 - TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only) (003-template-management)
 - TypeScript 5.3+ with strict mode enabled + Zero runtime dependencies (Node.js built-in APIs only) (005-multi-account-management)
+- TypeScript 5.3+ with strict mode + Zero runtime dependencies (devDependencies only: tsup 8, vitest 3, eslint 9, prettier 3) (006-sdk-documentation)
 
 ## Recent Changes
 - 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility; extracted requireWebhookConfig() private helper with per-field validation errors; shallow copy config for runtime immutability; hardened test assertions with expect.fail pattern

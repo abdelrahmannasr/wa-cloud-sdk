@@ -122,11 +122,11 @@ const manager = new WhatsAppMultiAccount({
 ```typescript
 // Get by account name
 const waA = manager.get('business-a');
-await waA.messages.sendText({ to: '1234567890', text: 'Hello from Business A!' });
+await waA.messages.sendText({ to: '1234567890', body: 'Hello from Business A!' });
 
 // Get by phone number ID
 const waB = manager.get('PHONE_B');
-await waB.messages.sendText({ to: '1234567890', text: 'Hello from Business B!' });
+await waB.messages.sendText({ to: '1234567890', body: 'Hello from Business B!' });
 ```
 
 ### Dynamic account management
@@ -143,7 +143,7 @@ manager.addAccount({
 // Check if account exists
 if (manager.has('business-c')) {
   const waC = manager.get('business-c');
-  await waC.messages.sendText({ to: '1234567890', text: 'Hello from Business C!' });
+  await waC.messages.sendText({ to: '1234567890', body: 'Hello from Business C!' });
 }
 
 // Remove an account (cleans up resources if accessed)
