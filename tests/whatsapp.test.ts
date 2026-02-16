@@ -251,7 +251,7 @@ describe('WhatsApp', () => {
       // This test validates that the quickstart example works as advertised.
       // Line 1: import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
       // Line 2: const wa = new WhatsApp({ accessToken: 'token', phoneNumberId: 'phone' });
-      // Line 3: await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+      // Line 3: await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
       // Lines 4-5: Optional error handling or destroy
 
       const wa = new WhatsApp({

@@ -106,8 +106,8 @@ src/
 - **Preferred:** Unified client — single constructor wires all modules with shared HttpClient
   ```ts
   const wa = new WhatsApp({ accessToken, phoneNumberId, businessAccountId });
-  await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
-  await wa.media.upload({ file, mimeType, filename });
+  await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+  await wa.media.upload({ file, mimeType, category: 'image', filename });
   const templates = await wa.templates.list({ limit: 10 });
   const events = wa.webhooks.parse(payload);
   wa.destroy(); // clean up rate limiter intervals
