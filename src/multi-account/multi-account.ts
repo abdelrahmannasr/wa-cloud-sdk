@@ -39,7 +39,7 @@ import { ValidationError } from '../errors/errors.js';
  *
  * // Get by account name
  * const waA = manager.get('business-a');
- * await waA.messages.sendText({ to: '1234567890', text: 'Hello!' });
+ * await waA.messages.sendText({ to: '1234567890', body: 'Hello!' });
  *
  * // Clean up
  * manager.destroy();
@@ -147,11 +147,11 @@ export class WhatsAppMultiAccount {
    * ```typescript
    * // Get by account name
    * const waA = manager.get('business-a');
-   * await waA.messages.sendText({ to: '1234567890', text: 'Hello!' });
+   * await waA.messages.sendText({ to: '1234567890', body: 'Hello!' });
    *
    * // Get by phone number ID
    * const waB = manager.get('PHONE_NUMBER_ID_B');
-   * await waB.messages.sendText({ to: '1234567890', text: 'Hi!' });
+   * await waB.messages.sendText({ to: '1234567890', body: 'Hi!' });
    * ```
    */
   get(nameOrPhoneNumberId: string): WhatsApp {
@@ -216,7 +216,7 @@ export class WhatsAppMultiAccount {
    * ```typescript
    * if (manager.has('business-c')) {
    *   const waC = manager.get('business-c');
-   *   await waC.messages.sendText({ to: '1234567890', text: 'Hello!' });
+   *   await waC.messages.sendText({ to: '1234567890', body: 'Hello!' });
    * }
    * ```
    */
