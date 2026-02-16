@@ -1,4 +1,13 @@
-import type { MultiAccountConfig, AccountConfig } from './types.js';
+import type {
+  MultiAccountConfig,
+  AccountConfig,
+  DistributionStrategy,
+  BroadcastMessageFactory,
+  BroadcastOptions,
+  BroadcastResult,
+  BroadcastSuccess,
+  BroadcastFailure,
+} from './types.js';
 import { WhatsApp } from '../whatsapp.js';
 import type { WhatsAppConfig } from '../client/types.js';
 import { ValidationError } from '../errors/errors.js';
@@ -46,10 +55,11 @@ import { ValidationError } from '../errors/errors.js';
  * ```
  */
 export class WhatsAppMultiAccount {
-  private readonly baseConfig: Omit<MultiAccountConfig, 'accounts'>;
+  private readonly baseConfig: Omit<MultiAccountConfig, 'accounts' | 'strategy'>;
   private readonly accountConfigs: Map<string, AccountConfig>;
   private readonly phoneNumberIdToName: Map<string, string>;
   private readonly instances: Map<string, WhatsApp>;
+  private readonly strategy: DistributionStrategy | null;
   private destroyed = false;
 
   /**
@@ -79,7 +89,7 @@ export class WhatsAppMultiAccount {
       throw new ValidationError('accounts array is required and cannot be empty', 'accounts');
     }
 
-    // Store base config (everything except accounts)
+    // Store base config (everything except accounts and strategy)
     this.baseConfig = {
       apiVersion: config.apiVersion,
       baseUrl: config.baseUrl,
@@ -88,6 +98,9 @@ export class WhatsAppMultiAccount {
       retryConfig: config.retryConfig,
       timeoutMs: config.timeoutMs,
     };
+
+    // Store strategy (if provided)
+    this.strategy = config.strategy ?? null;
 
     // Initialize maps
     this.accountConfigs = new Map();
@@ -332,6 +345,159 @@ export class WhatsAppMultiAccount {
    */
   getAccounts(): ReadonlyMap<string, AccountConfig> {
     return this.accountConfigs;
+  }
+
+  /**
+   * Get the next WhatsApp instance using the configured distribution strategy.
+   *
+   * Uses the strategy's selection logic to pick an account, then returns that
+   * account's WhatsApp instance via lazy instantiation.
+   *
+   * @param recipient - Optional recipient phone number (used by sticky strategy)
+   * @returns WhatsApp instance for the selected account
+   * @throws {ValidationError} If no strategy configured, no accounts registered, or manager destroyed
+   *
+   * @example
+   * ```typescript
+   * const manager = new WhatsAppMultiAccount({
+   *   strategy: new RoundRobinStrategy(),
+   *   accounts: [
+   *     { name: 'account-a', accessToken: 'TOKEN_A', phoneNumberId: 'PHONE_A' },
+   *     { name: 'account-b', accessToken: 'TOKEN_B', phoneNumberId: 'PHONE_B' },
+   *   ],
+   * });
+   *
+   * const wa = manager.getNext();
+   * await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+   * ```
+   */
+  getNext(recipient?: string): WhatsApp {
+    if (this.destroyed) {
+      throw new ValidationError('cannot call getNext() on destroyed manager');
+    }
+
+    if (!this.strategy) {
+      throw new ValidationError(
+        'strategy is required for getNext() — configure a strategy in MultiAccountConfig',
+      );
+    }
+
+    if (this.accountConfigs.size === 0) {
+      throw new ValidationError('cannot call getNext() with zero accounts registered');
+    }
+
+    // Get ordered account names
+    const accountNames = Array.from(this.accountConfigs.keys());
+
+    // Delegate to strategy
+    const selectedName = this.strategy.select(accountNames, recipient);
+
+    // Return WhatsApp instance (reuses existing lazy instantiation logic)
+    return this.get(selectedName);
+  }
+
+  /**
+   * Broadcast a message to multiple recipients in parallel using the configured strategy.
+   *
+   * For each recipient, selects an account using the strategy, then executes the factory
+   * function with that account's WhatsApp instance and the recipient. Respects concurrency
+   * limits to avoid overwhelming the API or network.
+   *
+   * @param recipients - Array of recipient phone numbers
+   * @param factory - Factory function that sends a message through the given WhatsApp instance
+   * @param options - Optional broadcast options (concurrency limit)
+   * @returns Aggregate result with successes, failures, and total count
+   * @throws {ValidationError} If no strategy configured, manager destroyed, or invalid options
+   *
+   * @example
+   * ```typescript
+   * const result = await manager.broadcast(
+   *   ['1111111111', '2222222222', '3333333333'],
+   *   async (wa, to) => wa.messages.sendText({ to, body: 'Campaign message!' }),
+   *   { concurrency: 10 },
+   * );
+   *
+   * console.log(`Sent: ${result.successes.length}, Failed: ${result.failures.length}`);
+   *
+   * // Handle failures
+   * for (const failure of result.failures) {
+   *   console.error(`Failed to send to ${failure.recipient}:`, failure.error);
+   * }
+   * ```
+   */
+  async broadcast(
+    recipients: readonly string[],
+    factory: BroadcastMessageFactory,
+    options?: BroadcastOptions,
+  ): Promise<BroadcastResult> {
+    if (this.destroyed) {
+      throw new ValidationError('cannot call broadcast() on destroyed manager');
+    }
+
+    if (!this.strategy) {
+      throw new ValidationError(
+        'strategy is required for broadcast() — configure a strategy in MultiAccountConfig',
+      );
+    }
+
+    // Handle empty recipients
+    if (recipients.length === 0) {
+      return { successes: [], failures: [], total: 0 };
+    }
+
+    // Validate concurrency
+    const concurrency = options?.concurrency ?? Infinity;
+    if (concurrency < 1) {
+      throw new ValidationError('concurrency must be >= 1');
+    }
+
+    // Results
+    const successes: BroadcastSuccess[] = [];
+    const failures: BroadcastFailure[] = [];
+
+    // Pool-based concurrency control
+    let activePromises = 0;
+    let nextIndex = 0;
+
+    const sendNext = (): void => {
+      // Check if manager was destroyed during broadcast
+      if (this.destroyed) {
+        return; // Don't initiate new sends
+      }
+
+      while (nextIndex < recipients.length && activePromises < concurrency) {
+        const recipient = recipients[nextIndex];
+        if (!recipient) {
+          break; // No more recipients
+        }
+        nextIndex++;
+        activePromises++;
+
+        // Execute send (do not await here to allow parallel execution)
+        void (async () => {
+          try {
+            const wa = this.getNext(recipient);
+            const response = await factory(wa, recipient);
+            successes.push({ recipient, response });
+          } catch (error) {
+            failures.push({ recipient, error });
+          } finally {
+            activePromises--;
+            sendNext(); // Start next send (synchronous call)
+          }
+        })();
+      }
+    };
+
+    // Start initial batch
+    sendNext();
+
+    // Wait for all active sends to complete
+    while (activePromises > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    return { successes, failures, total: recipients.length };
   }
 
   /**
