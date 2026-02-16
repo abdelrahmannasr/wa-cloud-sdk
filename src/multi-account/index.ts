@@ -1,2 +1,16 @@
 export { WhatsAppMultiAccount } from './multi-account.js';
-export type { AccountConfig, MultiAccountConfig } from './types.js';
+export {
+  RoundRobinStrategy,
+  WeightedStrategy,
+  StickyStrategy,
+} from './strategies.js';
+export type {
+  AccountConfig,
+  MultiAccountConfig,
+  DistributionStrategy,
+  BroadcastMessageFactory,
+  BroadcastOptions,
+  BroadcastSuccess,
+  BroadcastFailure,
+  BroadcastResult,
+} from './types.js';
