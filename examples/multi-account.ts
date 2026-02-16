@@ -17,43 +17,45 @@
 import { WhatsAppMultiAccount } from '@abdelrahmannasr-wa/cloud-api';
 
 async function main() {
-  // Initialize multi-account manager with account-specific configs
-  const multiAccount = new WhatsAppMultiAccount(
-    {
-      // Account 1 - Sales team
-      sales: {
+  // Initialize multi-account manager with shared base config and per-account configs
+  const multiAccount = new WhatsAppMultiAccount({
+    // Shared base configuration for all accounts
+    retryConfig: {
+      maxRetries: 3,
+      baseDelayMs: 1000,
+    },
+
+    // Per-account configurations
+    accounts: [
+      {
+        // Account 1 - Sales team
+        name: 'sales',
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
         phoneNumberId: process.env.ACCOUNT1_PHONE_NUMBER_ID!,
-        // Account-specific overrides can be added here
         rateLimitConfig: {
           maxTokens: 80,
           refillRate: 80,
         },
       },
-
-      // Account 2 - Support team
-      support: {
+      {
+        // Account 2 - Support team
+        name: 'support',
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
         phoneNumberId: process.env.ACCOUNT2_PHONE_NUMBER_ID!,
         rateLimitConfig: {
           maxTokens: 80,
           refillRate: 80,
         },
       },
-    },
-    {
-      // Shared base configuration for all accounts
-      accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
-      retryConfig: {
-        maxRetries: 3,
-        baseDelayMs: 1000,
-      },
-    }
-  );
+    ],
+  });
 
   try {
     console.log('Multi-account manager initialized with 2 accounts\n');
 
     // Get all account names
-    const accountNames = multiAccount.getAccounts();
+    const accounts = multiAccount.getAccounts();
+    const accountNames = Array.from(accounts.keys());
     console.log('Available accounts:', accountNames.join(', '));
 
     // Send a message via the sales account
@@ -85,19 +87,21 @@ async function main() {
 
     // Add a new account dynamically
     console.log('\nAdding a new account (marketing)...');
-    multiAccount.addAccount('marketing', {
+    multiAccount.addAccount({
+      name: 'marketing',
+      accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
       phoneNumberId: process.env.ACCOUNT1_PHONE_NUMBER_ID!, // Reuse for demo
     });
 
     console.log('✓ Marketing account added!');
-    console.log('  Total accounts:', multiAccount.getAccounts().length);
+    console.log('  Total accounts:', multiAccount.getAccounts().size);
 
     // Remove an account
     console.log('\nRemoving marketing account...');
     multiAccount.removeAccount('marketing');
 
     console.log('✓ Marketing account removed!');
-    console.log('  Remaining accounts:', multiAccount.getAccounts().join(', '));
+    console.log('  Remaining accounts:', Array.from(multiAccount.getAccounts().keys()).join(', '));
 
     // Lookup by phone number ID
     console.log('\nLooking up account by phone number ID...');

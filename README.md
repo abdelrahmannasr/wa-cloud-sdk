@@ -162,7 +162,7 @@ import { TemplateBuilder } from '@abdelrahmannasr-wa/cloud-api';
 const templates = await wa.templates.list({ limit: 10 });
 
 // Get specific template
-const template = await wa.templates.get({ name: 'hello_world' });
+const template = await wa.templates.get('hello_world');
 
 // Create template with TemplateBuilder
 const newTemplate = new TemplateBuilder()
@@ -175,13 +175,13 @@ const newTemplate = new TemplateBuilder()
 
 await wa.templates.create(newTemplate);
 
-// Update template
-await wa.templates.update('template_id', {
-  /* updated fields */
-});
+// Update template components
+await wa.templates.update('template_id', [
+  { type: 'BODY', text: 'Updated: Your order {{1}} has been confirmed.' },
+]);
 
 // Delete template
-await wa.templates.delete({ name: 'old_template' });
+await wa.templates.delete('old_template');
 ```
 
 ## Webhooks
@@ -281,20 +281,24 @@ Manage multiple WhatsApp Business Accounts:
 ```typescript
 import { WhatsAppMultiAccount } from '@abdelrahmannasr-wa/cloud-api';
 
-const multiAccount = new WhatsAppMultiAccount(
-  {
-    account1: {
+const multiAccount = new WhatsAppMultiAccount({
+  // Shared base config
+  retryConfig: { maxRetries: 3 },
+
+  // Per-account configurations
+  accounts: [
+    {
+      name: 'account1',
+      accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
       phoneNumberId: process.env.ACCOUNT1_PHONE_NUMBER_ID!,
     },
-    account2: {
+    {
+      name: 'account2',
+      accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
       phoneNumberId: process.env.ACCOUNT2_PHONE_NUMBER_ID!,
     },
-  },
-  {
-    // Shared base config
-    accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
-  }
-);
+  ],
+});
 
 // Send via specific account
 const client1 = multiAccount.get('account1');
