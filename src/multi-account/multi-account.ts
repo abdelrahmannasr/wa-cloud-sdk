@@ -373,17 +373,18 @@ export class WhatsAppMultiAccount {
    */
   getNext(recipient?: string): WhatsApp {
     if (this.destroyed) {
-      throw new ValidationError('cannot call getNext() on destroyed manager');
+      throw new ValidationError('cannot call getNext() on destroyed manager', 'manager');
     }
 
     if (!this.strategy) {
       throw new ValidationError(
         'strategy is required for getNext() — configure a strategy in MultiAccountConfig',
+        'strategy',
       );
     }
 
     if (this.accountConfigs.size === 0) {
-      throw new ValidationError('cannot call getNext() with zero accounts registered');
+      throw new ValidationError('cannot call getNext() with zero accounts registered', 'accounts');
     }
 
     // Get ordered account names
@@ -431,12 +432,13 @@ export class WhatsAppMultiAccount {
     options?: BroadcastOptions,
   ): Promise<BroadcastResult> {
     if (this.destroyed) {
-      throw new ValidationError('cannot call broadcast() on destroyed manager');
+      throw new ValidationError('cannot call broadcast() on destroyed manager', 'manager');
     }
 
     if (!this.strategy) {
       throw new ValidationError(
         'strategy is required for broadcast() — configure a strategy in MultiAccountConfig',
+        'strategy',
       );
     }
 
@@ -448,7 +450,7 @@ export class WhatsAppMultiAccount {
     // Validate concurrency
     const concurrency = options?.concurrency ?? Infinity;
     if (concurrency < 1) {
-      throw new ValidationError('concurrency must be >= 1');
+      throw new ValidationError('concurrency must be >= 1', 'concurrency');
     }
 
     // Results

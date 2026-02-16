@@ -27,14 +27,15 @@ export class RoundRobinStrategy implements DistributionStrategy {
    */
   select(accountNames: readonly string[], _recipient?: string): string {
     if (accountNames.length === 0) {
-      throw new ValidationError('Cannot select from empty account list');
+      throw new ValidationError('Cannot select from empty account list', 'accountNames');
     }
 
     const selected = accountNames[this.index % accountNames.length];
     if (!selected) {
-      throw new ValidationError('Account selection failed');
+      throw new ValidationError('Account selection failed', 'accountNames');
     }
-    this.index++;
+    // Increment with overflow protection (reset before MAX_SAFE_INTEGER)
+    this.index = this.index < Number.MAX_SAFE_INTEGER - 1 ? this.index + 1 : 0;
     return selected;
   }
 }
@@ -69,7 +70,7 @@ export class WeightedStrategy implements DistributionStrategy {
    */
   select(accountNames: readonly string[], _recipient?: string): string {
     if (accountNames.length === 0) {
-      throw new ValidationError('Cannot select from empty account list');
+      throw new ValidationError('Cannot select from empty account list', 'accountNames');
     }
 
     // Build cumulative weight distribution from available accounts
@@ -88,6 +89,7 @@ export class WeightedStrategy implements DistributionStrategy {
     if (totalWeight === 0 || accountWeights.length === 0) {
       throw new ValidationError(
         'All available accounts have weight 0 — cannot select',
+        'weights',
       );
     }
 
@@ -105,7 +107,7 @@ export class WeightedStrategy implements DistributionStrategy {
     // Fallback (should never reach due to floating point)
     const fallback = accountWeights[accountWeights.length - 1];
     if (!fallback) {
-      throw new ValidationError('Account selection failed');
+      throw new ValidationError('Account selection failed', 'accountNames');
     }
     return fallback.name;
   }
@@ -136,14 +138,14 @@ export class StickyStrategy implements DistributionStrategy {
    */
   select(accountNames: readonly string[], recipient?: string): string {
     if (accountNames.length === 0) {
-      throw new ValidationError('Cannot select from empty account list');
+      throw new ValidationError('Cannot select from empty account list', 'accountNames');
     }
 
     // If no recipient, fall back to first account
     if (!recipient) {
       const firstAccount = accountNames[0];
       if (!firstAccount) {
-        throw new ValidationError('Cannot select from empty account list');
+        throw new ValidationError('Cannot select from empty account list', 'accountNames');
       }
       return firstAccount;
     }
@@ -153,9 +155,9 @@ export class StickyStrategy implements DistributionStrategy {
     const index = hash % accountNames.length;
     const selected = accountNames[index];
     if (!selected) {
-      throw new ValidationError('Account selection failed');
+      throw new ValidationError('Account selection failed', 'accountNames');
     }
-    return selected;;
+    return selected;
   }
 
   /**
@@ -174,6 +176,6 @@ export class StickyStrategy implements DistributionStrategy {
     }
 
     // Convert to unsigned 32-bit and ensure positive
-    return (hash >>> 0) >>> 0;
+    return hash >>> 0;
   }
 }
