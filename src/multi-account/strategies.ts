@@ -96,10 +96,7 @@ export class WeightedStrategy implements DistributionStrategy {
 
     // Validate we have at least one account with positive weight
     if (totalWeight === 0 || accountWeights.length === 0) {
-      throw new ValidationError(
-        'All available accounts have weight 0 — cannot select',
-        'weights',
-      );
+      throw new ValidationError('All available accounts have weight 0 — cannot select', 'weights');
     }
 
     // Weighted random selection

@@ -9,6 +9,24 @@
   "description": "Zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp Cloud API",
   "author": "AbdelRahman Nasr",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abdelrahmannasr/wa-cloud-sdk.git"
+  },
+  "homepage": "https://github.com/abdelrahmannasr/wa-cloud-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/abdelrahmannasr/wa-cloud-sdk/issues"
+  },
+  "keywords": [
+    "whatsapp",
+    "cloud-api",
+    "sdk",
+    "typescript",
+    "meta",
+    "messaging",
+    "webhooks",
+    "templates"
+  ],
   "type": "module",
   "packageManager": "pnpm@10.23.0",
   "engines": {
@@ -62,7 +80,8 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsup",

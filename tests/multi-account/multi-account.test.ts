@@ -528,10 +528,7 @@ describe('WhatsAppMultiAccount', () => {
 
       const wa = manager.getNext('1234567890');
 
-      expect(mockStrategy.select).toHaveBeenCalledWith(
-        ['business-a', 'business-b'],
-        '1234567890',
-      );
+      expect(mockStrategy.select).toHaveBeenCalledWith(['business-a', 'business-b'], '1234567890');
       expect(wa).toBeDefined();
       expect(typeof wa.destroy).toBe('function');
     });
@@ -734,9 +731,7 @@ describe('WhatsAppMultiAccount', () => {
 
       const mockFactory = vi.fn();
 
-      await expect(manager.broadcast(['1111111111'], mockFactory)).rejects.toThrow(
-        ValidationError,
-      );
+      await expect(manager.broadcast(['1111111111'], mockFactory)).rejects.toThrow(ValidationError);
       await expect(manager.broadcast(['1111111111'], mockFactory)).rejects.toThrow(
         'strategy is required for broadcast()',
       );

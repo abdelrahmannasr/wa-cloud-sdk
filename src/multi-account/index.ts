@@ -1,9 +1,5 @@
 export { WhatsAppMultiAccount } from './multi-account.js';
-export {
-  RoundRobinStrategy,
-  WeightedStrategy,
-  StickyStrategy,
-} from './strategies.js';
+export { RoundRobinStrategy, WeightedStrategy, StickyStrategy } from './strategies.js';
 export type {
   AccountConfig,
   MultiAccountConfig,
