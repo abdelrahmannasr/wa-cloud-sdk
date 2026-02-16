@@ -74,9 +74,10 @@ src/
 │   ├── types.ts          # PhoneNumber, BusinessProfile, request/response types
 │   ├── phone-numbers.ts  # PhoneNumbers class with list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister
 │   └── index.ts
-├── multi-account/        # Multi-WABA management
-│   ├── types.ts          # AccountConfig, MultiAccountConfig interfaces
-│   ├── multi-account.ts  # WhatsAppMultiAccount class with lazy client instantiation, dynamic account management
+├── multi-account/        # Multi-WABA management + distribution strategies
+│   ├── types.ts          # AccountConfig, MultiAccountConfig, DistributionStrategy, Broadcast* types
+│   ├── strategies.ts     # RoundRobinStrategy, WeightedStrategy, StickyStrategy
+│   ├── multi-account.ts  # WhatsAppMultiAccount class with lazy instantiation, getNext(), broadcast()
 │   └── index.ts
 ├── errors/               # Typed error classes
 │   ├── errors.ts         # WhatsAppError, ApiError, RateLimitError, AuthenticationError, etc.
@@ -91,7 +92,7 @@ src/
 **Subpath exports:** `./errors`, `./messages`, `./webhooks` have dedicated subpath exports in package.json. All other modules (media, templates, phone-numbers, multi-account) are accessible via the main `.` export only.
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId)
+- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control)
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
@@ -174,6 +175,7 @@ src/
 - Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
 
 ## Recent Changes
+- 007-distribution-strategies: Added RoundRobinStrategy, WeightedStrategy, StickyStrategy implementing DistributionStrategy interface; getNext(recipient?) and broadcast(recipients, factory, options?) on WhatsAppMultiAccount; BroadcastMessageFactory, BroadcastOptions, BroadcastResult types; pool-based concurrency control; full backward compatibility
 - 006-sdk-documentation: Added comprehensive README with install, config, all modules, error handling, advanced usage; 7 runnable examples; TSDoc on all public APIs
 - 005-multi-account-management: Added WhatsAppMultiAccount class with lazy client instantiation, dynamic account add/remove, dual lookup by name or phoneNumberId; integrated phoneNumbers module into unified WhatsApp client with lazy init
 - 004-unified-whatsapp-client: Added WhatsApp unified client class with single entry point; Webhooks wrapper class with pre-bound config and deferred validation; messages/media eager init, templates/webhooks lazy init; all existing exports preserved for backwards compatibility; extracted requireWebhookConfig() private helper with per-field validation errors; shallow copy config for runtime immutability; hardened test assertions with expect.fail pattern

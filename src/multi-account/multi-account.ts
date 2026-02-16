@@ -1,4 +1,13 @@
-import type { MultiAccountConfig, AccountConfig } from './types.js';
+import type {
+  MultiAccountConfig,
+  AccountConfig,
+  DistributionStrategy,
+  BroadcastMessageFactory,
+  BroadcastOptions,
+  BroadcastResult,
+  BroadcastSuccess,
+  BroadcastFailure,
+} from './types.js';
 import { WhatsApp } from '../whatsapp.js';
 import type { WhatsAppConfig } from '../client/types.js';
 import { ValidationError } from '../errors/errors.js';
@@ -46,10 +55,12 @@ import { ValidationError } from '../errors/errors.js';
  * ```
  */
 export class WhatsAppMultiAccount {
-  private readonly baseConfig: Omit<MultiAccountConfig, 'accounts'>;
+  private readonly baseConfig: Omit<MultiAccountConfig, 'accounts' | 'strategy'>;
   private readonly accountConfigs: Map<string, AccountConfig>;
   private readonly phoneNumberIdToName: Map<string, string>;
   private readonly instances: Map<string, WhatsApp>;
+  private readonly strategy: DistributionStrategy | null;
+  private accountNamesCache: string[] | null = null;
   private destroyed = false;
 
   /**
@@ -79,7 +90,7 @@ export class WhatsAppMultiAccount {
       throw new ValidationError('accounts array is required and cannot be empty', 'accounts');
     }
 
-    // Store base config (everything except accounts)
+    // Store base config (everything except accounts and strategy)
     this.baseConfig = {
       apiVersion: config.apiVersion,
       baseUrl: config.baseUrl,
@@ -88,6 +99,9 @@ export class WhatsAppMultiAccount {
       retryConfig: config.retryConfig,
       timeoutMs: config.timeoutMs,
     };
+
+    // Store strategy (if provided)
+    this.strategy = config.strategy ?? null;
 
     // Initialize maps
     this.accountConfigs = new Map();
@@ -281,6 +295,7 @@ export class WhatsAppMultiAccount {
     // Store config and lookup mappings
     this.accountConfigs.set(config.name, config);
     this.phoneNumberIdToName.set(config.phoneNumberId, config.name);
+    this.accountNamesCache = null;
   }
 
   /**
@@ -312,6 +327,7 @@ export class WhatsAppMultiAccount {
     // Remove from all maps
     this.accountConfigs.delete(name);
     this.phoneNumberIdToName.delete(config.phoneNumberId);
+    this.accountNamesCache = null;
   }
 
   /**
@@ -332,6 +348,151 @@ export class WhatsAppMultiAccount {
    */
   getAccounts(): ReadonlyMap<string, AccountConfig> {
     return this.accountConfigs;
+  }
+
+  /**
+   * Get the next WhatsApp instance using the configured distribution strategy.
+   *
+   * Uses the strategy's selection logic to pick an account, then returns that
+   * account's WhatsApp instance via lazy instantiation.
+   *
+   * @param recipient - Optional recipient phone number (used by sticky strategy)
+   * @returns WhatsApp instance for the selected account
+   * @throws {ValidationError} If no strategy configured, no accounts registered, or manager destroyed
+   *
+   * @example
+   * ```typescript
+   * const manager = new WhatsAppMultiAccount({
+   *   strategy: new RoundRobinStrategy(),
+   *   accounts: [
+   *     { name: 'account-a', accessToken: 'TOKEN_A', phoneNumberId: 'PHONE_A' },
+   *     { name: 'account-b', accessToken: 'TOKEN_B', phoneNumberId: 'PHONE_B' },
+   *   ],
+   * });
+   *
+   * const wa = manager.getNext();
+   * await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
+   * ```
+   */
+  getNext(recipient?: string): WhatsApp {
+    if (this.destroyed) {
+      throw new ValidationError('cannot call getNext() on destroyed manager', 'manager');
+    }
+
+    if (!this.strategy) {
+      throw new ValidationError(
+        'strategy is required for getNext() — configure a strategy in MultiAccountConfig',
+        'strategy',
+      );
+    }
+
+    if (this.accountConfigs.size === 0) {
+      throw new ValidationError('cannot call getNext() with zero accounts registered', 'accounts');
+    }
+
+    // Get ordered account names (cached to avoid allocation on every call)
+    const accountNames = this.getAccountNames();
+
+    // Delegate to strategy
+    const selectedName = this.strategy.select(accountNames, recipient);
+
+    // Return WhatsApp instance (reuses existing lazy instantiation logic)
+    return this.get(selectedName);
+  }
+
+  /**
+   * Broadcast a message to multiple recipients in parallel using the configured strategy.
+   *
+   * For each recipient, selects an account using the strategy, then executes the factory
+   * function with that account's WhatsApp instance and the recipient. Respects concurrency
+   * limits to avoid overwhelming the API or network.
+   *
+   * @param recipients - Array of recipient phone numbers
+   * @param factory - Factory function that sends a message through the given WhatsApp instance
+   * @param options - Optional broadcast options (concurrency limit)
+   * @returns Aggregate result with successes, failures, and total count
+   * @throws {ValidationError} If no strategy configured, manager destroyed, or invalid options
+   *
+   * @example
+   * ```typescript
+   * const result = await manager.broadcast(
+   *   ['1111111111', '2222222222', '3333333333'],
+   *   async (wa, to) => wa.messages.sendText({ to, body: 'Campaign message!' }),
+   *   { concurrency: 10 },
+   * );
+   *
+   * console.log(`Sent: ${result.successes.length}, Failed: ${result.failures.length}`);
+   *
+   * // Handle failures
+   * for (const failure of result.failures) {
+   *   console.error(`Failed to send to ${failure.recipient}:`, failure.error);
+   * }
+   * ```
+   */
+  async broadcast(
+    recipients: readonly string[],
+    factory: BroadcastMessageFactory,
+    options?: BroadcastOptions,
+  ): Promise<BroadcastResult> {
+    if (this.destroyed) {
+      throw new ValidationError('cannot call broadcast() on destroyed manager', 'manager');
+    }
+
+    if (!this.strategy) {
+      throw new ValidationError(
+        'strategy is required for broadcast() — configure a strategy in MultiAccountConfig',
+        'strategy',
+      );
+    }
+
+    // Handle empty recipients
+    if (recipients.length === 0) {
+      return { successes: [], failures: [], total: 0 };
+    }
+
+    // Validate concurrency
+    const concurrency = options?.concurrency ?? Infinity;
+    if (concurrency !== Infinity && (!Number.isInteger(concurrency) || concurrency < 1)) {
+      throw new ValidationError('concurrency must be a positive integer', 'concurrency');
+    }
+
+    // Output arrays are ordered by completion time, not by input order
+    const successes: BroadcastSuccess[] = [];
+    const failures: BroadcastFailure[] = [];
+
+    // Promise-based concurrency pool
+    const results: Promise<void>[] = [];
+    const executing = new Set<Promise<void>>();
+
+    for (const recipient of recipients) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can change during async iteration
+      if (this.destroyed) break;
+
+      const p = (async () => {
+        try {
+          const wa = this.getNext(recipient);
+          const response = await factory(wa, recipient);
+          successes.push({ recipient, response });
+        } catch (error) {
+          failures.push({ recipient, error });
+        }
+      })();
+
+      results.push(p);
+      executing.add(p);
+      const cleanup = () => {
+        executing.delete(p);
+      };
+      p.then(cleanup, cleanup);
+
+      if (executing.size >= concurrency) {
+        await Promise.race(executing);
+      }
+    }
+
+    await Promise.all(results);
+
+    return { successes, failures, total: recipients.length };
   }
 
   /**
@@ -356,8 +517,16 @@ export class WhatsAppMultiAccount {
     this.instances.clear();
     this.accountConfigs.clear();
     this.phoneNumberIdToName.clear();
+    this.accountNamesCache = null;
 
     // Mark as destroyed
     this.destroyed = true;
+  }
+
+  private getAccountNames(): readonly string[] {
+    if (!this.accountNamesCache) {
+      this.accountNamesCache = Array.from(this.accountConfigs.keys());
+    }
+    return this.accountNamesCache;
   }
 }

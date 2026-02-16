@@ -497,4 +497,393 @@ describe('WhatsAppMultiAccount', () => {
       expect(() => manager.get('business-a')).toThrow('manager has been destroyed');
     });
   });
+
+  describe('getNext', () => {
+    it('should return WhatsApp instance using strategy selection', () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const wa = manager.getNext();
+
+      expect(mockStrategy.select).toHaveBeenCalledWith(['business-a', 'business-b'], undefined);
+      expect(wa).toBeDefined();
+      expect(typeof wa.destroy).toBe('function');
+    });
+
+    it('should pass recipient to strategy when provided', () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-b'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const wa = manager.getNext('1234567890');
+
+      expect(mockStrategy.select).toHaveBeenCalledWith(
+        ['business-a', 'business-b'],
+        '1234567890',
+      );
+      expect(wa).toBeDefined();
+      expect(typeof wa.destroy).toBe('function');
+    });
+
+    it('should throw ValidationError when no strategy configured', () => {
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+      });
+
+      expect(() => manager.getNext()).toThrow(ValidationError);
+      expect(() => manager.getNext()).toThrow('strategy is required for getNext()');
+    });
+
+    it('should throw ValidationError when manager is destroyed', () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      manager.destroy();
+
+      expect(() => manager.getNext()).toThrow(ValidationError);
+      expect(() => manager.getNext()).toThrow('cannot call getNext() on destroyed manager');
+    });
+
+    it('should throw ValidationError when no accounts registered', () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      // Remove all accounts
+      manager.removeAccount('business-a');
+      manager.removeAccount('business-b');
+
+      expect(() => manager.getNext()).toThrow(ValidationError);
+      expect(() => manager.getNext()).toThrow('cannot call getNext() with zero accounts');
+    });
+  });
+
+  describe('broadcast', () => {
+    it('should distribute sends across accounts using strategy', async () => {
+      const selections = ['business-a', 'business-b', 'business-a'];
+      let callIndex = 0;
+
+      const mockStrategy = {
+        select: vi.fn().mockImplementation(() => selections[callIndex++]),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn().mockResolvedValue({
+        success: true,
+        data: { messaging_product: 'whatsapp', messages: [{ id: 'msg_1' }] },
+      });
+
+      const recipients = ['1111111111', '2222222222', '3333333333'];
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.total).toBe(3);
+      expect(result.successes.length).toBe(3);
+      expect(result.failures.length).toBe(0);
+
+      expect(mockStrategy.select).toHaveBeenCalledTimes(3);
+      expect(mockFactory).toHaveBeenCalledTimes(3);
+
+      // Verify factory was called with correct arguments
+      expect(mockFactory.mock.calls[0]![1]).toBe('1111111111');
+      expect(mockFactory.mock.calls[1]![1]).toBe('2222222222');
+      expect(mockFactory.mock.calls[2]![1]).toBe('3333333333');
+    });
+
+    it('should collect successes and failures separately', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn().mockImplementation((_wa, recipient) => {
+        if (recipient === '2222222222') {
+          return Promise.reject(new Error('Send failed'));
+        }
+        return Promise.resolve({
+          success: true,
+          data: { messaging_product: 'whatsapp', messages: [{ id: 'msg_1' }] },
+        });
+      });
+
+      const recipients = ['1111111111', '2222222222', '3333333333'];
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.total).toBe(3);
+      expect(result.successes.length).toBe(2);
+      expect(result.failures.length).toBe(1);
+
+      expect(result.failures[0]!.recipient).toBe('2222222222');
+      expect(result.failures[0]!.error).toBeInstanceOf(Error);
+    });
+
+    it('should return empty result for empty recipients array', async () => {
+      const mockStrategy = {
+        select: vi.fn(),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      const result = await manager.broadcast([], mockFactory);
+
+      expect(result.total).toBe(0);
+      expect(result.successes.length).toBe(0);
+      expect(result.failures.length).toBe(0);
+
+      expect(mockStrategy.select).not.toHaveBeenCalled();
+      expect(mockFactory).not.toHaveBeenCalled();
+    });
+
+    it('should respect concurrency limit', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      let activeCalls = 0;
+      let maxConcurrent = 0;
+
+      const mockFactory = vi.fn().mockImplementation(async () => {
+        activeCalls++;
+        maxConcurrent = Math.max(maxConcurrent, activeCalls);
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        activeCalls--;
+        return {
+          success: true,
+          data: { messaging_product: 'whatsapp', messages: [{ id: 'msg_1' }] },
+        };
+      });
+
+      const recipients = Array.from({ length: 20 }, (_, i) => `recipient-${i}`);
+      await manager.broadcast(recipients, mockFactory, { concurrency: 5 });
+
+      expect(maxConcurrent).toBeLessThanOrEqual(5);
+    });
+
+    it('should allow per-recipient factory customization', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn().mockImplementation((_wa, recipient) =>
+        Promise.resolve({
+          success: true,
+          data: {
+            messaging_product: 'whatsapp',
+            messages: [{ id: `msg_${recipient}` }],
+          },
+        }),
+      );
+
+      const recipients = ['1111111111', '2222222222'];
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.successes[0]!.response.data.messages[0]!.id).toBe('msg_1111111111');
+      expect(result.successes[1]!.response.data.messages[0]!.id).toBe('msg_2222222222');
+    });
+
+    it('should throw ValidationError when no strategy configured', async () => {
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(manager.broadcast(['1111111111'], mockFactory)).rejects.toThrow(
+        ValidationError,
+      );
+      await expect(manager.broadcast(['1111111111'], mockFactory)).rejects.toThrow(
+        'strategy is required for broadcast()',
+      );
+    });
+
+    it('should handle scale test with 1000 recipients across 5 accounts', async () => {
+      const accounts: AccountConfig[] = Array.from({ length: 5 }, (_, i) => ({
+        name: `account-${i}`,
+        accessToken: `TOKEN_${i}`,
+        phoneNumberId: `PHONE_${i}`,
+      }));
+
+      const mockStrategy = {
+        select: vi.fn().mockImplementation((accountNames: string[]) => {
+          const index = Math.floor(Math.random() * accountNames.length);
+          return accountNames[index]!;
+        }),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn().mockResolvedValue({
+        success: true,
+        data: { messaging_product: 'whatsapp', messages: [{ id: 'msg_1' }] },
+      });
+
+      const recipients = Array.from({ length: 1000 }, (_, i) => `recipient-${i}`);
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.total).toBe(1000);
+      expect(result.successes.length).toBe(1000);
+      expect(result.failures.length).toBe(0);
+
+      expect(mockFactory).toHaveBeenCalledTimes(1000);
+    });
+
+    it('should not initiate new sends when destroy() called during broadcast', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      let factoryCalls = 0;
+
+      const mockFactory = vi.fn().mockImplementation(async () => {
+        factoryCalls++;
+
+        // Destroy manager after first 2 calls
+        if (factoryCalls === 2) {
+          manager.destroy();
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        return {
+          success: true,
+          data: { messaging_product: 'whatsapp', messages: [{ id: 'msg_1' }] },
+        };
+      });
+
+      const recipients = Array.from({ length: 10 }, (_, i) => `recipient-${i}`);
+      await manager.broadcast(recipients, mockFactory, { concurrency: 2 });
+
+      // Should have stopped initiating new sends after destroy()
+      // At most concurrency + in-flight requests should complete
+      expect(factoryCalls).toBeLessThan(10);
+    });
+
+    it('should throw ValidationError for invalid concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 0 }),
+      ).rejects.toThrow(ValidationError);
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 0 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for NaN concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: NaN }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for fractional concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 0.5 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: 1.7 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should throw ValidationError for negative concurrency', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const mockFactory = vi.fn();
+
+      await expect(
+        manager.broadcast(['1111111111'], mockFactory, { concurrency: -1 }),
+      ).rejects.toThrow('concurrency must be a positive integer');
+    });
+  });
 });

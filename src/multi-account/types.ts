@@ -1,4 +1,6 @@
-import type { Logger } from '../client/types.js';
+import type { ApiResponse, Logger } from '../client/types.js';
+import type { MessageResponse } from '../messages/types.js';
+import type { WhatsApp } from '../whatsapp.js';
 
 /**
  * Configuration for a single managed account
@@ -40,11 +42,88 @@ export interface AccountConfig {
 }
 
 /**
+ * Distribution strategy interface for routing sends across multiple accounts.
+ * All built-in and custom strategies implement this contract.
+ *
+ * @example
+ * ```typescript
+ * class PriorityStrategy implements DistributionStrategy {
+ *   select(accountNames: readonly string[], _recipient?: string): string {
+ *     if (accountNames.length === 0) {
+ *       throw new ValidationError('Cannot select from empty account list', 'accountNames');
+ *     }
+ *     return accountNames[0]; // Always use first account
+ *   }
+ * }
+ * ```
+ */
+export interface DistributionStrategy {
+  /**
+   * Select the next account to use for a send operation.
+   *
+   * @param accountNames - Ordered list of available account names
+   * @param recipient - Optional recipient phone number (used by sticky strategy)
+   * @returns The name of the selected account
+   */
+  select(accountNames: readonly string[], recipient?: string): string;
+}
+
+/**
+ * Factory function that sends a message through the given WhatsApp instance.
+ * The developer controls which message type and content to use.
+ *
+ * @example
+ * ```typescript
+ * const factory: BroadcastMessageFactory = async (wa, recipient) =>
+ *   wa.messages.sendText({ to: recipient, body: 'Hello!' });
+ * ```
+ */
+export type BroadcastMessageFactory = (
+  wa: WhatsApp,
+  recipient: string,
+) => Promise<ApiResponse<MessageResponse>>;
+
+/**
+ * Options for broadcast execution
+ */
+export interface BroadcastOptions {
+  /** Max concurrent sends. Default: unlimited. Must be >= 1. */
+  readonly concurrency?: number;
+}
+
+/**
+ * A single successful send in a broadcast
+ */
+export interface BroadcastSuccess {
+  readonly recipient: string;
+  readonly response: ApiResponse<MessageResponse>;
+}
+
+/**
+ * A single failed send in a broadcast
+ */
+export interface BroadcastFailure {
+  readonly recipient: string;
+  readonly error: unknown;
+}
+
+/**
+ * Aggregate result of a broadcast operation
+ */
+export interface BroadcastResult {
+  readonly successes: readonly BroadcastSuccess[];
+  readonly failures: readonly BroadcastFailure[];
+  readonly total: number;
+}
+
+/**
  * Top-level configuration for the multi-account manager
  */
 export interface MultiAccountConfig {
   /** Array of account configurations (at least one required) */
   readonly accounts: readonly AccountConfig[];
+  /** Distribution strategy for routing sends. If omitted, getNext() and broadcast() throw. */
+  readonly strategy?: DistributionStrategy;
   /** Shared base API version (default: 'v21.0') */
   readonly apiVersion?: string;
   /** Shared base URL (default: 'https://graph.facebook.com') */

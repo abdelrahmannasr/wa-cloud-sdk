@@ -187,5 +187,19 @@ export type {
 } from './phone-numbers/index.js';
 
 // Multi-Account
-export { WhatsAppMultiAccount } from './multi-account/index.js';
-export type { AccountConfig, MultiAccountConfig } from './multi-account/index.js';
+export {
+  WhatsAppMultiAccount,
+  RoundRobinStrategy,
+  WeightedStrategy,
+  StickyStrategy,
+} from './multi-account/index.js';
+export type {
+  AccountConfig,
+  MultiAccountConfig,
+  DistributionStrategy,
+  BroadcastMessageFactory,
+  BroadcastOptions,
+  BroadcastSuccess,
+  BroadcastFailure,
+  BroadcastResult,
+} from './multi-account/index.js';
