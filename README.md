@@ -62,24 +62,24 @@ wa.destroy();
 
 The `WhatsApp` client accepts a configuration object with the following options:
 
-| Option | Type | Required | Default | Description |
-|--------|------|----------|---------|-------------|
-| `accessToken` | `string` | Yes | — | Meta access token for authentication |
-| `phoneNumberId` | `string` | Yes | — | WhatsApp phone number ID |
-| `businessAccountId` | `string` | No | — | WhatsApp Business Account ID (required for templates) |
-| `apiVersion` | `string` | No | `'v21.0'` | Graph API version |
-| `baseUrl` | `string` | No | `'https://graph.facebook.com'` | API base URL |
-| `logger` | `Logger` | No | — | Custom logger instance |
-| `rateLimitConfig.maxTokens` | `number` | No | `80` | Max tokens in bucket |
-| `rateLimitConfig.refillRate` | `number` | No | `80` | Tokens refilled per second |
-| `rateLimitConfig.enabled` | `boolean` | No | `true` | Enable/disable rate limiting |
-| `retryConfig.maxRetries` | `number` | No | `3` | Maximum retry attempts |
-| `retryConfig.baseDelayMs` | `number` | No | `1000` | Base delay between retries (ms) |
-| `retryConfig.maxDelayMs` | `number` | No | `30000` | Maximum delay cap (ms) |
-| `retryConfig.jitterFactor` | `number` | No | `0.2` | Jitter randomization factor (0-1) |
-| `timeoutMs` | `number` | No | `30000` | Request timeout in milliseconds |
-| `appSecret` | `string` | No | — | App secret for webhook signature verification |
-| `webhookVerifyToken` | `string` | No | — | Webhook verify token |
+| Option                       | Type      | Required | Default                        | Description                                           |
+| ---------------------------- | --------- | -------- | ------------------------------ | ----------------------------------------------------- |
+| `accessToken`                | `string`  | Yes      | —                              | Meta access token for authentication                  |
+| `phoneNumberId`              | `string`  | Yes      | —                              | WhatsApp phone number ID                              |
+| `businessAccountId`          | `string`  | No       | —                              | WhatsApp Business Account ID (required for templates) |
+| `apiVersion`                 | `string`  | No       | `'v21.0'`                      | Graph API version                                     |
+| `baseUrl`                    | `string`  | No       | `'https://graph.facebook.com'` | API base URL                                          |
+| `logger`                     | `Logger`  | No       | —                              | Custom logger instance                                |
+| `rateLimitConfig.maxTokens`  | `number`  | No       | `80`                           | Max tokens in bucket                                  |
+| `rateLimitConfig.refillRate` | `number`  | No       | `80`                           | Tokens refilled per second                            |
+| `rateLimitConfig.enabled`    | `boolean` | No       | `true`                         | Enable/disable rate limiting                          |
+| `retryConfig.maxRetries`     | `number`  | No       | `3`                            | Maximum retry attempts                                |
+| `retryConfig.baseDelayMs`    | `number`  | No       | `1000`                         | Base delay between retries (ms)                       |
+| `retryConfig.maxDelayMs`     | `number`  | No       | `30000`                        | Maximum delay cap (ms)                                |
+| `retryConfig.jitterFactor`   | `number`  | No       | `0.2`                          | Jitter randomization factor (0-1)                     |
+| `timeoutMs`                  | `number`  | No       | `30000`                        | Request timeout in milliseconds                       |
+| `appSecret`                  | `string`  | No       | —                              | App secret for webhook signature verification         |
+| `webhookVerifyToken`         | `string`  | No       | —                              | Webhook verify token                                  |
 
 ## Messages
 
@@ -123,6 +123,82 @@ await wa.messages.markAsRead({
 });
 ```
 
+Additional message types:
+
+```typescript
+// Video message
+await wa.messages.sendVideo({
+  to: '1234567890',
+  media: { id: 'media_id_123' },
+  caption: 'Watch this video',
+});
+
+// Audio message
+await wa.messages.sendAudio({
+  to: '1234567890',
+  media: { link: 'https://example.com/audio.mp3' },
+});
+
+// Document message
+await wa.messages.sendDocument({
+  to: '1234567890',
+  media: { link: 'https://example.com/report.pdf' },
+  filename: 'report.pdf',
+  caption: 'Monthly report',
+});
+
+// Sticker message
+await wa.messages.sendSticker({
+  to: '1234567890',
+  media: { id: 'sticker_media_id' },
+});
+
+// Location message
+await wa.messages.sendLocation({
+  to: '1234567890',
+  longitude: -122.4194,
+  latitude: 37.7749,
+  name: 'San Francisco',
+  address: 'San Francisco, CA',
+});
+
+// Contacts message
+await wa.messages.sendContacts({
+  to: '1234567890',
+  contacts: [
+    {
+      name: { formatted_name: 'Jane Doe' },
+      phones: [{ phone: '+0987654321', type: 'WORK' }],
+    },
+  ],
+});
+
+// Reaction (emoji react to an existing message)
+await wa.messages.sendReaction({
+  to: '1234567890',
+  messageId: 'wamid.ABC123...',
+  emoji: '\u{1F44D}', // Use empty string to remove reaction
+});
+
+// Interactive list message
+await wa.messages.sendInteractiveList({
+  to: '1234567890',
+  body: 'Select a product:',
+  buttonText: 'View options',
+  sections: [
+    {
+      title: 'Products',
+      rows: [
+        { id: 'p1', title: 'Widget', description: 'A useful widget' },
+        { id: 'p2', title: 'Gadget', description: 'A fancy gadget' },
+      ],
+    },
+  ],
+  header: 'Our Catalog',
+  footer: 'Reply STOP to opt out',
+});
+```
+
 ## Media
 
 Upload, download, and manage media files:
@@ -152,6 +228,29 @@ const buffer = Buffer.from(downloadResult.data);
 await wa.media.delete(mediaId);
 ```
 
+### Supported Media Types
+
+The SDK validates MIME types and file sizes client-side before uploading:
+
+| Category             | MIME Types                                                                   | Max Size |
+| -------------------- | ---------------------------------------------------------------------------- | -------- |
+| `image`              | `image/jpeg`, `image/png`                                                    | 5 MB     |
+| `video`              | `video/mp4`, `video/3gpp`                                                    | 16 MB    |
+| `audio`              | `audio/aac`, `audio/mp4`, `audio/mpeg`, `audio/amr`, `audio/ogg`             | 16 MB    |
+| `document`           | `application/pdf`, `text/plain`, `text/csv`, MS Office, OpenDocument formats | 100 MB   |
+| `sticker` (static)   | `image/webp`                                                                 | 500 KB   |
+| `sticker` (animated) | `image/webp`                                                                 | 1 MB     |
+
+```typescript
+// Upload a sticker (stickerType is required for stickers)
+await wa.media.upload({
+  file: stickerBuffer,
+  mimeType: 'image/webp',
+  category: 'sticker',
+  stickerType: 'static', // or 'animated'
+});
+```
+
 ## Templates
 
 Create and manage message templates:
@@ -176,6 +275,23 @@ const newTemplate = new TemplateBuilder()
 
 await wa.templates.create(newTemplate);
 
+// Full template with all builder options
+const promoTemplate = new TemplateBuilder()
+  .setName('summer_sale')
+  .setLanguage('en_US')
+  .setCategory('MARKETING')
+  .allowCategoryChange(true)
+  .addHeaderText('Summer Sale!')
+  .addBody('Hi {{1}}, enjoy {{2}}% off all items this week.')
+  .addFooter('Terms and conditions apply')
+  .addQuickReplyButton('Shop Now')
+  .addQuickReplyButton('Not Interested')
+  .addUrlButton('View Catalog', 'https://example.com/catalog/{{1}}')
+  .addPhoneNumberButton('Call Support', '+1234567890')
+  .build();
+
+await wa.templates.create(promoTemplate);
+
 // Update template components
 await wa.templates.update('template_id', [
   { type: 'BODY', text: 'Updated: Your order {{1}} has been confirmed.' },
@@ -184,6 +300,8 @@ await wa.templates.update('template_id', [
 // Delete template
 await wa.templates.delete('old_template');
 ```
+
+**TemplateBuilder methods:** `setName()`, `setLanguage()`, `setCategory()`, `allowCategoryChange()`, `addHeaderText()`, `addHeaderMedia(format, example?)`, `addBody(text, example?)`, `addFooter()`, `addQuickReplyButton()` (max 3), `addUrlButton()` (max 2), `addPhoneNumberButton()` (max 1).
 
 ## Webhooks
 
@@ -214,8 +332,8 @@ app.use(
       onError: (event) => {
         console.error('Error:', event.error);
       },
-    }
-  )
+    },
+  ),
 );
 
 app.listen(3000);
@@ -239,10 +357,45 @@ const { GET, POST } = createNextRouteHandler(
     onStatus: (event) => {
       console.log('Status update:', event.status.status);
     },
-  }
+  },
 );
 
 export { GET, POST };
+```
+
+**Unified Client:**
+
+When using the `WhatsApp` client, webhooks are available via `wa.webhooks`:
+
+```typescript
+const wa = new WhatsApp({
+  accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
+  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID!,
+  appSecret: process.env.WHATSAPP_APP_SECRET!,
+  webhookVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN!,
+});
+
+// Parse webhook payload into typed events
+const events = wa.webhooks.parse(webhookPayload);
+for (const event of events) {
+  if (event.type === 'message') {
+    console.log('Message from:', event.message.from);
+  }
+}
+
+// Verify webhook subscription (GET endpoint)
+const challenge = wa.webhooks.verify(queryParams);
+
+// Verify payload signature (POST endpoint)
+wa.webhooks.verifySignature(rawBody, signatureHeader);
+
+// Or create middleware directly from the unified client
+app.use(
+  '/webhook',
+  wa.webhooks.createExpressMiddleware({
+    onMessage: (event) => console.log('Message:', event.message.text?.body),
+  }),
+);
 ```
 
 ## Phone Numbers
@@ -273,6 +426,14 @@ await wa.phoneNumbers.requestVerificationCode('phone_number_id', {
 
 // Verify code
 await wa.phoneNumbers.verifyCode('phone_number_id', { code: '123456' });
+
+// Register a verified phone number
+await wa.phoneNumbers.register('phone_number_id', {
+  pin: '123456', // Two-step verification PIN
+});
+
+// Deregister a phone number
+await wa.phoneNumbers.deregister('phone_number_id');
 ```
 
 ## Multi-Account
@@ -315,15 +476,38 @@ const client2 = multiAccount.get(process.env.ACCOUNT2_PHONE_NUMBER_ID!);
 multiAccount.destroy();
 ```
 
+### Dynamic Account Management
+
+Add, remove, and query accounts at runtime:
+
+```typescript
+// Check if an account exists (by name or phone number ID)
+if (!manager.has('marketing')) {
+  // Add a new account dynamically
+  manager.addAccount({
+    name: 'marketing',
+    accessToken: 'TOKEN_M',
+    phoneNumberId: 'PHONE_M',
+    businessAccountId: 'WABA_M',
+  });
+}
+
+// List all registered accounts
+const accounts = manager.getAccounts();
+for (const [name, config] of accounts) {
+  console.log(`${name}: ${config.phoneNumberId}`);
+}
+
+// Remove an account (destroys its client if created)
+manager.removeAccount('marketing');
+```
+
 ### Distribution Strategies
 
 Automatically distribute sends across accounts using built-in strategies:
 
 ```typescript
-import {
-  WhatsAppMultiAccount,
-  RoundRobinStrategy,
-} from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr-wa/cloud-api';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new RoundRobinStrategy(),
@@ -344,17 +528,14 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 Route traffic proportionally based on per-account weights:
 
 ```typescript
-import {
-  WhatsAppMultiAccount,
-  WeightedStrategy,
-} from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsAppMultiAccount, WeightedStrategy } from '@abdelrahmannasr-wa/cloud-api';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new WeightedStrategy(
     new Map([
-      ['enterprise', 80],  // gets ~80% of traffic
-      ['business-1', 10],  // gets ~10% of traffic
-      ['business-2', 10],  // gets ~10% of traffic
+      ['enterprise', 80], // gets ~80% of traffic
+      ['business-1', 10], // gets ~10% of traffic
+      ['business-2', 10], // gets ~10% of traffic
     ]),
   ),
   accounts: [
@@ -373,10 +554,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 Ensure the same recipient always routes to the same account for conversation continuity:
 
 ```typescript
-import {
-  WhatsAppMultiAccount,
-  StickyStrategy,
-} from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsAppMultiAccount, StickyStrategy } from '@abdelrahmannasr-wa/cloud-api';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new StickyStrategy(),
@@ -474,15 +652,15 @@ WhatsAppError (base)
 
 ### Error Properties
 
-| Error Class | Extends | Properties |
-|------------|---------|------------|
-| `WhatsAppError` | `Error` | `code: string` |
-| `ApiError` | `WhatsAppError` | `statusCode: number`<br>`errorType: string`<br>`errorSubcode?: number`<br>`fbTraceId?: string` |
-| `RateLimitError` | `ApiError` | All ApiError properties<br>`retryAfterMs?: number` |
-| `AuthenticationError` | `ApiError` | All ApiError properties |
-| `ValidationError` | `WhatsAppError` | `field?: string` |
-| `WebhookVerificationError` | `WhatsAppError` | None |
-| `MediaError` | `WhatsAppError` | `mediaType?: string` |
+| Error Class                | Extends         | Properties                                                                                     |
+| -------------------------- | --------------- | ---------------------------------------------------------------------------------------------- |
+| `WhatsAppError`            | `Error`         | `code: string`                                                                                 |
+| `ApiError`                 | `WhatsAppError` | `statusCode: number`<br>`errorType: string`<br>`errorSubcode?: number`<br>`fbTraceId?: string` |
+| `RateLimitError`           | `ApiError`      | All ApiError properties<br>`retryAfterMs?: number`                                             |
+| `AuthenticationError`      | `ApiError`      | All ApiError properties                                                                        |
+| `ValidationError`          | `WhatsAppError` | `field?: string`                                                                               |
+| `WebhookVerificationError` | `WhatsAppError` | None                                                                                           |
+| `MediaError`               | `WhatsAppError` | `mediaType?: string`                                                                           |
 
 ### Error Handling Patterns
 
@@ -519,7 +697,7 @@ try {
     console.log(`Rate limited. Retry after ${delayMs}ms`);
 
     // Wait and retry
-    await new Promise(resolve => setTimeout(resolve, delayMs));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
     await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
   } else {
     throw error; // Re-throw if not a rate limit error
@@ -619,7 +797,7 @@ await wa.messages.sendText(
     timeoutMs: 10000, // Override timeout for this request
     skipRateLimit: false,
     skipRetry: false,
-  }
+  },
 );
 ```
 
@@ -642,4 +820,3 @@ const { WhatsApp } = require('@abdelrahmannasr-wa/cloud-api');
 ## License
 
 MIT © AbdelRahman Nasr
-
