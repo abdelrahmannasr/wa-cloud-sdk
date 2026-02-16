@@ -30,13 +30,13 @@ const { GET, POST } = createNextRouteHandler(
   {
     // Handle incoming messages
     onMessage: (event) => {
-      console.log('📩 Message received from:', event.from);
+      console.log('📩 Message received from:', event.message.from);
 
       if (event.message.text) {
         console.log('Text:', event.message.text.body);
 
         // Example: Echo the message back (implement in your app logic)
-        // await sendReply(event.from, event.message.text.body);
+        // await sendReply(event.message.from, event.message.text.body);
       }
 
       if (event.message.image) {
@@ -53,11 +53,11 @@ const { GET, POST } = createNextRouteHandler(
 
     // Handle status updates
     onStatus: (event) => {
-      console.log('📊 Status update for message:', event.messageId);
+      console.log('📊 Status update for message:', event.status.id);
       console.log('Status:', event.status.status);
 
       // Track delivery status in your database
-      // await updateMessageStatus(event.messageId, event.status.status);
+      // await updateMessageStatus(event.status.id, event.status.status);
     },
 
     // Handle errors

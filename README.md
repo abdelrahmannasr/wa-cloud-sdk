@@ -45,7 +45,7 @@ const wa = new WhatsApp({
 try {
   const result = await wa.messages.sendText({
     to: '1234567890',
-    text: 'Hello from WhatsApp Cloud API!',
+    body: 'Hello from WhatsApp Cloud API!',
   });
 
   console.log('Message sent:', result.data.messages[0].id);
@@ -89,31 +89,31 @@ Send various types of messages using the `messages` module:
 // Text message
 await wa.messages.sendText({
   to: '1234567890',
-  text: 'Hello! 👋',
+  body: 'Hello! 👋',
   previewUrl: true, // Enable URL preview
 });
 
 // Image message
 await wa.messages.sendImage({
   to: '1234567890',
-  image: { link: 'https://example.com/image.jpg' },
+  media: { link: 'https://example.com/image.jpg' },
   caption: 'Check out this image!',
 });
 
 // Template message
 await wa.messages.sendTemplate({
   to: '1234567890',
-  name: 'hello_world',
+  templateName: 'hello_world',
   language: 'en_US',
 });
 
 // Interactive buttons
 await wa.messages.sendInteractiveButtons({
   to: '1234567890',
-  bodyText: 'Choose an option:',
+  body: 'Choose an option:',
   buttons: [
-    { id: 'btn1', title: 'Option 1' },
-    { id: 'btn2', title: 'Option 2' },
+    { type: 'reply', reply: { id: 'btn1', title: 'Option 1' } },
+    { type: 'reply', reply: { id: 'btn2', title: 'Option 2' } },
   ],
 });
 
@@ -134,6 +134,7 @@ import { readFileSync } from 'fs';
 const uploadResult = await wa.media.upload({
   file: readFileSync('./image.jpg'),
   mimeType: 'image/jpeg',
+  category: 'image',
   filename: 'image.jpg',
 });
 
@@ -271,7 +272,7 @@ await wa.phoneNumbers.requestVerificationCode('phone_number_id', {
 });
 
 // Verify code
-await wa.phoneNumbers.verifyCode('phone_number_id', '123456');
+await wa.phoneNumbers.verifyCode('phone_number_id', { code: '123456' });
 ```
 
 ## Multi-Account
@@ -304,7 +305,7 @@ const multiAccount = new WhatsAppMultiAccount({
 const client1 = multiAccount.get('account1');
 await client1.messages.sendText({
   to: '1234567890',
-  text: 'Hello from account 1!',
+  body: 'Hello from account 1!',
 });
 
 // Lookup by phone number ID
@@ -373,7 +374,7 @@ WhatsAppError (base)
 import { ApiError, RateLimitError } from '@abdelrahmannasr-wa/cloud-api';
 
 try {
-  await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+  await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 } catch (error) {
   if (error instanceof ApiError) {
     console.error(`API Error ${error.statusCode}: ${error.message}`);
@@ -393,7 +394,7 @@ try {
 import { RateLimitError } from '@abdelrahmannasr-wa/cloud-api';
 
 try {
-  await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+  await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 } catch (error) {
   if (error instanceof RateLimitError) {
     const delayMs = error.retryAfterMs || 60000; // Default 60s if not provided
@@ -401,7 +402,7 @@ try {
 
     // Wait and retry
     await new Promise(resolve => setTimeout(resolve, delayMs));
-    await wa.messages.sendText({ to: '1234567890', text: 'Hello!' });
+    await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
   } else {
     throw error; // Re-throw if not a rate limit error
   }
@@ -417,6 +418,7 @@ try {
   await wa.media.upload({
     file: buffer,
     mimeType: 'invalid/type', // Invalid MIME type
+    category: 'document',
     filename: 'file.txt',
   });
 } catch (error) {
@@ -450,7 +452,7 @@ const messages = new Messages(client, process.env.WHATSAPP_PHONE_NUMBER_ID!);
 
 await messages.sendText({
   to: '1234567890',
-  text: 'Hello!',
+  body: 'Hello!',
 });
 
 client.destroy();
@@ -493,7 +495,7 @@ Pass custom options to individual requests:
 await wa.messages.sendText(
   {
     to: '1234567890',
-    text: 'Hello!',
+    body: 'Hello!',
   },
   {
     timeoutMs: 10000, // Override timeout for this request

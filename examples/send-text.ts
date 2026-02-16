@@ -27,7 +27,7 @@ async function main() {
     // Send a text message
     const result = await wa.messages.sendText({
       to: process.env.RECIPIENT_PHONE!,
-      text: 'Hello! This is a test message from the WhatsApp Cloud API SDK.',
+      body: 'Hello! This is a test message from the WhatsApp Cloud API SDK.',
       previewUrl: true, // Enable URL preview if text contains links
     });
 

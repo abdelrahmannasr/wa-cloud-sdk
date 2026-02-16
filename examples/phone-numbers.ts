@@ -30,18 +30,18 @@ async function main() {
 
     console.log(`✓ Found ${numbers.data.data.length} phone number(s):`);
     numbers.data.data.forEach((number) => {
-      console.log(`  - ${number.display_phone_number}`);
+      console.log(`  - ${number.displayPhoneNumber}`);
       console.log(`    ID: ${number.id}`);
-      console.log(`    Verified: ${number.code_verification_status}`);
-      console.log(`    Quality: ${number.quality_rating}`);
+      console.log(`    Verified: ${number.codeVerificationStatus}`);
+      console.log(`    Quality: ${number.qualityRating}`);
     });
 
     // Get details for a specific phone number
     console.log('\nFetching phone number details...');
     const phoneDetails = await wa.phoneNumbers.get(process.env.WHATSAPP_PHONE_NUMBER_ID!);
 
-    console.log('✓ Phone number:', phoneDetails.data.display_phone_number);
-    console.log('  Verified:', phoneDetails.data.code_verification_status);
+    console.log('✓ Phone number:', phoneDetails.data.displayPhoneNumber);
+    console.log('  Verified:', phoneDetails.data.codeVerificationStatus);
 
     // Get business profile
     console.log('\nFetching business profile...');
@@ -50,9 +50,9 @@ async function main() {
     );
 
     console.log('✓ Business profile:');
-    console.log('  Description:', profile.data.data[0]?.about || 'Not set');
-    console.log('  Address:', profile.data.data[0]?.address || 'Not set');
-    console.log('  Website:', profile.data.data[0]?.websites?.[0] || 'Not set');
+    console.log('  Description:', profile.data.about || 'Not set');
+    console.log('  Address:', profile.data.address || 'Not set');
+    console.log('  Website:', profile.data.websites?.[0] || 'Not set');
 
     // Update business profile
     console.log('\nUpdating business profile...');
@@ -83,7 +83,7 @@ async function main() {
     console.log('\nVerifying code...');
     await wa.phoneNumbers.verifyCode(
       process.env.WHATSAPP_PHONE_NUMBER_ID!,
-      '123456' // Replace with actual code
+      { code: '123456' } // Replace with actual code
     );
 
     console.log('✓ Code verified!');

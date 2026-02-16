@@ -60,7 +60,7 @@ async function main() {
     console.log('\nSending template message...');
     const messageResult = await wa.messages.sendTemplate({
       to: process.env.RECIPIENT_PHONE!,
-      name: 'hello_world', // Replace with your approved template name
+      templateName: 'hello_world', // Replace with your approved template name
       language: 'en_US',
     });
 

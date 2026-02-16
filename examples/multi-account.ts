@@ -64,7 +64,7 @@ async function main() {
 
     const result1 = await salesClient.messages.sendText({
       to: '1234567890', // Replace with actual recipient
-      text: 'Hello from the Sales team! 📈',
+      body: 'Hello from the Sales team! 📈',
     });
 
     console.log('✓ Sales message sent! ID:', result1.data.messages[0].id);
@@ -75,7 +75,7 @@ async function main() {
 
     const result2 = await supportClient.messages.sendText({
       to: '1234567890', // Replace with actual recipient
-      text: 'Hello from the Support team! 🛠️',
+      body: 'Hello from the Support team! 🛠️',
     });
 
     console.log('✓ Support message sent! ID:', result2.data.messages[0].id);

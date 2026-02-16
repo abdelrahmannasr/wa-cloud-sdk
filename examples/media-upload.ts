@@ -40,6 +40,7 @@ async function main() {
     const uploadResult = await wa.media.upload({
       file: fileBuffer,
       mimeType: 'image/jpeg',
+      category: 'image',
       filename: 'test-image.jpg',
     });
 
@@ -50,7 +51,7 @@ async function main() {
     console.log('Sending image message...');
     const messageResult = await wa.messages.sendImage({
       to: process.env.RECIPIENT_PHONE!,
-      image: { id: mediaId },
+      media: { id: mediaId },
       caption: 'Check out this image uploaded via the SDK!',
     });
 

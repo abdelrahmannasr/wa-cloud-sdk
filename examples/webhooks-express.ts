@@ -35,7 +35,7 @@ app.use(
       // Handle incoming messages
       onMessage: (event) => {
         console.log('📩 Message received:');
-        console.log('  From:', event.from);
+        console.log('  From:', event.message.from);
         console.log('  Type:', event.message.type);
 
         if (event.message.text) {
@@ -52,9 +52,9 @@ app.use(
       // Handle status updates (sent, delivered, read, failed)
       onStatus: (event) => {
         console.log('📊 Status update:');
-        console.log('  Message ID:', event.messageId);
+        console.log('  Message ID:', event.status.id);
         console.log('  Status:', event.status.status);
-        console.log('  Timestamp:', new Date(event.status.timestamp * 1000).toISOString());
+        console.log('  Timestamp:', event.timestamp.toISOString());
       },
 
       // Handle errors
