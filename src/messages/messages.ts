@@ -17,9 +17,16 @@ import type {
   InteractiveButtonMessageOptions,
   InteractiveListMessageOptions,
   TemplateMessageOptions,
+  CtaUrlButtonMessageOptions,
+  LocationRequestMessageOptions,
+  TypingIndicatorOptions,
   MarkAsReadOptions,
   MediaSource,
+  InteractiveHeader,
 } from './types.js';
+
+/** Meta's dynamic URL parameter placeholder for CTA URL buttons. */
+const CTA_URL_DYNAMIC_SUFFIX = '{{1}}';
 
 export class Messages {
   private readonly client: HttpClient;
@@ -47,7 +54,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'text'),
+      ...this.buildBasePayload(options.to, 'text', options.replyTo),
       text: {
         preview_url: options.previewUrl ?? false,
         body: options.body,
@@ -73,7 +80,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'image'),
+      ...this.buildBasePayload(options.to, 'image', options.replyTo),
       image: {
         ...this.resolveMedia(options.media),
         ...(options.caption !== undefined && { caption: options.caption }),
@@ -99,7 +106,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'video'),
+      ...this.buildBasePayload(options.to, 'video', options.replyTo),
       video: {
         ...this.resolveMedia(options.media),
         ...(options.caption !== undefined && { caption: options.caption }),
@@ -124,7 +131,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'audio'),
+      ...this.buildBasePayload(options.to, 'audio', options.replyTo),
       audio: this.resolveMedia(options.media),
     };
     return this.send(payload, requestOptions);
@@ -148,7 +155,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'document'),
+      ...this.buildBasePayload(options.to, 'document', options.replyTo),
       document: {
         ...this.resolveMedia(options.media),
         ...(options.caption !== undefined && { caption: options.caption }),
@@ -174,7 +181,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'sticker'),
+      ...this.buildBasePayload(options.to, 'sticker', options.replyTo),
       sticker: this.resolveMedia(options.media),
     };
     return this.send(payload, requestOptions);
@@ -199,7 +206,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'location'),
+      ...this.buildBasePayload(options.to, 'location', options.replyTo),
       location: {
         longitude: options.longitude,
         latitude: options.latitude,
@@ -226,7 +233,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'contacts'),
+      ...this.buildBasePayload(options.to, 'contacts', options.replyTo),
       contacts: options.contacts,
     };
     return this.send(payload, requestOptions);
@@ -278,13 +285,12 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'interactive'),
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
       interactive: {
         type: 'button',
         body: { text: options.body },
         action: { buttons: options.buttons },
-        ...(options.header !== undefined && { header: options.header }),
-        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+        ...this.buildInteractiveOptionals(options.header, options.footer),
       },
     };
     return this.send(payload, requestOptions);
@@ -308,7 +314,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'interactive'),
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
       interactive: {
         type: 'list',
         body: { text: options.body },
@@ -316,8 +322,10 @@ export class Messages {
           button: options.buttonText,
           sections: options.sections,
         },
-        ...(options.header !== undefined && { header: { type: 'text', text: options.header } }),
-        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+        ...this.buildInteractiveOptionals(
+          options.header !== undefined ? { type: 'text' as const, text: options.header } : undefined,
+          options.footer,
+        ),
       },
     };
     return this.send(payload, requestOptions);
@@ -341,7 +349,7 @@ export class Messages {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
     const payload = {
-      ...this.buildBasePayload(options.to, 'template'),
+      ...this.buildBasePayload(options.to, 'template', options.replyTo),
       template: {
         name: options.templateName,
         language: { code: options.language },
@@ -349,6 +357,97 @@ export class Messages {
       },
     };
     return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send a CTA URL button message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendInteractiveCta({
+   *   to: '+1234567890',
+   *   body: 'Check out our latest collection!',
+   *   buttonText: 'Shop Now',
+   *   url: 'https://example.com/shop',
+   * });
+   * ```
+   */
+  async sendInteractiveCta(
+    options: CtaUrlButtonMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    const urlValue = options.urlSuffix
+      ? `${options.url}${CTA_URL_DYNAMIC_SUFFIX}`
+      : options.url;
+    const parameters: {
+      display_text: string;
+      url: string;
+      example?: string[];
+    } = {
+      display_text: options.buttonText,
+      url: urlValue,
+      ...(options.urlSuffix ? { example: [options.urlSuffix] } : {}),
+    };
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'cta_url',
+        body: { text: options.body },
+        action: {
+          name: 'cta_url',
+          parameters,
+        },
+        ...this.buildInteractiveOptionals(options.header, options.footer),
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send a location request message.
+   *
+   * @example
+   * ```ts
+   * const response = await messages.sendLocationRequest({
+   *   to: '+1234567890',
+   *   body: 'Please share your delivery address.',
+   * });
+   * ```
+   */
+  async sendLocationRequest(
+    options: LocationRequestMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'location_request_message',
+        body: { text: options.body },
+        action: { name: 'send_location' },
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send a typing indicator to show "typing..." in the recipient's chat.
+   *
+   * @example
+   * ```ts
+   * await messages.sendTypingIndicator({ to: '+1234567890' });
+   * ```
+   */
+  async sendTypingIndicator(
+    options: TypingIndicatorOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MarkAsReadResponse>> {
+    const payload = {
+      messaging_product: 'whatsapp' as const,
+      recipient_type: 'individual' as const,
+      to: validatePhoneNumber(options.to),
+      status: 'typing',
+    };
+    return this.send<MarkAsReadResponse>(payload, requestOptions);
   }
 
   /**
@@ -376,18 +475,32 @@ export class Messages {
   private buildBasePayload(
     to: string,
     type: MessageType,
+    replyTo?: string,
   ): {
     messaging_product: 'whatsapp';
     recipient_type: 'individual';
     to: string;
     type: MessageType;
+    context?: { message_id: string };
   } {
     const validatedTo = validatePhoneNumber(to);
+    const trimmedReplyTo = replyTo?.trim();
     return {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
       to: validatedTo,
       type,
+      ...(trimmedReplyTo ? { context: { message_id: trimmedReplyTo } } : {}),
+    };
+  }
+
+  private buildInteractiveOptionals(
+    header?: InteractiveHeader,
+    footer?: string,
+  ): { header?: InteractiveHeader; footer?: { text: string } } {
+    return {
+      ...(header !== undefined && { header }),
+      ...(footer !== undefined && { footer: { text: footer } }),
     };
   }
 

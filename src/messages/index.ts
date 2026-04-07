@@ -1,5 +1,6 @@
 export { Messages } from './messages.js';
 export type {
+  BaseMessageOptions,
   MessageResponse,
   MarkAsReadResponse,
   MessageResponseContact,
@@ -34,6 +35,9 @@ export type {
   TemplateParameter,
   TemplateComponent,
   TemplateMessageOptions,
+  CtaUrlButtonMessageOptions,
+  LocationRequestMessageOptions,
+  TypingIndicatorOptions,
   MarkAsReadOptions,
   MessageType,
 } from './types.js';

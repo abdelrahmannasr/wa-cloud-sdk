@@ -75,6 +75,46 @@
         "types": "./dist/webhooks/index.d.cts",
         "default": "./dist/webhooks/index.cjs"
       }
+    },
+    "./media": {
+      "import": {
+        "types": "./dist/media/index.d.ts",
+        "default": "./dist/media/index.js"
+      },
+      "require": {
+        "types": "./dist/media/index.d.cts",
+        "default": "./dist/media/index.cjs"
+      }
+    },
+    "./templates": {
+      "import": {
+        "types": "./dist/templates/index.d.ts",
+        "default": "./dist/templates/index.js"
+      },
+      "require": {
+        "types": "./dist/templates/index.d.cts",
+        "default": "./dist/templates/index.cjs"
+      }
+    },
+    "./phone-numbers": {
+      "import": {
+        "types": "./dist/phone-numbers/index.d.ts",
+        "default": "./dist/phone-numbers/index.js"
+      },
+      "require": {
+        "types": "./dist/phone-numbers/index.d.cts",
+        "default": "./dist/phone-numbers/index.cjs"
+      }
+    },
+    "./multi-account": {
+      "import": {
+        "types": "./dist/multi-account/index.d.ts",
+        "default": "./dist/multi-account/index.js"
+      },
+      "require": {
+        "types": "./dist/multi-account/index.d.cts",
+        "default": "./dist/multi-account/index.cjs"
+      }
     }
   },
   "files": [
