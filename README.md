@@ -733,9 +733,36 @@ try {
 
 ### Direct Module Imports
 
-For advanced use cases, import modules directly:
+For advanced use cases or tree-shaking, import individual modules via dedicated subpaths:
 
 ```typescript
+// Import only what you need
+import { Messages } from '@abdelrahmannasr-wa/cloud-api/messages';
+import { Media, MEDIA_CONSTRAINTS } from '@abdelrahmannasr-wa/cloud-api/media';
+import { Templates, TemplateBuilder } from '@abdelrahmannasr-wa/cloud-api/templates';
+import { PhoneNumbers } from '@abdelrahmannasr-wa/cloud-api/phone-numbers';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr-wa/cloud-api/multi-account';
+import { Webhooks, createExpressMiddleware } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { WhatsAppError, ApiError } from '@abdelrahmannasr-wa/cloud-api/errors';
+```
+
+**Available subpath exports:**
+
+| Subpath | Primary Exports |
+|---------|----------------|
+| `@abdelrahmannasr-wa/cloud-api` | `WhatsApp` (unified client), all modules |
+| `@abdelrahmannasr-wa/cloud-api/messages` | `Messages`, all message type interfaces |
+| `@abdelrahmannasr-wa/cloud-api/media` | `Media`, `MEDIA_CONSTRAINTS`, media types |
+| `@abdelrahmannasr-wa/cloud-api/templates` | `Templates`, `TemplateBuilder`, validation constants |
+| `@abdelrahmannasr-wa/cloud-api/phone-numbers` | `PhoneNumbers`, business profile types |
+| `@abdelrahmannasr-wa/cloud-api/multi-account` | `WhatsAppMultiAccount`, distribution strategies |
+| `@abdelrahmannasr-wa/cloud-api/webhooks` | `Webhooks`, middleware factories, parser |
+| `@abdelrahmannasr-wa/cloud-api/errors` | `WhatsAppError`, `ApiError`, `RateLimitError`, etc. |
+
+All subpaths support ESM (`import`), CommonJS (`require`), and include full TypeScript declarations.
+
+```typescript
+// Direct module usage with HttpClient
 import { HttpClient } from '@abdelrahmannasr-wa/cloud-api';
 import { Messages } from '@abdelrahmannasr-wa/cloud-api/messages';
 
