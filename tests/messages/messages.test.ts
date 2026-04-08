@@ -770,9 +770,9 @@ describe('Messages', () => {
     });
 
     it('should reject invalid phone number', async () => {
-      await expect(
-        messages.sendLocationRequest({ to: '12', body: 'Where?' }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendLocationRequest({ to: '12', body: 'Where?' })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -799,9 +799,7 @@ describe('Messages', () => {
     });
 
     it('should reject invalid phone number', async () => {
-      await expect(
-        messages.sendTypingIndicator({ to: '12' }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendTypingIndicator({ to: '12' })).rejects.toThrow(ValidationError);
     });
   });
 });

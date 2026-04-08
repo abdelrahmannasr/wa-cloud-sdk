@@ -323,7 +323,9 @@ export class Messages {
           sections: options.sections,
         },
         ...this.buildInteractiveOptionals(
-          options.header !== undefined ? { type: 'text' as const, text: options.header } : undefined,
+          options.header !== undefined
+            ? { type: 'text' as const, text: options.header }
+            : undefined,
           options.footer,
         ),
       },
@@ -376,9 +378,7 @@ export class Messages {
     options: CtaUrlButtonMessageOptions,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
-    const urlValue = options.urlSuffix
-      ? `${options.url}${CTA_URL_DYNAMIC_SUFFIX}`
-      : options.url;
+    const urlValue = options.urlSuffix ? `${options.url}${CTA_URL_DYNAMIC_SUFFIX}` : options.url;
     const parameters: {
       display_text: string;
       url: string;
