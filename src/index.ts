@@ -28,10 +28,13 @@ export type { RateLimiterConfig } from './utils/index.js';
 export { withRetry, DEFAULT_RETRY_CONFIG } from './utils/index.js';
 export type { RetryConfig } from './utils/index.js';
 export { validatePhoneNumber, isValidPhoneNumber } from './utils/index.js';
+export { extractConversationPricing } from './utils/index.js';
+export type { ConversationPricing, PricingCategory, PricingModel } from './utils/index.js';
 
 // Messages
 export { Messages } from './messages/index.js';
 export type {
+  BaseMessageOptions,
   MessageResponse,
   MarkAsReadResponse,
   MessageResponseContact,
@@ -66,6 +69,9 @@ export type {
   TemplateParameter,
   TemplateComponent,
   TemplateMessageOptions,
+  CtaUrlButtonMessageOptions,
+  LocationRequestMessageOptions,
+  TypingIndicatorOptions,
   MarkAsReadOptions,
   MessageType,
 } from './messages/index.js';

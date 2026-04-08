@@ -50,11 +50,19 @@ export interface MediaLink {
 /** Media can be referenced by uploaded media ID or by public URL. */
 export type MediaSource = MediaId | MediaLink;
 
-// ── Text ──
+// ── Base ──
 
-export interface TextMessageOptions {
+/** Shared fields for all outbound message option interfaces. */
+export interface BaseMessageOptions {
   /** Recipient phone number (E.164 or digits-only) */
   readonly to: string;
+  /** Message ID to reply to (quoted reply) */
+  readonly replyTo?: string;
+}
+
+// ── Text ──
+
+export interface TextMessageOptions extends BaseMessageOptions {
   /** Message body (up to 4096 characters) */
   readonly body: string;
   /** Enable URL preview for links in the body */
@@ -63,31 +71,27 @@ export interface TextMessageOptions {
 
 // ── Image ──
 
-export interface ImageMessageOptions {
-  readonly to: string;
+export interface ImageMessageOptions extends BaseMessageOptions {
   readonly media: MediaSource;
   readonly caption?: string;
 }
 
 // ── Video ──
 
-export interface VideoMessageOptions {
-  readonly to: string;
+export interface VideoMessageOptions extends BaseMessageOptions {
   readonly media: MediaSource;
   readonly caption?: string;
 }
 
 // ── Audio ──
 
-export interface AudioMessageOptions {
-  readonly to: string;
+export interface AudioMessageOptions extends BaseMessageOptions {
   readonly media: MediaSource;
 }
 
 // ── Document ──
 
-export interface DocumentMessageOptions {
-  readonly to: string;
+export interface DocumentMessageOptions extends BaseMessageOptions {
   readonly media: MediaSource;
   readonly caption?: string;
   readonly filename?: string;
@@ -95,15 +99,13 @@ export interface DocumentMessageOptions {
 
 // ── Sticker ──
 
-export interface StickerMessageOptions {
-  readonly to: string;
+export interface StickerMessageOptions extends BaseMessageOptions {
   readonly media: MediaSource;
 }
 
 // ── Location ──
 
-export interface LocationMessageOptions {
-  readonly to: string;
+export interface LocationMessageOptions extends BaseMessageOptions {
   readonly longitude: number;
   readonly latitude: number;
   readonly name?: string;
@@ -163,15 +165,13 @@ export interface ContactInfo {
   readonly birthday?: string;
 }
 
-export interface ContactsMessageOptions {
-  readonly to: string;
+export interface ContactsMessageOptions extends BaseMessageOptions {
   readonly contacts: readonly ContactInfo[];
 }
 
 // ── Reaction ──
 
-export interface ReactionMessageOptions {
-  readonly to: string;
+export interface ReactionMessageOptions extends Omit<BaseMessageOptions, 'replyTo'> {
   /** The wamid of the message to react to */
   readonly messageId: string;
   /** Emoji to react with. Empty string removes reaction. */
@@ -194,8 +194,7 @@ export type InteractiveHeader =
   | { readonly type: 'video'; readonly video: MediaSource }
   | { readonly type: 'document'; readonly document: MediaSource };
 
-export interface InteractiveButtonMessageOptions {
-  readonly to: string;
+export interface InteractiveButtonMessageOptions extends BaseMessageOptions {
   readonly body: string;
   readonly buttons: readonly InteractiveReplyButton[];
   readonly header?: InteractiveHeader;
@@ -215,8 +214,7 @@ export interface InteractiveListSection {
   readonly rows: readonly InteractiveListRow[];
 }
 
-export interface InteractiveListMessageOptions {
-  readonly to: string;
+export interface InteractiveListMessageOptions extends BaseMessageOptions {
   readonly body: string;
   readonly buttonText: string;
   readonly sections: readonly InteractiveListSection[];
@@ -253,12 +251,39 @@ export interface TemplateComponent {
   readonly parameters?: readonly TemplateParameter[];
 }
 
-export interface TemplateMessageOptions {
-  readonly to: string;
+export interface TemplateMessageOptions extends BaseMessageOptions {
   readonly templateName: string;
   readonly language: string;
   readonly components?: readonly TemplateComponent[];
 }
+
+// ── CTA URL Button ──
+
+export interface CtaUrlButtonMessageOptions extends BaseMessageOptions {
+  /** Message body text */
+  readonly body: string;
+  /** Button display text */
+  readonly buttonText: string;
+  /** Target URL */
+  readonly url: string;
+  /** Dynamic URL suffix appended to the URL at delivery time */
+  readonly urlSuffix?: string;
+  /** Optional header (text, image, video, or document) */
+  readonly header?: InteractiveHeader;
+  /** Optional footer text */
+  readonly footer?: string;
+}
+
+// ── Location Request ──
+
+export interface LocationRequestMessageOptions extends BaseMessageOptions {
+  /** Body text explaining why the location is needed */
+  readonly body: string;
+}
+
+// ── Typing Indicator ──
+
+export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;
 
 // ── Mark as Read ──
 

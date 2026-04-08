@@ -600,4 +600,208 @@ describe('Messages', () => {
       expect(postSpy.mock.calls[0]![0]).toBe(`${PHONE_NUMBER_ID}/messages`);
     });
   });
+
+  // ── Reply-to context ──
+
+  describe('reply-to context', () => {
+    it('should include context when replyTo is provided on sendText', async () => {
+      await messages.sendText({ to: '15551234567', body: 'Reply!', replyTo: 'wamid.abc123' });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toHaveProperty('context');
+      expect(payload.context).toEqual({ message_id: 'wamid.abc123' });
+    });
+
+    it('should include context when replyTo is provided on sendImage', async () => {
+      await messages.sendImage({
+        to: '15551234567',
+        media: { id: 'img_123' },
+        replyTo: 'wamid.img456',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toHaveProperty('context');
+      expect(payload.context).toEqual({ message_id: 'wamid.img456' });
+    });
+
+    it('should not include context when replyTo is omitted', async () => {
+      await messages.sendText({ to: '15551234567', body: 'No reply' });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).not.toHaveProperty('context');
+    });
+
+    it('should not include context when replyTo is empty string', async () => {
+      await messages.sendText({ to: '15551234567', body: 'Empty', replyTo: '' });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).not.toHaveProperty('context');
+    });
+
+    it('should not include context when replyTo is whitespace only', async () => {
+      await messages.sendText({ to: '15551234567', body: 'Whitespace', replyTo: '   ' });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).not.toHaveProperty('context');
+    });
+  });
+
+  // ── CTA URL Button ──
+
+  describe('sendInteractiveCta', () => {
+    it('should send CTA URL button with correct payload', async () => {
+      await messages.sendInteractiveCta({
+        to: '15551234567',
+        body: 'Check this out',
+        buttonText: 'Shop Now',
+        url: 'https://example.com/shop',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: '15551234567',
+        type: 'interactive',
+        interactive: {
+          type: 'cta_url',
+          body: { text: 'Check this out' },
+          action: {
+            name: 'cta_url',
+            parameters: {
+              display_text: 'Shop Now',
+              url: 'https://example.com/shop',
+            },
+          },
+        },
+      });
+    });
+
+    it('should include header and footer when provided', async () => {
+      await messages.sendInteractiveCta({
+        to: '15551234567',
+        body: 'Body text',
+        buttonText: 'Click',
+        url: 'https://example.com',
+        header: { type: 'text', text: 'Header' },
+        footer: 'Footer text',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload.interactive as Record<string, unknown>;
+      expect(interactive).toHaveProperty('header', { type: 'text', text: 'Header' });
+      expect(interactive).toHaveProperty('footer', { text: 'Footer text' });
+    });
+
+    it('should handle urlSuffix with dynamic parameter', async () => {
+      await messages.sendInteractiveCta({
+        to: '15551234567',
+        body: 'Track order',
+        buttonText: 'Track',
+        url: 'https://example.com/track/',
+        urlSuffix: 'order-12345',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload.interactive as Record<string, unknown>;
+      const action = interactive.action as Record<string, unknown>;
+      const parameters = action.parameters as Record<string, unknown>;
+      expect(parameters.url).toBe('https://example.com/track/{{1}}');
+      expect(parameters.example).toEqual(['order-12345']);
+    });
+
+    it('should include context when replyTo is provided', async () => {
+      await messages.sendInteractiveCta({
+        to: '15551234567',
+        body: 'CTA',
+        buttonText: 'Go',
+        url: 'https://example.com',
+        replyTo: 'wamid.cta123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toHaveProperty('context', { message_id: 'wamid.cta123' });
+    });
+
+    it('should reject invalid phone number', async () => {
+      await expect(
+        messages.sendInteractiveCta({
+          to: '123',
+          body: 'CTA',
+          buttonText: 'Go',
+          url: 'https://example.com',
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  // ── Location Request ──
+
+  describe('sendLocationRequest', () => {
+    it('should send location request with correct payload', async () => {
+      await messages.sendLocationRequest({
+        to: '15551234567',
+        body: 'Please share your delivery address.',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: '15551234567',
+        type: 'interactive',
+        interactive: {
+          type: 'location_request_message',
+          body: { text: 'Please share your delivery address.' },
+          action: { name: 'send_location' },
+        },
+      });
+    });
+
+    it('should include context when replyTo is provided', async () => {
+      await messages.sendLocationRequest({
+        to: '15551234567',
+        body: 'Share location',
+        replyTo: 'wamid.loc123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toHaveProperty('context', { message_id: 'wamid.loc123' });
+    });
+
+    it('should reject invalid phone number', async () => {
+      await expect(
+        messages.sendLocationRequest({ to: '12', body: 'Where?' }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
+  // ── Typing Indicator ──
+
+  describe('sendTypingIndicator', () => {
+    it('should send typing indicator with correct payload', async () => {
+      postSpy.mockResolvedValueOnce({
+        data: { success: true },
+        status: 200,
+        headers: new Headers(),
+      });
+
+      const result = await messages.sendTypingIndicator({ to: '15551234567' });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toEqual({
+        messaging_product: 'whatsapp',
+        status: 'typing',
+        recipient_type: 'individual',
+        to: '15551234567',
+      });
+      expect(result.data.success).toBe(true);
+    });
+
+    it('should reject invalid phone number', async () => {
+      await expect(
+        messages.sendTypingIndicator({ to: '12' }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
 });
