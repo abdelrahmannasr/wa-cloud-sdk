@@ -281,6 +281,52 @@ export interface LocationRequestMessageOptions extends BaseMessageOptions {
   readonly body: string;
 }
 
+// ── Flow ──
+
+/**
+ * Options for sendFlow — sends an interactive flow message.
+ *
+ * Delivers a WhatsApp Flow invitation to a recipient. The recipient sees a
+ * body message with a call-to-action button that, when tapped, opens the
+ * flow for them to complete.
+ *
+ * See https://developers.facebook.com/docs/whatsapp/flows/guides/sendingaflow/
+ */
+export interface FlowMessageOptions extends BaseMessageOptions {
+  /** Main message body text shown above the CTA button */
+  readonly body: string;
+  /** CTA button label (e.g. "Open", "Start", "View") */
+  readonly flowCta: string;
+  /** UUID of the published or draft flow */
+  readonly flowId: string;
+  /**
+   * Optional token transmitted with the flow for correlating sends with
+   * webhook responses. Note: Meta does NOT echo this token back in flow
+   * completion payloads by default; it is only returned if the flow's
+   * terminal screen or endpoint explicitly includes it in its response.
+   */
+  readonly flowToken?: string;
+  /** Draft mode for testing unpublished flows; defaults to 'published' */
+  readonly mode?: 'draft' | 'published';
+  /** Flow navigation: 'navigate' (open a screen) or 'data_exchange' (backend call). Defaults to 'navigate' */
+  readonly flowAction?: 'navigate' | 'data_exchange';
+  /** Initial screen name and data (used when flowAction='navigate') */
+  readonly flowActionPayload?: {
+    readonly screen: string;
+    readonly data?: Record<string, unknown>;
+  };
+  /**
+   * Flow message protocol version. The SDK defaults to '3'. Override only
+   * if you need to test or adopt a newer Meta version before the SDK
+   * updates its pinned default.
+   */
+  readonly flowMessageVersion?: string;
+  /** Optional interactive header (text, image, video, or document) */
+  readonly header?: InteractiveHeader;
+  /** Optional footer text */
+  readonly footer?: string;
+}
+
 // ── Typing Indicator ──
 
 export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;
