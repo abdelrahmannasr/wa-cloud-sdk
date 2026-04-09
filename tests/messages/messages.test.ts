@@ -796,21 +796,18 @@ describe('Messages', () => {
         interactive: {
           type: 'flow',
           body: { text: 'Complete your booking' },
-          action: {
-            name: 'flow',
-            parameters: {
-              flow_message_version: '3',
-              flow_id: 'flow_abc_123',
-              flow_cta: 'Book Now',
-            },
-          },
+          action: { name: 'flow' },
         },
       });
       const interactive = payload['interactive'] as Record<string, unknown>;
       const action = interactive['action'] as Record<string, unknown>;
-      const parameters = action['parameters'] as Record<string, unknown>;
-      expect(parameters).not.toHaveProperty('mode');
-      expect(parameters).not.toHaveProperty('flow_action');
+      // toStrictEqual pins the exact key set so any future leak (mode,
+      // flow_action, etc.) fails the test without needing a new assertion.
+      expect(action['parameters']).toStrictEqual({
+        flow_message_version: '3',
+        flow_id: 'flow_abc_123',
+        flow_cta: 'Book Now',
+      });
     });
 
     it('should send flow in draft mode when specified', async () => {
@@ -857,9 +854,14 @@ describe('Messages', () => {
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       const interactive = payload['interactive'] as Record<string, unknown>;
       const action = interactive['action'] as Record<string, unknown>;
-      const parameters = action['parameters'] as Record<string, unknown>;
-      expect(parameters['flow_action']).toBe('data_exchange');
-      expect(parameters).not.toHaveProperty('flow_action_payload');
+      // toStrictEqual pins both the presence of flow_action and the
+      // absence of mode/flow_action_payload in a single assertion.
+      expect(action['parameters']).toStrictEqual({
+        flow_message_version: '3',
+        flow_id: 'flow_abc_123',
+        flow_cta: 'Continue',
+        flow_action: 'data_exchange',
+      });
     });
 
     it('should include flow_token when provided', async () => {
