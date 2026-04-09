@@ -910,8 +910,7 @@ describe('WhatsAppMultiAccount', () => {
       }> = [];
 
       const mockFactory = vi.fn().mockImplementation((wa, recipient: string) => {
-        const phoneNumberId = (wa as { config: { phoneNumberId: string } }).config
-          .phoneNumberId;
+        const phoneNumberId = (wa as { config: { phoneNumberId: string } }).config.phoneNumberId;
         const account = validAccounts.find((a) => a.phoneNumberId === phoneNumberId)!;
         const flowId = flowIdByAccount[account.name]!;
         sendsReceived.push({ phoneNumberId, recipient, flowId });
