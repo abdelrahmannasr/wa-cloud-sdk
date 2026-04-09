@@ -779,7 +779,7 @@ describe('Messages', () => {
   // ── Flow ──
 
   describe('sendFlow', () => {
-    it('should send flow with minimal options and correct defaults', async () => {
+    it('should send flow with minimal options and omit mode/flow_action by default', async () => {
       await messages.sendFlow({
         to: '15551234567',
         body: 'Complete your booking',
@@ -802,12 +802,15 @@ describe('Messages', () => {
               flow_message_version: '3',
               flow_id: 'flow_abc_123',
               flow_cta: 'Book Now',
-              mode: 'published',
-              flow_action: 'navigate',
             },
           },
         },
       });
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters).not.toHaveProperty('mode');
+      expect(parameters).not.toHaveProperty('flow_action');
     });
 
     it('should send flow in draft mode when specified', async () => {
@@ -840,6 +843,23 @@ describe('Messages', () => {
       const action = interactive['action'] as Record<string, unknown>;
       const parameters = action['parameters'] as Record<string, unknown>;
       expect(parameters['flow_message_version']).toBe('4');
+    });
+
+    it('should emit flow_action only when explicitly set (data_exchange)', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Fetch offers',
+        flowCta: 'Continue',
+        flowId: 'flow_abc_123',
+        flowAction: 'data_exchange',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters['flow_action']).toBe('data_exchange');
+      expect(parameters).not.toHaveProperty('flow_action_payload');
     });
 
     it('should include flow_token when provided', async () => {

@@ -457,12 +457,20 @@ export class Messages {
     options: FlowMessageOptions,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<MessageResponse>> {
-    const parameters: Record<string, unknown> = {
+    const parameters: {
+      flow_message_version: string;
+      flow_id: string;
+      flow_cta: string;
+      mode?: 'draft';
+      flow_action?: 'navigate' | 'data_exchange';
+      flow_token?: string;
+      flow_action_payload?: { screen: string; data?: Record<string, unknown> };
+    } = {
       flow_message_version: options.flowMessageVersion ?? '3',
       flow_id: options.flowId,
       flow_cta: options.flowCta,
-      mode: options.mode ?? 'published',
-      flow_action: options.flowAction ?? 'navigate',
+      ...(options.mode === 'draft' ? { mode: 'draft' } : {}),
+      ...(options.flowAction !== undefined ? { flow_action: options.flowAction } : {}),
       ...(options.flowToken ? { flow_token: options.flowToken } : {}),
       ...(options.flowActionPayload ? { flow_action_payload: options.flowActionPayload } : {}),
     };
