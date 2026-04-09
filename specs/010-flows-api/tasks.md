@@ -25,7 +25,7 @@ After completing each task below, run `/gen-commit-msg` and create **one commit*
 
 **Purpose**: No new setup — branch `010-flows-api` is already checked out, specs are in place, scripts run.
 
-- [ ] T001 [verify] Confirm working branch is `010-flows-api`, working tree is clean, and `specs/010-flows-api/{spec.md,plan.md,research.md,data-model.md,contracts/,quickstart.md,checklists/}` all exist (use `git status` and `ls`)
+- [X] T001 [verify] Confirm working branch is `010-flows-api`, working tree is clean, and `specs/010-flows-api/{spec.md,plan.md,research.md,data-model.md,contracts/,quickstart.md,checklists/}` all exist (use `git status` and `ls`)
 
 **Checkpoint**: Ready to begin user-story work. No commit produced.
 
@@ -47,12 +47,12 @@ After completing each task below, run `/gen-commit-msg` and create **one commit*
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] Add `FlowMessageOptions` interface to `src/messages/types.ts` (extends `BaseMessageOptions`; fields: body, flowCta, flowId, flowToken?, mode?, flowAction?, flowActionPayload?, flowMessageVersion?, header?, footer?) — see `specs/010-flows-api/data-model.md §15` and `specs/010-flows-api/contracts/send-flow.md` for exact shape
-- [ ] T003 [US1] Export `FlowMessageOptions` type from `src/messages/index.ts` barrel
-- [ ] T004 [US1] Add `sendFlow(options, requestOptions?)` method to `src/messages/messages.ts`, inserted after `sendLocationRequest` (lines 417-430). Implementation follows `specs/010-flows-api/contracts/send-flow.md §Implementation detail` verbatim. Reuse `buildBasePayload()` and `buildInteractiveOptionals()`. Default `mode='published'`, `flow_action='navigate'`, `flow_message_version='3'`. Include TSDoc with `@example`.
-- [ ] T005 [US1] Add `sendFlow` unit test suite to `tests/messages/messages.test.ts` (~8 tests): minimal payload shape, draft mode, per-call version override, correlation token, initial screen + data, reply-to, header + footer, phone validation error. Follow mock pattern from `tests/messages/messages.test.ts:651-678` (`sendInteractiveCta`).
-- [ ] T006 [US1] Add broadcast-with-flows scenario test to `tests/multi-account/multi-account.test.ts` — a factory that calls `messages.sendFlow` across two mock accounts with per-account flow-ID mapping. Asserts each recipient receives the correct per-account flow_id on the wire. Satisfies FR-007a test requirement.
-- [ ] T007 [US1] [verify] Run `pnpm typecheck && pnpm lint && pnpm test -- tests/messages tests/multi-account` — must pass with zero errors. No commit.
+- [X] T002 [US1] Add `FlowMessageOptions` interface to `src/messages/types.ts` (extends `BaseMessageOptions`; fields: body, flowCta, flowId, flowToken?, mode?, flowAction?, flowActionPayload?, flowMessageVersion?, header?, footer?) — see `specs/010-flows-api/data-model.md §15` and `specs/010-flows-api/contracts/send-flow.md` for exact shape
+- [X] T003 [US1] Export `FlowMessageOptions` type from `src/messages/index.ts` barrel
+- [X] T004 [US1] Add `sendFlow(options, requestOptions?)` method to `src/messages/messages.ts`, inserted after `sendLocationRequest` (lines 417-430). Implementation follows `specs/010-flows-api/contracts/send-flow.md §Implementation detail` verbatim. Reuse `buildBasePayload()` and `buildInteractiveOptionals()`. Default `mode='published'`, `flow_action='navigate'`, `flow_message_version='3'`. Include TSDoc with `@example`.
+- [X] T005 [US1] Add `sendFlow` unit test suite to `tests/messages/messages.test.ts` (~8 tests): minimal payload shape, draft mode, per-call version override, correlation token, initial screen + data, reply-to, header + footer, phone validation error. Follow mock pattern from `tests/messages/messages.test.ts:651-678` (`sendInteractiveCta`).
+- [X] T006 [US1] Add broadcast-with-flows scenario test to `tests/multi-account/multi-account.test.ts` — a factory that calls `messages.sendFlow` across two mock accounts with per-account flow-ID mapping. Asserts each recipient receives the correct per-account flow_id on the wire. Satisfies FR-007a test requirement.
+- [X] T007 [US1] [verify] Run `pnpm typecheck && pnpm lint && pnpm test -- tests/messages tests/multi-account` — must pass with zero errors. No commit.
 
 **Checkpoint**: User Story 1 is fully functional. A consumer can send flows using `new WhatsApp({...}).messages.sendFlow(...)`. Demo-ready as MVP.
 
