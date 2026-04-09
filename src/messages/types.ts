@@ -284,6 +284,21 @@ export interface LocationRequestMessageOptions extends BaseMessageOptions {
 // ── Flow ──
 
 /**
+ * Initial screen and data passed to a flow when it opens.
+ *
+ * Used with `flowAction='navigate'` to open the flow on a specific screen
+ * with pre-populated context. When `flowAction='data_exchange'` is used
+ * instead, `screen` is ignored because the flow's backend decides which
+ * screen to render based on the exchanged data.
+ */
+export interface FlowActionPayload {
+  /** Screen name to open the flow on (ignored when flowAction='data_exchange') */
+  readonly screen: string;
+  /** Pre-populated data made available to the flow definition */
+  readonly data?: Record<string, unknown>;
+}
+
+/**
  * Options for sendFlow — sends an interactive flow message.
  *
  * Delivers a WhatsApp Flow invitation to a recipient. The recipient sees a
@@ -306,21 +321,30 @@ export interface FlowMessageOptions extends BaseMessageOptions {
    * terminal screen or endpoint explicitly includes it in its response.
    */
   readonly flowToken?: string;
-  /** Draft mode for testing unpublished flows; defaults to 'published' */
+  /**
+   * Flow testing mode. Omit to send the flow in its default ('published')
+   * mode. Set to 'draft' to test an unpublished flow before launch.
+   */
   readonly mode?: 'draft' | 'published';
-  /** Flow navigation: 'navigate' (open a screen) or 'data_exchange' (backend call). Defaults to 'navigate' */
+  /**
+   * Flow navigation action:
+   * - `'navigate'` — open a specific screen; requires `flowActionPayload.screen`.
+   * - `'data_exchange'` — invoke the flow's backend endpoint on open; the
+   *   backend decides the initial screen, so `flowActionPayload.screen` is
+   *   ignored if supplied.
+   *
+   * Omit to let Meta apply its server-side default.
+   */
   readonly flowAction?: 'navigate' | 'data_exchange';
   /** Initial screen name and data (used when flowAction='navigate') */
-  readonly flowActionPayload?: {
-    readonly screen: string;
-    readonly data?: Record<string, unknown>;
-  };
+  readonly flowActionPayload?: FlowActionPayload;
   /**
    * Flow message protocol version. The SDK defaults to '3'. Override only
    * if you need to test or adopt a newer Meta version before the SDK
-   * updates its pinned default.
+   * updates its pinned default. Typed as a string union to preserve
+   * autocomplete for the default while still allowing any string.
    */
-  readonly flowMessageVersion?: string;
+  readonly flowMessageVersion?: '3' | (string & {});
   /** Optional interactive header (text, image, video, or document) */
   readonly header?: InteractiveHeader;
   /** Optional footer text */
