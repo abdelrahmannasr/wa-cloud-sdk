@@ -909,19 +909,19 @@ describe('WhatsAppMultiAccount', () => {
         flowId: string;
       }> = [];
 
-      const mockFactory = vi.fn().mockImplementation(async (wa, recipient: string) => {
+      const mockFactory = vi.fn().mockImplementation((wa, recipient: string) => {
         const phoneNumberId = (wa as { config: { phoneNumberId: string } }).config
           .phoneNumberId;
         const account = validAccounts.find((a) => a.phoneNumberId === phoneNumberId)!;
         const flowId = flowIdByAccount[account.name]!;
         sendsReceived.push({ phoneNumberId, recipient, flowId });
-        return {
+        return Promise.resolve({
           success: true,
           data: {
             messaging_product: 'whatsapp',
             messages: [{ id: `msg_${recipient}` }],
           },
-        };
+        });
       });
 
       const recipients = ['1111111111', '2222222222', '3333333333'];
