@@ -254,3 +254,11 @@ After US4 completes, all three collaborate on Phase 7 (Polish) — ~15 more comm
 - Before starting any task, re-read the task description + the referenced contract section. Do not speculate.
 - If a verify task fails: fix the issue in a dedicated commit before continuing. Do not amend the previous commit.
 - If a PR reviewer finds a gap: add a new task at the end of the relevant phase, complete it, commit atomically.
+
+---
+
+## Deferred follow-ups
+
+Items identified during implementation that are out of scope for this spec but worth tracking for future work:
+
+- Shared `buildInteractivePayload(type, body, action, header, footer)` helper: `sendFlow`, `sendInteractiveCta`, `sendInteractiveButtons`, `sendInteractiveList`, and `sendLocationRequest` all have structurally similar bodies. A shared helper would reduce ~30 lines across the module. This is a reasonable follow-up refactor but would touch existing methods and is out of scope for this MVP slice.
