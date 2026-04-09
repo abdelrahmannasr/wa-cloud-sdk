@@ -437,7 +437,10 @@ export class Messages {
    * that opens the flow. Supports draft and published modes, optional initial
    * screen and data, correlation tokens, reply-to, and optional header/footer.
    *
-   * Defaults: `mode='published'`, `flowAction='navigate'`, `flowMessageVersion='3'`.
+   * Defaults: `flowMessageVersion='3'`. `mode` and `flowAction` are omitted
+   * from the wire payload unless explicitly set, letting Meta apply its
+   * server-side defaults. When `flowAction='navigate'`, you MUST supply
+   * `flowActionPayload.screen` — Meta rejects navigate calls without it.
    *
    * @example
    * ```ts
@@ -446,6 +449,7 @@ export class Messages {
    *   body: 'Complete your appointment booking',
    *   flowCta: 'Book Now',
    *   flowId: '1234567890',
+   *   flowAction: 'navigate',
    *   flowActionPayload: {
    *     screen: 'SELECT_DATE',
    *     data: { default_date: '2026-04-15' },
