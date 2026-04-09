@@ -19,6 +19,7 @@ import type {
   TemplateMessageOptions,
   CtaUrlButtonMessageOptions,
   LocationRequestMessageOptions,
+  FlowActionPayload,
   FlowMessageOptions,
   TypingIndicatorOptions,
   MarkAsReadOptions,
@@ -468,7 +469,7 @@ export class Messages {
       mode?: 'draft';
       flow_action?: 'navigate' | 'data_exchange';
       flow_token?: string;
-      flow_action_payload?: { screen: string; data?: Record<string, unknown> };
+      flow_action_payload?: FlowActionPayload;
     } = {
       flow_message_version: options.flowMessageVersion ?? '3',
       flow_id: options.flowId,
