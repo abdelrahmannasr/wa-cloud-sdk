@@ -6,6 +6,7 @@ import { Media } from '../src/media/media.js';
 import { Templates } from '../src/templates/templates.js';
 import { Webhooks } from '../src/webhooks/webhooks.js';
 import { PhoneNumbers } from '../src/phone-numbers/phone-numbers.js';
+import { Flows } from '../src/flows/flows.js';
 import { ValidationError } from '../src/errors/errors.js';
 
 // Mock the dependencies
@@ -15,6 +16,7 @@ vi.mock('../src/media/media.js');
 vi.mock('../src/templates/templates.js');
 vi.mock('../src/webhooks/webhooks.js');
 vi.mock('../src/phone-numbers/phone-numbers.js');
+vi.mock('../src/flows/flows.js');
 
 describe('WhatsApp', () => {
   const validConfig = {
@@ -231,6 +233,40 @@ describe('WhatsApp', () => {
       const wa = new WhatsApp(validConfig);
       const first = wa.phoneNumbers;
       const second = wa.phoneNumbers;
+      expect(first).toBe(second);
+    });
+  });
+
+  describe('flows getter', () => {
+    it('returns a Flows instance when businessAccountId is provided', () => {
+      const wa = new WhatsApp(validConfig);
+      expect(wa.flows).toBeInstanceOf(Flows);
+    });
+
+    it('throws ValidationError with field "businessAccountId" when businessAccountId is not provided', () => {
+      const wa = new WhatsApp({
+        accessToken: 'test-token',
+        phoneNumberId: 'test-phone-id',
+      });
+
+      expect(() => wa.flows).toThrow(ValidationError);
+      expect(() => wa.flows).toThrow(
+        'businessAccountId is required for flow operations',
+      );
+
+      try {
+        void wa.flows;
+        expect.fail('Expected ValidationError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(ValidationError);
+        expect((error as ValidationError).field).toBe('businessAccountId');
+      }
+    });
+
+    it('returns the same cached instance on repeated calls', () => {
+      const wa = new WhatsApp(validConfig);
+      const first = wa.flows;
+      const second = wa.flows;
       expect(first).toBe(second);
     });
   });
