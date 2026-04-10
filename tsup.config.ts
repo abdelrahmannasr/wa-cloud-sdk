@@ -9,6 +9,7 @@ export default defineConfig({
     'webhooks/index': 'src/webhooks/index.ts',
     'media/index': 'src/media/index.ts',
     'templates/index': 'src/templates/index.ts',
+    'flows/index': 'src/flows/index.ts',
     'phone-numbers/index': 'src/phone-numbers/index.ts',
     'multi-account/index': 'src/multi-account/index.ts',
   },

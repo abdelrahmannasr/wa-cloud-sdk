@@ -96,6 +96,16 @@
         "default": "./dist/templates/index.cjs"
       }
     },
+    "./flows": {
+      "import": {
+        "types": "./dist/flows/index.d.ts",
+        "default": "./dist/flows/index.js"
+      },
+      "require": {
+        "types": "./dist/flows/index.d.cts",
+        "default": "./dist/flows/index.cjs"
+      }
+    },
     "./phone-numbers": {
       "import": {
         "types": "./dist/phone-numbers/index.d.ts",
