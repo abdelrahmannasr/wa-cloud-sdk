@@ -5,6 +5,7 @@ import type {
   MessageEvent,
   StatusEvent,
   ErrorEvent,
+  FlowCompletionEvent,
 } from '../../src/webhooks/types.js';
 
 function createPayload(value: Record<string, unknown>): WebhookPayload {
@@ -381,6 +382,129 @@ describe('parseWebhookPayload', () => {
       expect(event.message.type).toBe('reaction');
       expect(event.message.reaction?.message_id).toBe('wamid.original');
       expect(event.message.reaction?.emoji).toBe('\u{1F44D}');
+    });
+  });
+
+  describe('flow completion events', () => {
+    const flowResponseData = {
+      screen_name: 'SUCCESS',
+      form: { full_name: 'Alice Example', email: 'alice@example.com' },
+    };
+
+    function createNfmReplyPayload(
+      responseJson: string = JSON.stringify(flowResponseData),
+    ) {
+      return createPayload({
+        contacts: [{ profile: { name: 'Alice' }, wa_id: '15559876543' }],
+        messages: [
+          {
+            from: '15559876543',
+            id: 'wamid.flow1',
+            timestamp: '1712620800',
+            type: 'interactive',
+            interactive: {
+              type: 'nfm_reply',
+              nfm_reply: {
+                name: 'flow',
+                body: 'Sent',
+                response_json: responseJson,
+              },
+            },
+          },
+        ],
+      });
+    }
+
+    it('should divert nfm_reply to FlowCompletionEvent instead of MessageEvent', () => {
+      const payload = createNfmReplyPayload();
+      const events = parseWebhookPayload(payload);
+
+      expect(events).toHaveLength(1);
+      const event = events[0] as FlowCompletionEvent;
+      expect(event.type).toBe('flow_completion');
+      expect(events.filter((e) => e.type === 'message')).toHaveLength(0);
+    });
+
+    it('should parse valid response_json into response object', () => {
+      const payload = createNfmReplyPayload();
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+
+      expect(event.response).toStrictEqual(flowResponseData);
+    });
+
+    it('should preserve raw responseJson byte-for-byte', () => {
+      const rawJson = JSON.stringify(flowResponseData);
+      const payload = createNfmReplyPayload(rawJson);
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+
+      expect(event.responseJson).toBe(rawJson);
+    });
+
+    it('should tolerate malformed JSON without throwing', () => {
+      const payload = createNfmReplyPayload('not valid json{{{');
+      const events = parseWebhookPayload(payload);
+
+      expect(events).toHaveLength(1);
+      const event = events[0] as FlowCompletionEvent;
+      expect(event.type).toBe('flow_completion');
+      expect(event.response).toStrictEqual({});
+      expect(event.responseJson).toBe('not valid json{{{');
+    });
+
+    it('should treat JSON array response_json as empty response', () => {
+      const payload = createNfmReplyPayload('[1, 2, 3]');
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+
+      expect(event.response).toStrictEqual({});
+      expect(event.responseJson).toBe('[1, 2, 3]');
+    });
+
+    it('should still parse button_reply as MessageEvent (regression)', () => {
+      const payload = createPayload({
+        contacts: [{ profile: { name: 'User' }, wa_id: '15559876543' }],
+        messages: [
+          {
+            from: '15559876543',
+            id: 'wamid.btn1',
+            timestamp: '1700000000',
+            type: 'interactive',
+            interactive: {
+              type: 'button_reply',
+              button_reply: { id: 'btn1', title: 'Option A' },
+            },
+          },
+        ],
+      });
+
+      const events = parseWebhookPayload(payload);
+      expect(events).toHaveLength(1);
+      const event = events[0] as MessageEvent;
+      expect(event.type).toBe('message');
+      expect(event.message.interactive?.type).toBe('button_reply');
+    });
+
+    it('should populate metadata, contact, messageId, and timestamp correctly', () => {
+      const payload = createNfmReplyPayload();
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+
+      expect(event.metadata.phoneNumberId).toBe('123456');
+      expect(event.metadata.displayPhoneNumber).toBe('15551234567');
+      expect(event.contact.name).toBe('Alice');
+      expect(event.contact.waId).toBe('15559876543');
+      expect(event.messageId).toBe('wamid.flow1');
+      expect(event.timestamp).toEqual(new Date(1712620800 * 1000));
+    });
+
+    it('should leave flowToken as undefined', () => {
+      const payload = createNfmReplyPayload();
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+
+      expect(event.flowToken).toBeUndefined();
     });
   });
 });
