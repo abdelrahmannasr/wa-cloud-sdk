@@ -101,6 +101,9 @@ export function createWebhookHandler(
           case 'error':
             await callbacks.onError?.(event);
             break;
+          case 'flow_completion':
+            await callbacks.onFlowCompletion?.(event);
+            break;
         }
       }
 
