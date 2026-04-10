@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Flows } from '../../src/flows/flows.js';
 import type { HttpClient } from '../../src/client/http-client.js';
@@ -30,13 +29,10 @@ function createMockClient(): {
 
 describe('Flows', () => {
   let client: HttpClient;
-  let getSpy: ReturnType<typeof vi.fn>;
   let postSpy: ReturnType<typeof vi.fn>;
-  let deleteSpy: ReturnType<typeof vi.fn>;
-  let uploadSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    ({ client, getSpy, postSpy, deleteSpy, uploadSpy } = createMockClient());
+    ({ client, postSpy } = createMockClient());
   });
 
   describe('constructor', () => {
@@ -124,7 +120,7 @@ describe('Flows', () => {
       postSpy.mockResolvedValue({ data: { id: 'flow_123', success: true } });
 
       const flows = new Flows(client, BUSINESS_ACCOUNT_ID);
-      const requestOptions = { timeout: 5000 };
+      const requestOptions = { timeoutMs: 5000 };
       await flows.create({ name: 'test', categories: ['OTHER'] }, requestOptions);
 
       expect(postSpy).toHaveBeenCalledWith(
@@ -149,7 +145,7 @@ describe('Flows', () => {
       postSpy.mockResolvedValue({ data: { success: true } });
 
       const flows = new Flows(client, BUSINESS_ACCOUNT_ID);
-      const requestOptions = { timeout: 10000 };
+      const requestOptions = { timeoutMs: 10000 };
       await flows.publish('flow_123', requestOptions);
 
       expect(postSpy).toHaveBeenCalledWith('flow_123/publish', {}, requestOptions);
