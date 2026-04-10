@@ -222,14 +222,16 @@ export interface EventMetadata {
   readonly displayPhoneNumber: string;
 }
 
+export interface EventContact {
+  readonly name: string;
+  readonly waId: string;
+}
+
 /** Parsed message event. */
 export interface MessageEvent {
   readonly type: 'message';
   readonly metadata: EventMetadata;
-  readonly contact: {
-    readonly name: string;
-    readonly waId: string;
-  };
+  readonly contact: EventContact;
   readonly message: WebhookMessage;
   readonly timestamp: Date;
 }
@@ -258,10 +260,7 @@ export interface ErrorEvent {
 export interface FlowCompletionEvent {
   readonly type: 'flow_completion';
   readonly metadata: EventMetadata;
-  readonly contact: {
-    readonly name: string;
-    readonly waId: string;
-  };
+  readonly contact: EventContact;
   readonly messageId: string;
   /**
    * Flow correlation token. Always `undefined` in this release — Meta does not

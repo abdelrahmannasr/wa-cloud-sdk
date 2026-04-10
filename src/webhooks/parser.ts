@@ -78,11 +78,11 @@ function extractMessageEvents(
       let parsedResponse: Record<string, unknown> = {};
       try {
         const parsed: unknown = JSON.parse(nfm.response_json);
-        if (typeof parsed === 'object' && parsed !== null) {
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
           parsedResponse = parsed as Record<string, unknown>;
         }
       } catch {
-        // Malformed JSON — leave response as {}. Raw string still in responseJson.
+        // Leave parsedResponse as empty object; raw string still in responseJson.
       }
 
       const flowEvent: FlowCompletionEvent = {
