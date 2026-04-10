@@ -123,8 +123,14 @@ export interface WebhookContactCardPhone {
   readonly wa_id?: string;
 }
 
+export interface WebhookNfmReply {
+  readonly name: string;
+  readonly body: string;
+  readonly response_json: string;
+}
+
 export interface WebhookInteractivePayload {
-  readonly type: 'button_reply' | 'list_reply';
+  readonly type: 'button_reply' | 'list_reply' | 'nfm_reply';
   readonly button_reply?: {
     readonly id: string;
     readonly title: string;
@@ -134,6 +140,7 @@ export interface WebhookInteractivePayload {
     readonly title: string;
     readonly description?: string;
   };
+  readonly nfm_reply?: WebhookNfmReply;
 }
 
 export interface WebhookReactionPayload {
@@ -242,8 +249,34 @@ export interface ErrorEvent {
   readonly error: WebhookError;
 }
 
+/**
+ * Parsed flow completion event.
+ *
+ * Emitted when a user submits a WhatsApp Flow (interactive.type === 'nfm_reply').
+ * Routed to the `onFlowCompletion` callback instead of `onMessage`.
+ */
+export interface FlowCompletionEvent {
+  readonly type: 'flow_completion';
+  readonly metadata: EventMetadata;
+  readonly contact: {
+    readonly name: string;
+    readonly waId: string;
+  };
+  readonly messageId: string;
+  /**
+   * Flow correlation token. Always `undefined` in this release — Meta does not
+   * echo flow_token back in nfm_reply payloads. The field exists for future use.
+   */
+  readonly flowToken?: string;
+  /** Raw response_json string as received from the platform. */
+  readonly responseJson: string;
+  /** Parsed response_json, or `{}` if JSON parsing failed. */
+  readonly response: Record<string, unknown>;
+  readonly timestamp: Date;
+}
+
 /** Discriminated union of all webhook events. */
-export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent;
+export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent | FlowCompletionEvent;
 
 // ════════════════════════════════════════════
 // HANDLER CONFIGURATION
@@ -260,6 +293,7 @@ export interface WebhookHandlerCallbacks {
   readonly onMessage?: (event: MessageEvent) => void | Promise<void>;
   readonly onStatus?: (event: StatusEvent) => void | Promise<void>;
   readonly onError?: (event: ErrorEvent) => void | Promise<void>;
+  readonly onFlowCompletion?: (event: FlowCompletionEvent) => void | Promise<void>;
 }
 
 // ════════════════════════════════════════════
