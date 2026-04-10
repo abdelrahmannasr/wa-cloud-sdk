@@ -140,40 +140,55 @@ async function main() {
     accounts: [
       {
         name: 'us',
-        config: {
-          accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
-          phoneNumberId: 'phone_us',
-        },
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
+        phoneNumberId: 'phone_us',
       },
       {
         name: 'eu',
-        config: {
-          accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
-          phoneNumberId: 'phone_eu',
-        },
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
+        phoneNumberId: 'phone_eu',
       },
     ],
     strategy: new RoundRobinStrategy(),
   });
 
+  // Flow IDs are scoped to a single WABA — each account has its own ID.
+  // Send per-account by iterating over accounts explicitly.
   const flowIdByAccount: Record<string, string> = {
     us: 'flow_id_in_us_account',
     eu: 'flow_id_in_eu_account',
   };
 
+  const recipients = ['15551234567', '15559876543'];
+
+  for (const [accountName, acctFlowId] of Object.entries(flowIdByAccount)) {
+    const acct = manager.get(accountName);
+    for (const to of recipients) {
+      await acct.messages.sendFlow({
+        to,
+        body: 'Complete your registration',
+        flowCta: 'Get Started',
+        flowId: acctFlowId,
+      });
+    }
+  }
+  console.log('Per-account flow sends complete');
+
+  // For same-flow broadcasts (single flow ID shared across all accounts),
+  // use manager.broadcast() with round-robin distribution:
   const broadcastResult = await manager.broadcast(
-    ['15551234567', '15559876543'],
+    recipients,
     (account, to) =>
       account.messages.sendFlow({
         to,
         body: 'Complete your registration',
         flowCta: 'Get Started',
-        flowId: flowIdByAccount[account.name]!,
+        flowId,
       }),
     { concurrency: 5 },
   );
 
-  console.log(`Broadcast: ${broadcastResult.succeeded.length} sent, ${broadcastResult.failed.length} failed`);
+  console.log(`Broadcast: ${broadcastResult.successes.length} sent, ${broadcastResult.failures.length} failed`);
 
   // ─── 7. Lifecycle: list, preview, deprecate, delete ─────────────────
   const flows = await wa.flows.list({ limit: 5 });
