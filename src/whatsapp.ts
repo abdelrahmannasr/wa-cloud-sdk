@@ -5,6 +5,7 @@ import { Media } from './media/media.js';
 import { Templates } from './templates/templates.js';
 import { Webhooks } from './webhooks/webhooks.js';
 import { PhoneNumbers } from './phone-numbers/phone-numbers.js';
+import { Flows } from './flows/flows.js';
 import { ValidationError } from './errors/errors.js';
 
 /**
@@ -43,6 +44,7 @@ export class WhatsApp {
   private _templates?: Templates;
   private _webhooks?: Webhooks;
   private _phoneNumbers?: PhoneNumbers;
+  private _flows?: Flows;
 
   /**
    * Creates a unified WhatsApp Cloud API client.
@@ -176,6 +178,30 @@ export class WhatsApp {
       this._phoneNumbers = new PhoneNumbers(this._client, this.config.businessAccountId);
     }
     return this._phoneNumbers;
+  }
+
+  /**
+   * Flow lifecycle management (list, create, update, publish, deprecate, delete).
+   *
+   * @throws ValidationError if businessAccountId was not provided in config
+   *
+   * @example
+   * ```typescript
+   * const result = await wa.flows.create({ name: 'signup', categories: ['SIGN_UP'] });
+   * await wa.flows.publish(result.data.id);
+   * ```
+   */
+  get flows(): Flows {
+    if (!this._flows) {
+      if (!this.config.businessAccountId || this.config.businessAccountId.trim() === '') {
+        throw new ValidationError(
+          'businessAccountId is required for flow operations. Provide it in the WhatsApp constructor config.',
+          'businessAccountId',
+        );
+      }
+      this._flows = new Flows(this._client, this.config.businessAccountId);
+    }
+    return this._flows;
   }
 
   /**
