@@ -13,7 +13,8 @@ A comprehensive, zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp
 - **Messages** — Send text, media (images, videos, audio, documents, stickers), locations, contacts, reactions, interactive buttons/lists, and templates
 - **Media** — Upload, download, retrieve URLs, and delete media assets with client-side validation
 - **Templates** — Create, list, update, and delete message templates with a fluent TemplateBuilder API
-- **Webhooks** — Parse incoming events, verify signatures, and integrate with Express or Next.js App Router
+- **Flows** — Create, publish, update, deprecate, and delete WhatsApp Flows; send flow messages; receive flow completions as typed events
+- **Webhooks** — Parse incoming events (including flow completions), verify signatures, and integrate with Express or Next.js App Router
 - **Phone Numbers** — List, manage business profiles, request verification codes, and register/deregister numbers
 - **Multi-Account** — Manage multiple WABAs with distribution strategies (round-robin, weighted, sticky), broadcast messaging with concurrency control, and dynamic account management
 
@@ -302,6 +303,121 @@ await wa.templates.delete('old_template');
 ```
 
 **TemplateBuilder methods:** `setName()`, `setLanguage()`, `setCategory()`, `allowCategoryChange()`, `addHeaderText()`, `addHeaderMedia(format, example?)`, `addBody(text, example?)`, `addFooter()`, `addQuickReplyButton()` (max 3), `addUrlButton()` (max 2), `addPhoneNumberButton()` (max 1).
+
+## Flows
+
+Create and manage WhatsApp Flows for interactive forms, surveys, and guided journeys:
+
+### Send a Flow
+
+```typescript
+// Send a published flow to a user
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Please complete your appointment booking.',
+  flowCta: 'Book Now',
+  flowId: '9876543210',
+});
+
+// Test a draft flow before publishing
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Preview the onboarding flow',
+  flowCta: 'Start',
+  flowId: '9876543210',
+  mode: 'draft',
+});
+
+// Pre-populate initial screen data
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Review your profile',
+  flowCta: 'Continue',
+  flowId: '9876543210',
+  flowActionPayload: {
+    screen: 'EDIT_PROFILE',
+    data: { name: 'Alice', email: 'alice@example.com' },
+  },
+});
+```
+
+### Receive Flow Completions
+
+Flow completions arrive as a dedicated `FlowCompletionEvent` via the `onFlowCompletion` callback (NOT via `onMessage`):
+
+```typescript
+const handler = wa.webhooks.createHandler({
+  onMessage: async (event) => {
+    // Text, images, button/list replies — unchanged
+  },
+  onFlowCompletion: async (event) => {
+    // Deduplicate (Meta retries on errors)
+    if (await db.isProcessed(event.messageId)) return;
+    await db.markProcessed(event.messageId);
+
+    // event.response is the parsed form data (or {} if malformed)
+    // event.responseJson is the raw string, preserved exactly
+    await saveSubmission(event.contact.waId, event.response);
+  },
+});
+```
+
+### Flow Lifecycle (CRUD)
+
+Requires `businessAccountId` in the client config:
+
+```typescript
+const wa = new WhatsApp({
+  accessToken: '...',
+  phoneNumberId: '...',
+  businessAccountId: 'YOUR_WABA_ID',
+});
+
+// Create a flow
+const created = await wa.flows.create({
+  name: 'customer_onboarding',
+  categories: ['SIGN_UP'],
+});
+
+// Upload flow JSON (accepts string or object — SDK stringifies objects)
+await wa.flows.updateAssets(created.data.id, {
+  flow_json: { version: '3.0', screens: [/* ... */] },
+});
+
+// Publish
+await wa.flows.publish(created.data.id);
+
+// List, get, update metadata, preview, deprecate, delete
+const list = await wa.flows.list({ limit: 10 });
+const flow = await wa.flows.get('flow_id');
+await wa.flows.updateMetadata('flow_id', { name: 'new_name' });
+const preview = await wa.flows.getPreview('flow_id');
+await wa.flows.deprecate('flow_id');
+await wa.flows.delete('draft_flow_id'); // Only draft flows can be deleted
+```
+
+### Multi-Account Broadcast with Flows
+
+Flow IDs are scoped to a single WABA. When broadcasting across accounts, maintain a per-account flow ID mapping:
+
+```typescript
+const flowIdByAccount = {
+  us: 'flow_id_in_us_account',
+  eu: 'flow_id_in_eu_account',
+};
+
+const result = await manager.broadcast(
+  ['15551234567', '442071234567'],
+  (account, recipient) => account.messages.sendFlow({
+    to: recipient,
+    body: 'Complete your registration',
+    flowCta: 'Get Started',
+    flowId: flowIdByAccount[account.name as keyof typeof flowIdByAccount],
+  }),
+);
+```
+
+**Flows methods:** `list()`, `get()`, `create()`, `updateMetadata()`, `updateAssets()`, `publish()`, `deprecate()`, `delete()`, `getPreview()`.
 
 ## Webhooks
 
