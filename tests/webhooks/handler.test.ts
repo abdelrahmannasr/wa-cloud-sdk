@@ -1,7 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { createWebhookHandler } from '../../src/webhooks/handler.js';
-import type { MessageEvent, StatusEvent, ErrorEvent } from '../../src/webhooks/types.js';
+import type {
+  MessageEvent,
+  StatusEvent,
+  ErrorEvent,
+  FlowCompletionEvent,
+} from '../../src/webhooks/types.js';
 
 const APP_SECRET = 'test_secret';
 const VERIFY_TOKEN = 'test_verify';
@@ -216,6 +221,125 @@ describe('createWebhookHandler', () => {
 
       expect(result.statusCode).toBe(400);
       expect(result.body).toBe('Invalid webhook payload structure');
+    });
+  });
+
+  describe('onFlowCompletion callback', () => {
+    function createFlowCompletionBody(): string {
+      return JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'Alice' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.flow1',
+                      timestamp: '1712620800',
+                      type: 'interactive',
+                      interactive: {
+                        type: 'nfm_reply',
+                        nfm_reply: {
+                          name: 'flow',
+                          body: 'Sent',
+                          response_json: JSON.stringify({ screen: 'SUCCESS', name: 'Alice' }),
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    it('should route flow completion to onFlowCompletion callback', async () => {
+      const onFlowCompletion = vi.fn();
+      const handler = createWebhookHandler(config, { onFlowCompletion });
+      const body = createFlowCompletionBody();
+
+      const result = await handler.handlePost(body, signBody(body));
+
+      expect(result.statusCode).toBe(200);
+      expect(onFlowCompletion).toHaveBeenCalledTimes(1);
+      const event = onFlowCompletion.mock.calls[0]![0] as FlowCompletionEvent;
+      expect(event.type).toBe('flow_completion');
+      expect(event.messageId).toBe('wamid.flow1');
+      expect(event.response).toStrictEqual({ screen: 'SUCCESS', name: 'Alice' });
+    });
+
+    it('should not invoke onMessage for flow completion payload', async () => {
+      const onMessage = vi.fn();
+      const onFlowCompletion = vi.fn();
+      const handler = createWebhookHandler(config, { onMessage, onFlowCompletion });
+      const body = createFlowCompletionBody();
+
+      await handler.handlePost(body, signBody(body));
+
+      expect(onFlowCompletion).toHaveBeenCalledTimes(1);
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it('should invoke both onMessage and onFlowCompletion for mixed payload', async () => {
+      const onMessage = vi.fn();
+      const onFlowCompletion = vi.fn();
+      const handler = createWebhookHandler(config, { onMessage, onFlowCompletion });
+
+      const body = JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'Alice' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.text1',
+                      timestamp: '1712620800',
+                      type: 'text',
+                      text: { body: 'Hello' },
+                    },
+                    {
+                      from: '15559876543',
+                      id: 'wamid.flow1',
+                      timestamp: '1712620801',
+                      type: 'interactive',
+                      interactive: {
+                        type: 'nfm_reply',
+                        nfm_reply: {
+                          name: 'flow',
+                          body: 'Sent',
+                          response_json: '{"done":true}',
+                        },
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      });
+
+      await handler.handlePost(body, signBody(body));
+
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onFlowCompletion).toHaveBeenCalledTimes(1);
     });
   });
 });
