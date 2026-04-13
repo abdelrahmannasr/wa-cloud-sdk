@@ -219,18 +219,20 @@ export class HttpClient {
         controller.abort();
       }, timeout);
 
-      // Forward external abort signal (handle already-aborted + { once: true } to prevent leaks)
+      // Forward external abort signal. Track the listener so we can detach it
+      // in `finally` — otherwise a long-lived caller signal accumulates one
+      // closure per request that captures this controller.
+      let externalSignal: AbortSignal | undefined;
+      let externalListener: (() => void) | undefined;
       if (options?.signal) {
         if (options.signal.aborted) {
           controller.abort(options.signal.reason);
         } else {
-          options.signal.addEventListener(
-            'abort',
-            () => {
-              controller.abort(options.signal?.reason);
-            },
-            { once: true },
-          );
+          externalSignal = options.signal;
+          externalListener = (): void => {
+            controller.abort(externalSignal?.reason);
+          };
+          externalSignal.addEventListener('abort', externalListener, { once: true });
         }
       }
 
@@ -250,6 +252,9 @@ export class HttpClient {
         };
       } finally {
         clearTimeout(timeoutId);
+        if (externalSignal && externalListener) {
+          externalSignal.removeEventListener('abort', externalListener);
+        }
       }
     };
 
