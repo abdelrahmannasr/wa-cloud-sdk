@@ -192,6 +192,8 @@ export type {
   StatusEvent,
   ErrorEvent,
   FlowCompletionEvent,
+  OrderItem,
+  OrderEvent,
   WebhookEvent,
   WebhookConfig,
   WebhookHandlerCallbacks,
