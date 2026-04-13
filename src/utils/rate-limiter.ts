@@ -1,5 +1,13 @@
 import { WhatsAppError } from '../errors/errors.js';
 
+// Prefer the monotonic clock (unaffected by NTP adjustments) when available,
+// falling back to Date.now for exotic runtimes. performance.now is a global
+// on Node 16+ and modern browsers.
+const monotonicNow: () => number =
+  typeof performance !== 'undefined' && typeof performance.now === 'function'
+    ? () => performance.now()
+    : () => Date.now();
+
 export interface RateLimiterConfig {
   /** Maximum tokens in the bucket (burst capacity) */
   readonly maxTokens: number;
@@ -25,7 +33,7 @@ export class TokenBucketRateLimiter {
     this.maxTokens = config.maxTokens;
     this.refillRate = config.refillRate;
     this.tokens = config.maxTokens;
-    this.lastRefillTimestamp = Date.now();
+    this.lastRefillTimestamp = monotonicNow();
     this.queue = [];
     this.drainTimer = null;
     this.destroyed = false;
@@ -84,7 +92,7 @@ export class TokenBucketRateLimiter {
       entry.reject(new WhatsAppError('Rate limiter was reset', 'RATE_LIMITER_RESET'));
     }
     this.tokens = this.maxTokens;
-    this.lastRefillTimestamp = Date.now();
+    this.lastRefillTimestamp = monotonicNow();
     if (this.drainTimer !== null) {
       clearTimeout(this.drainTimer);
       this.drainTimer = null;
@@ -105,14 +113,16 @@ export class TokenBucketRateLimiter {
   }
 
   private refill(): void {
-    const now = Date.now();
-    const elapsed = (now - this.lastRefillTimestamp) / 1000;
+    const now = monotonicNow();
+    // Clamp to handle any residual non-monotonic edge case (e.g. a mocked
+    // clock). Always advance lastRefillTimestamp so the bucket cannot stall.
+    const elapsed = Math.max(0, (now - this.lastRefillTimestamp) / 1000);
     const tokensToAdd = elapsed * this.refillRate;
 
     if (tokensToAdd > 0) {
       this.tokens = Math.min(this.maxTokens, this.tokens + tokensToAdd);
-      this.lastRefillTimestamp = now;
     }
+    this.lastRefillTimestamp = now;
   }
 
   private scheduleDrain(): void {
