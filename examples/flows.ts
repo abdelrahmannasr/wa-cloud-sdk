@@ -133,8 +133,8 @@ async function main() {
   console.log('Webhook handler created (wire into your HTTP server)');
   void handler; // Avoid unused variable lint error in this example
 
-  // ─── 6. Multi-account broadcast with per-account flow IDs ───────────
-  // Flow IDs are scoped to a single WABA. When broadcasting the "same"
+  // ─── 6. Multi-account flow sending ──────────────────────────────────
+  // Flow IDs are scoped to a single WABA. When sending the "same"
   // flow across accounts, each account has its own flow ID.
   const manager = new WhatsAppMultiAccount({
     accounts: [
@@ -152,8 +152,7 @@ async function main() {
     strategy: new RoundRobinStrategy(),
   });
 
-  // Flow IDs are scoped to a single WABA — each account has its own ID.
-  // Send per-account by iterating over accounts explicitly.
+  // Per-account flow IDs: iterate over accounts explicitly.
   const flowIdByAccount: Record<string, string> = {
     us: 'flow_id_in_us_account',
     eu: 'flow_id_in_eu_account',
@@ -174,8 +173,8 @@ async function main() {
   }
   console.log('Per-account flow sends complete');
 
-  // For same-flow broadcasts (single flow ID shared across all accounts),
-  // use manager.broadcast() with round-robin distribution:
+  // When all accounts share the same WABA (same flow ID), use broadcast():
+  const sharedFlowId = flowIdByAccount['us'];
   const broadcastResult = await manager.broadcast(
     recipients,
     (account, to) =>
@@ -183,7 +182,7 @@ async function main() {
         to,
         body: 'Complete your registration',
         flowCta: 'Get Started',
-        flowId,
+        flowId: sharedFlowId,
       }),
     { concurrency: 5 },
   );
