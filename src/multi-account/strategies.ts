@@ -141,6 +141,17 @@ export class WeightedStrategy implements DistributionStrategy {
  * Deterministically maps each recipient to a consistent account via hashing.
  * Ensures the same recipient always routes to the same account for conversation continuity.
  *
+ * @remarks
+ * Routing is computed as `hash(recipient) % accountNames.length`. Stickiness
+ * holds only **between mutations of the account set**: calling
+ * `addAccount()` or `removeAccount()` changes `accountNames.length`, which
+ * shifts the modulo result and reroutes most recipients to a different
+ * account. If you need stable routing across account-set changes — for
+ * example, to survive a rolling add/remove without breaking conversation
+ * continuity — replace the modulo with rendezvous (HRW) or consistent
+ * hashing, which rebinds only ~1/N of recipients on mutation. That is a
+ * larger refactor and is not provided by this built-in strategy.
+ *
  * @example
  * ```typescript
  * const strategy = new StickyStrategy();

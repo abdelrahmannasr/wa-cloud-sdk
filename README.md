@@ -685,6 +685,15 @@ const wa = manager.getNext('1234567890');
 await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 ```
 
+> **Stickiness is not stable across account-set mutations.** `StickyStrategy`
+> uses a simple `hash(recipient) % accountNames.length` mapping, so calling
+> `addAccount()` or `removeAccount()` shifts the modulo result and reroutes
+> most recipients to a different account. If your deployment adds or removes
+> accounts while conversations are in flight and you need routing to survive
+> those changes, implement a custom `DistributionStrategy` using rendezvous
+> (HRW) or consistent hashing — they rebind only ~1/N of recipients on
+> mutation.
+
 ### Broadcast
 
 Send a message to many recipients in parallel, distributed across accounts:
