@@ -641,6 +641,28 @@ describe('WhatsAppMultiAccount', () => {
 
       expect(result.failures[0]!.recipient).toBe('2222222222');
       expect(result.failures[0]!.error).toBeInstanceOf(Error);
+      expect(result.failures[0]!.kind).toBe('api');
+    });
+
+    it('should record selection errors with kind="selection"', async () => {
+      // Strategy returns an unknown account name → getNext() throws with
+      // kind 'selection' instead of the factory's 'api' kind.
+      const badStrategy = {
+        select: vi.fn().mockReturnValue('nonexistent-account'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: badStrategy,
+      });
+
+      const factory = vi.fn();
+      const result = await manager.broadcast(['1111111111'], factory);
+
+      expect(factory).not.toHaveBeenCalled();
+      expect(result.failures.length).toBe(1);
+      expect(result.failures[0]!.kind).toBe('selection');
+      expect(result.failures[0]!.recipient).toBe('1111111111');
     });
 
     it('should return empty result for empty recipients array', async () => {

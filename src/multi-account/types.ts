@@ -100,11 +100,20 @@ export interface BroadcastSuccess {
 }
 
 /**
- * A single failed send in a broadcast
+ * A single failed send in a broadcast.
+ *
+ * `kind` discriminates between programmer errors surfaced during account
+ * selection (e.g. the configured strategy returned an unknown account name,
+ * or no accounts are registered) and errors raised by the caller's message
+ * factory (network failures, Meta API errors, application logic).
+ *
+ * - `'selection'` — `getNext()` threw before the factory was invoked.
+ * - `'api'` — the factory itself threw (or its returned promise rejected).
  */
 export interface BroadcastFailure {
   readonly recipient: string;
   readonly error: unknown;
+  readonly kind: 'selection' | 'api';
 }
 
 /**

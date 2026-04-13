@@ -478,12 +478,21 @@ export class WhatsAppMultiAccount {
       }
 
       const p = (async () => {
+        // Split the catch so a programmer error from getNext (e.g. strategy
+        // returned an unknown account name) is recorded with kind 'selection'
+        // and is distinguishable from a Meta/HTTP failure inside the factory.
+        let wa: WhatsApp;
         try {
-          const wa = this.getNext(recipient);
+          wa = this.getNext(recipient);
+        } catch (error) {
+          failures.push({ recipient, error, kind: 'selection' });
+          return;
+        }
+        try {
           const response = await factory(wa, recipient);
           successes.push({ recipient, response });
         } catch (error) {
-          failures.push({ recipient, error });
+          failures.push({ recipient, error, kind: 'api' });
         }
       })();
 
