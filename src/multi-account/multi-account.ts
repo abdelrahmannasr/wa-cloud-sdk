@@ -347,7 +347,10 @@ export class WhatsAppMultiAccount {
    * ```
    */
   getAccounts(): ReadonlyMap<string, AccountConfig> {
-    return this.accountConfigs;
+    // Return a snapshot so a caller that casts the return type cannot mutate
+    // the manager's internal state, and so iteration is stable even if
+    // addAccount/removeAccount is called during iteration.
+    return new Map(this.accountConfigs);
   }
 
   /**
