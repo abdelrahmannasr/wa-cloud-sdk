@@ -625,7 +625,7 @@ describe('HttpClient', () => {
 
     function assertNoToken(value: unknown): void {
       const serialized = typeof value === 'string' ? value : JSON.stringify(value);
-      expect(serialized ?? '').not.toContain(SENTINEL_TOKEN);
+      expect(serialized).not.toContain(SENTINEL_TOKEN);
     }
 
     function captureLogger(): {
