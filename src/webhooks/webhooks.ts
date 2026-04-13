@@ -13,6 +13,7 @@ import type {
   WebhookRequest,
   WebhookResponse,
   WebhookNextFunction,
+  OrderEvent,
 } from './types.js';
 
 /**
@@ -45,6 +46,14 @@ import type {
  */
 export class Webhooks {
   private readonly config: WhatsAppConfig;
+
+  /**
+   * Pending callbacks registered via individual `onX()` methods.
+   * Merged (as lower-priority defaults) with any callbacks passed to createHandler and middleware methods.
+   */
+  private _pendingCallbacks: {
+    onOrder?: (event: OrderEvent) => void | Promise<void>;
+  } = {};
 
   /**
    * Creates a new Webhooks instance.
@@ -148,6 +157,33 @@ export class Webhooks {
   }
 
   /**
+   * Register a callback for incoming order events (submitted carts from product/catalog messages).
+   *
+   * Callbacks registered here are merged as defaults when creating handlers via
+   * `createHandler`, `createExpressMiddleware`, or `createNextRouteHandler`.
+   * Explicitly passed callbacks always take precedence over registered ones.
+   *
+   * The SDK does NOT deduplicate events — use `event.messageId` as an idempotency
+   * key in your own persistence layer (FR-015).
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onOrder(async (event) => {
+   *   if (await db.orderExists(event.messageId)) return; // dedup
+   *   await db.createOrder({
+   *     catalogId: event.catalogId,
+   *     items: event.items,
+   *     customer: event.from,
+   *   });
+   * });
+   * ```
+   */
+  onOrder(callback: (event: OrderEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onOrder = callback;
+    return this;
+  }
+
+  /**
    * Create a webhook handler with typed callbacks.
    *
    * @param callbacks - Event callbacks (onMessage, onStatus, etc.)
@@ -166,10 +202,11 @@ export class Webhooks {
    * ```
    */
   createHandler(callbacks: WebhookHandlerCallbacks): WebhookHandler {
+    const merged: WebhookHandlerCallbacks = { ...this._pendingCallbacks, ...callbacks };
     const { appSecret, verifyToken } = this.requireWebhookConfig();
     return createWebhookHandler(
       { appSecret, verifyToken, logger: this.config.logger },
-      callbacks,
+      merged,
     );
   }
 
@@ -197,10 +234,11 @@ export class Webhooks {
   createExpressMiddleware(
     callbacks: WebhookHandlerCallbacks,
   ): (req: WebhookRequest, res: WebhookResponse, next: WebhookNextFunction) => void {
+    const merged: WebhookHandlerCallbacks = { ...this._pendingCallbacks, ...callbacks };
     const { appSecret, verifyToken } = this.requireWebhookConfig();
     return createExpressMiddlewareUtil(
       { appSecret, verifyToken, logger: this.config.logger },
-      callbacks,
+      merged,
     );
   }
 
@@ -227,10 +265,11 @@ export class Webhooks {
     GET: (request: Request) => Promise<Response>;
     POST: (request: Request) => Promise<Response>;
   } {
+    const merged: WebhookHandlerCallbacks = { ...this._pendingCallbacks, ...callbacks };
     const { appSecret, verifyToken } = this.requireWebhookConfig();
     return createNextRouteHandlerUtil(
       { appSecret, verifyToken, logger: this.config.logger },
-      callbacks,
+      merged,
     );
   }
 }
