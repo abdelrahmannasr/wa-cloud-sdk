@@ -64,10 +64,18 @@ export class RoundRobinStrategy implements DistributionStrategy {
  * ```
  */
 export class WeightedStrategy implements DistributionStrategy {
+  private readonly rng: () => number;
+
   /**
    * @param weights - Map of account name → weight (default: 1, 0 = excluded)
+   * @param rng - Optional random source in [0, 1). Defaults to `Math.random`.
+   *              Inject a deterministic RNG to make distribution testable or
+   *              to plug in a seeded PRNG for reproducible audits.
    */
-  constructor(private readonly weights: ReadonlyMap<string, number>) {
+  constructor(
+    private readonly weights: ReadonlyMap<string, number>,
+    rng: () => number = Math.random,
+  ) {
     for (const [name, weight] of weights) {
       if (weight < 0) {
         throw new ValidationError(
@@ -76,6 +84,7 @@ export class WeightedStrategy implements DistributionStrategy {
         );
       }
     }
+    this.rng = rng;
   }
 
   /**
@@ -108,7 +117,7 @@ export class WeightedStrategy implements DistributionStrategy {
     }
 
     // Weighted random selection
-    const random = Math.random() * totalWeight;
+    const random = this.rng() * totalWeight;
     let cumulative = 0;
 
     for (const { name, weight } of accountWeights) {
