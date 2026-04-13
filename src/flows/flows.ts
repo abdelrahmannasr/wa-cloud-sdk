@@ -98,7 +98,7 @@ export class Flows {
     if (Object.keys(queryParams).length > 0) {
       return this.client.get<FlowListResponse>(`${this.businessAccountId}/flows`, {
         ...requestOptions,
-        params: queryParams,
+        params: { ...(requestOptions?.params ?? {}), ...queryParams },
       });
     }
 
@@ -130,7 +130,10 @@ export class Flows {
     if (options?.fields && options.fields.length > 0) {
       return this.client.get<Flow>(flowId, {
         ...requestOptions,
-        params: { fields: options.fields.join(',') },
+        params: {
+          ...(requestOptions?.params ?? {}),
+          fields: options.fields.join(','),
+        },
       });
     }
 
@@ -328,7 +331,10 @@ export class Flows {
   ): Promise<ApiResponse<FlowPreviewResponse>> {
     return this.client.get<FlowPreviewResponse>(flowId, {
       ...requestOptions,
-      params: { fields: 'preview.invalidate(false)' },
+      params: {
+        ...(requestOptions?.params ?? {}),
+        fields: 'preview.invalidate(false)',
+      },
     });
   }
 }
