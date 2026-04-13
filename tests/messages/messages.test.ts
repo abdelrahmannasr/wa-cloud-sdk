@@ -984,4 +984,90 @@ describe('Messages', () => {
       await expect(messages.sendTypingIndicator({ to: '12' })).rejects.toThrow(ValidationError);
     });
   });
+
+  describe('sendProduct', () => {
+    it('should send a product message with correct wire payload', async () => {
+      await messages.sendProduct({
+        to: '15551234567',
+        catalogId: 'cat-001',
+        productRetailerId: 'SKU-001',
+      });
+
+      expect(postSpy).toHaveBeenCalledWith(
+        `${PHONE_NUMBER_ID}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: '15551234567',
+          type: 'interactive',
+          interactive: {
+            type: 'product',
+            action: {
+              catalog_id: 'cat-001',
+              product_retailer_id: 'SKU-001',
+            },
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should include body and footer when provided', async () => {
+      await messages.sendProduct({
+        to: '15551234567',
+        catalogId: 'cat-001',
+        productRetailerId: 'SKU-001',
+        body: 'Check this out!',
+        footer: 'Limited offer',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['body']).toEqual({ text: 'Check this out!' });
+      expect(interactive['footer']).toEqual({ text: 'Limited offer' });
+    });
+
+    it('should omit body and footer when not provided', async () => {
+      await messages.sendProduct({
+        to: '15551234567',
+        catalogId: 'cat-001',
+        productRetailerId: 'SKU-001',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['body']).toBeUndefined();
+      expect(interactive['footer']).toBeUndefined();
+    });
+
+    it('should include context when replyTo is provided', async () => {
+      await messages.sendProduct({
+        to: '15551234567',
+        catalogId: 'cat-001',
+        productRetailerId: 'SKU-001',
+        replyTo: 'wamid.reply123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload['context']).toEqual({ message_id: 'wamid.reply123' });
+    });
+
+    it('should throw ValidationError when catalogId is empty', async () => {
+      await expect(
+        messages.sendProduct({ to: '15551234567', catalogId: '', productRetailerId: 'SKU-001' }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError when productRetailerId is empty', async () => {
+      await expect(
+        messages.sendProduct({ to: '15551234567', catalogId: 'cat-001', productRetailerId: '' }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError on invalid phone number', async () => {
+      await expect(
+        messages.sendProduct({ to: 'bad', catalogId: 'cat-001', productRetailerId: 'SKU-001' }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
 });
