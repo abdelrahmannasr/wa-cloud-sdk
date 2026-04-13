@@ -471,6 +471,8 @@ export class Messages {
       flow_token?: string;
       flow_action_payload?: FlowActionPayload;
     } = {
+      // Default kept so a future widening of the flowMessageVersion union
+      // does not silently drop the version when the caller omits it.
       flow_message_version: options.flowMessageVersion ?? '3',
       flow_id: options.flowId,
       flow_cta: options.flowCta,
