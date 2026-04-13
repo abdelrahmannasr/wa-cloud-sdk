@@ -332,8 +332,10 @@ export class Flows {
     return this.client.get<FlowPreviewResponse>(flowId, {
       ...requestOptions,
       params: {
-        ...(requestOptions?.params ?? {}),
+        // SDK default first, caller wins — lets a caller request a narrower
+        // field selection for the preview response when they need it.
         fields: 'preview.invalidate(false)',
+        ...(requestOptions?.params ?? {}),
       },
     });
   }

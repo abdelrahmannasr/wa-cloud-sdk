@@ -440,10 +440,25 @@ describe('Flows', () => {
 
       expect(getSpy).toHaveBeenCalledWith('flow_123', {
         params: {
+          fields: 'preview.invalidate(false)',
           locale: 'en_US',
           debug_flag: '1',
-          fields: 'preview.invalidate(false)',
         },
+      });
+    });
+
+    it('should let a caller-supplied fields value win over the SDK default', async () => {
+      getSpy.mockResolvedValue({
+        data: { id: 'flow_123', preview: { preview_url: 'url', expires_at: 'ts' } },
+      });
+
+      const flows = new Flows(client, BUSINESS_ACCOUNT_ID);
+      await flows.getPreview('flow_123', {
+        params: { fields: 'id,preview' },
+      });
+
+      expect(getSpy).toHaveBeenCalledWith('flow_123', {
+        params: { fields: 'id,preview' },
       });
     });
   });
