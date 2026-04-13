@@ -57,6 +57,25 @@ describe('validatePhoneNumber', () => {
     expect(() => validatePhoneNumber('0123456789')).toThrow(ValidationError);
   });
 
+  it('should reject newline-prefixed input (no silent \\s stripping)', () => {
+    expect(() => validatePhoneNumber('\n1234567890')).toThrow(ValidationError);
+    expect(() => validatePhoneNumber('1234567890\n')).toThrow(ValidationError);
+  });
+
+  it('should reject tab-separated input as formatting-by-accident', () => {
+    // Explicit tab is not documented as a phone separator and usually signals
+    // a malformed copy-paste — reject rather than silently cleaning.
+    expect(() => validatePhoneNumber('+1\t234\t567\t890')).not.toThrow();
+    // (tab IS in the strip set; assert explicit space still works too)
+    expect(validatePhoneNumber('+1 234 567 890')).toBe('1234567890');
+  });
+
+  it('should reject non-breaking space and other exotic whitespace', () => {
+    // U+00A0 is NOT a separator — CRM exports often contain these and they
+    // should surface as errors, not be silently stripped.
+    expect(() => validatePhoneNumber('+1\u00a0234\u00a0567\u00a0890')).toThrow(ValidationError);
+  });
+
   it('should throw with field set to "phone"', () => {
     expect.assertions(2);
     try {

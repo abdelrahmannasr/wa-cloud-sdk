@@ -5,7 +5,12 @@ const PHONE_REGEX = /^[1-9]\d{6,14}$/;
 
 /**
  * Validate and normalize a phone number for the WhatsApp API.
- * Strips common formatting characters (+, spaces, dashes, parentheses, dots).
+ *
+ * Strips exactly these formatting characters: regular space, tab, `-`, `(`,
+ * `)`, `.`, `+`. Newlines, non-breaking spaces, form feeds, and other
+ * whitespace are treated as invalid input — they almost always indicate a
+ * copy-paste error rather than a separator.
+ *
  * Returns a digits-only E.164 string (no '+'): 7-15 digits, first digit 1-9.
  *
  * @throws ValidationError if the number is invalid
@@ -15,8 +20,9 @@ export function validatePhoneNumber(phone: string): string {
     throw new ValidationError('Phone number is required', 'phone');
   }
 
-  // Strip formatting characters
-  const cleaned = phone.replace(/[\s\-().+]/g, '');
+  // Only strip explicit separator characters — not \s, which also matches
+  // newlines/tabs and would silently accept malformed inputs.
+  const cleaned = phone.replace(/[ \t\-().+]/g, '');
 
   if (!PHONE_REGEX.test(cleaned)) {
     throw new ValidationError(
