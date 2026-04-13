@@ -119,6 +119,58 @@ describe('HttpClient', () => {
       );
       client.destroy();
     });
+
+    it('should not let caller headers shadow Authorization on request()', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.get('test', { headers: { Authorization: 'Bearer attacker' } });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should not let caller headers shadow Authorization on upload()', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ id: 'media-1' }));
+      const client = new HttpClient(BASE_CONFIG);
+      const form = new FormData();
+      form.set('messaging_product', 'whatsapp');
+
+      await client.upload('123/media', form, {
+        headers: { Authorization: 'Bearer attacker' },
+      });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should not let caller headers shadow Authorization on downloadMedia()', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.downloadMedia('https://lookaside.fbsbx.com/x', {
+        headers: { Authorization: 'Bearer attacker' },
+      });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
   });
 
   describe('HTTP methods', () => {

@@ -123,8 +123,8 @@ export class HttpClient {
         return fetch(url, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${this.accessToken}`,
             ...options?.headers,
+            Authorization: `Bearer ${this.accessToken}`,
           },
           body: formData,
           signal,
@@ -151,8 +151,8 @@ export class HttpClient {
         return fetch(url, {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${this.accessToken}`,
             ...options?.headers,
+            Authorization: `Bearer ${this.accessToken}`,
           },
           signal,
         });
@@ -285,8 +285,8 @@ export class HttpClient {
 
   private buildHeaders(options?: RequestOptions): Record<string, string> {
     return {
-      Authorization: `Bearer ${this.accessToken}`,
       ...options?.headers,
+      Authorization: `Bearer ${this.accessToken}`,
     };
   }
 
