@@ -5,6 +5,14 @@ import type { DistributionStrategy } from './types.js';
  * Round-robin distribution strategy.
  * Cycles through accounts in order: A → B → C → A → B → C → ...
  *
+ * @remarks
+ * The internal counter is modulo the current account list length at call
+ * time. Adding or removing accounts between calls therefore shifts which
+ * account is "next" — the strategy does not reset to 0 on mutation, nor
+ * does it remember which account was served last. This is intentional: a
+ * reset would cause every client to re-hammer the first account whenever
+ * the account set changes.
+ *
  * @example
  * ```typescript
  * const strategy = new RoundRobinStrategy();
@@ -34,7 +42,7 @@ export class RoundRobinStrategy implements DistributionStrategy {
     if (!selected) {
       throw new ValidationError('Account selection failed', 'accountNames');
     }
-    // Increment with overflow protection (reset before MAX_SAFE_INTEGER)
+    // Reset before MAX_SAFE_INTEGER so index + 1 never silently loses precision.
     this.index = this.index < Number.MAX_SAFE_INTEGER - 1 ? this.index + 1 : 0;
     return selected;
   }
