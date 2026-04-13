@@ -1181,4 +1181,76 @@ describe('Messages', () => {
       expect(postSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('sendCatalogMessage', () => {
+    it('should send a minimal catalog message without thumbnail', async () => {
+      await messages.sendCatalogMessage({
+        to: '15551234567',
+        body: 'Browse our catalog',
+      });
+
+      expect(postSpy).toHaveBeenCalledWith(
+        `${PHONE_NUMBER_ID}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: '15551234567',
+          type: 'interactive',
+          interactive: {
+            type: 'catalog_message',
+            body: { text: 'Browse our catalog' },
+            action: { name: 'catalog_message' },
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should include thumbnail parameters when thumbnailProductRetailerId is provided', async () => {
+      await messages.sendCatalogMessage({
+        to: '15551234567',
+        body: 'Browse our catalog',
+        thumbnailProductRetailerId: 'SKU-featured',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      expect(action['parameters']).toEqual({
+        thumbnail_product_retailer_id: 'SKU-featured',
+      });
+    });
+
+    it('should include footer and context when provided', async () => {
+      await messages.sendCatalogMessage({
+        to: '15551234567',
+        body: 'Check it out',
+        footer: 'Free shipping',
+        replyTo: 'wamid.ctx789',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['footer']).toEqual({ text: 'Free shipping' });
+      expect(payload['context']).toEqual({ message_id: 'wamid.ctx789' });
+    });
+
+    it('should throw ValidationError when body is empty', async () => {
+      await expect(
+        messages.sendCatalogMessage({ to: '15551234567', body: '' }),
+      ).rejects.toThrow(ValidationError);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when thumbnailProductRetailerId is empty string', async () => {
+      await expect(
+        messages.sendCatalogMessage({
+          to: '15551234567',
+          body: 'Browse',
+          thumbnailProductRetailerId: '',
+        }),
+      ).rejects.toThrow(ValidationError);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+  });
 });
