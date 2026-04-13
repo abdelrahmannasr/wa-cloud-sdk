@@ -647,6 +647,32 @@ describe('HttpClient', () => {
 
       client.destroy();
     });
+
+    it('should detach the external abort listener after each request', async () => {
+      // Reusing one AbortController across many requests would accumulate
+      // one closure per call if the SDK forgot to call removeEventListener
+      // in its finally block. Track add/remove counts on the same signal.
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient(BASE_CONFIG);
+
+      const controller = new AbortController();
+      const addSpy = vi.spyOn(controller.signal, 'addEventListener');
+      const removeSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+      const n = 10;
+      for (let i = 0; i < n; i++) {
+        await client.get('test', { signal: controller.signal });
+      }
+
+      const abortAdds = addSpy.mock.calls.filter((c) => c[0] === 'abort').length;
+      const abortRemoves = removeSpy.mock.calls.filter((c) => c[0] === 'abort').length;
+      expect(abortAdds).toBe(n);
+      expect(abortRemoves).toBe(n);
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+      client.destroy();
+    });
   });
 
   describe('Destroy', () => {
