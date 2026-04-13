@@ -995,5 +995,62 @@ describe('WhatsAppMultiAccount', () => {
         { phoneNumberId: 'PHONE_A', recipient: '3333333333', flowId: 'flow_in_waba_a' },
       ]);
     });
+
+    it('should support broadcasting sendProduct with per-account catalogId mapping', async () => {
+      // Catalog IDs are scoped to a single WABA, so multi-account platforms
+      // must maintain a per-account catalogId map and look up the correct
+      // catalog inside the broadcast factory. This verifies FR-009 / spec-011.
+      const catalogIdByAccount: Record<string, string> = {
+        'business-a': 'catalog_waba_a',
+        'business-b': 'catalog_waba_b',
+      };
+
+      const selections = ['business-a', 'business-b', 'business-a'];
+      let callIndex = 0;
+      const mockStrategy = {
+        select: vi.fn().mockImplementation(() => selections[callIndex++]),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const sendsReceived: Array<{
+        phoneNumberId: string;
+        recipient: string;
+        catalogId: string;
+      }> = [];
+
+      const mockFactory = vi.fn().mockImplementation((wa, recipient: string) => {
+        const phoneNumberId = (wa as { config: { phoneNumberId: string } }).config.phoneNumberId;
+        const account = validAccounts.find((a) => a.phoneNumberId === phoneNumberId)!;
+        const catalogId = catalogIdByAccount[account.name]!;
+        sendsReceived.push({ phoneNumberId, recipient, catalogId });
+        return Promise.resolve({
+          data: {
+            messaging_product: 'whatsapp',
+            contacts: [{ input: recipient, wa_id: recipient }],
+            messages: [{ id: `msg_${recipient}` }],
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      });
+
+      const recipients = ['1111111111', '2222222222', '3333333333'];
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.total).toBe(3);
+      expect(result.successes.length).toBe(3);
+      expect(result.failures.length).toBe(0);
+
+      // Each recipient routed to the right account uses that account's catalog ID.
+      expect(sendsReceived).toEqual([
+        { phoneNumberId: 'PHONE_A', recipient: '1111111111', catalogId: 'catalog_waba_a' },
+        { phoneNumberId: 'PHONE_B', recipient: '2222222222', catalogId: 'catalog_waba_b' },
+        { phoneNumberId: 'PHONE_A', recipient: '3333333333', catalogId: 'catalog_waba_a' },
+      ]);
+    });
   });
 });
