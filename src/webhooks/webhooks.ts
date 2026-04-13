@@ -224,7 +224,7 @@ export class Webhooks {
    * ```
    */
   createNextRouteHandler(callbacks: WebhookHandlerCallbacks): {
-    GET: (request: Request) => Response;
+    GET: (request: Request) => Promise<Response>;
     POST: (request: Request) => Promise<Response>;
   } {
     const { appSecret, verifyToken } = this.requireWebhookConfig();

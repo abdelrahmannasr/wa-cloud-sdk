@@ -41,21 +41,34 @@ export function createNextRouteHandler(
   callbacks: WebhookHandlerCallbacks,
   options?: NextRouteHandlerOptions,
 ): {
-  GET: (request: Request) => Response;
+  GET: (request: Request) => Promise<Response>;
   POST: (request: Request) => Promise<Response>;
 } {
   const handler = createWebhookHandler(config, callbacks);
 
   return {
-    GET(request: Request): Response {
-      const url = new URL(request.url);
-      const params: Record<string, string> = {};
-      for (const [key, value] of url.searchParams.entries()) {
-        params[key] = value;
-      }
+    async GET(request: Request): Promise<Response> {
+      try {
+        const url = new URL(request.url);
+        const params: Record<string, string> = {};
+        for (const [key, value] of url.searchParams.entries()) {
+          params[key] = value;
+        }
 
-      const result = handler.handleGet(params);
-      return new Response(String(result.body), { status: result.statusCode });
+        const result = handler.handleGet(params);
+        return new Response(String(result.body), { status: result.statusCode });
+      } catch (error: unknown) {
+        // Non-verification errors on the GET path (e.g. a malformed
+        // request.url) would otherwise surface as a silent framework 500.
+        if (options?.onInternalError) {
+          try {
+            await options.onInternalError(error, request);
+          } catch {
+            // Never let the observer's own failure change the response.
+          }
+        }
+        return new Response('Internal Server Error', { status: 500 });
+      }
     },
 
     async POST(request: Request): Promise<Response> {
