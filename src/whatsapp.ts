@@ -6,6 +6,7 @@ import { Templates } from './templates/templates.js';
 import { Webhooks } from './webhooks/webhooks.js';
 import { PhoneNumbers } from './phone-numbers/phone-numbers.js';
 import { Flows } from './flows/flows.js';
+import { Catalog } from './catalog/catalog.js';
 import { ValidationError } from './errors/errors.js';
 
 /**
@@ -45,6 +46,7 @@ export class WhatsApp {
   private _webhooks?: Webhooks;
   private _phoneNumbers?: PhoneNumbers;
   private _flows?: Flows;
+  private _catalog?: Catalog;
 
   /**
    * Creates a unified WhatsApp Cloud API client.
@@ -202,6 +204,34 @@ export class WhatsApp {
       this._flows = new Flows(this._client, this.config.businessAccountId);
     }
     return this._flows;
+  }
+
+  /**
+   * Programmatic product catalog management (list catalogs, CRUD on products).
+   *
+   * @throws ValidationError if businessAccountId was not provided in config
+   *
+   * @example
+   * ```typescript
+   * const catalogs = await wa.catalog.listCatalogs();
+   * await wa.catalog.createProduct('CATALOG_ID', {
+   *   retailer_id: 'SKU-001',
+   *   name: 'Wireless Headphones',
+   *   image_url: 'https://example.com/sku-001.jpg',
+   * });
+   * ```
+   */
+  get catalog(): Catalog {
+    if (!this._catalog) {
+      if (!this.config.businessAccountId || this.config.businessAccountId.trim() === '') {
+        throw new ValidationError(
+          'businessAccountId is required for catalog operations. Provide it in the WhatsApp constructor config.',
+          'businessAccountId',
+        );
+      }
+      this._catalog = new Catalog(this._client, this.config.businessAccountId);
+    }
+    return this._catalog;
   }
 
   /**
