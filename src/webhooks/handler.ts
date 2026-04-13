@@ -72,8 +72,21 @@ export function createWebhookHandler(
       }
 
       let body: WebhookPayload;
+      let text: string;
+      if (typeof rawBody === 'string') {
+        text = rawBody;
+      } else {
+        // A signed-but-non-UTF-8 body is garbage we cannot interpret —
+        // `Buffer.toString('utf-8')` would silently substitute U+FFFD.
+        // Use TextDecoder in fatal mode to reject cleanly.
+        try {
+          text = new TextDecoder('utf-8', { fatal: true }).decode(rawBody);
+        } catch {
+          config.logger?.warn('handlePost: signed webhook body is not valid UTF-8');
+          return { statusCode: 400, body: 'Webhook body must be UTF-8 encoded' };
+        }
+      }
       try {
-        const text = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf-8');
         const parsed: unknown = JSON.parse(text);
         if (
           typeof parsed !== 'object' ||

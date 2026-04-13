@@ -313,7 +313,12 @@ export interface WebhookRequest {
   readonly query: Record<string, string | string[] | undefined>;
   readonly body: unknown;
   readonly headers: Record<string, string | string[] | undefined>;
-  /** Raw body buffer for signature verification. Must be set by body-parser. */
+  /**
+   * Raw body for signature verification. Must be set by body-parser.
+   * When provided as a Buffer, it MUST be UTF-8 encoded; the handler
+   * rejects non-UTF-8 bodies with 400 because JSON.parse would otherwise
+   * read U+FFFD-substituted mojibake.
+   */
   readonly rawBody?: Buffer | string;
 }
 

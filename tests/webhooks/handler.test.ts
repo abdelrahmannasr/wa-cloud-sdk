@@ -115,6 +115,21 @@ describe('createWebhookHandler', () => {
       expect(message).not.toContain(rawBody);
     });
 
+    it('should return 400 when a signed Buffer body is not valid UTF-8', async () => {
+      // Standalone 0xC3 byte — valid UTF-8 start, no continuation → invalid.
+      const invalidUtf8 = Buffer.from([0xc3, 0x28, 0x7b, 0x7d]);
+      const warn = vi.fn();
+      const logger = { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() };
+      const handler = createWebhookHandler({ ...config, logger }, {});
+
+      const signature = `sha256=${createHmac('sha256', APP_SECRET).update(invalidUtf8).digest('hex')}`;
+      const result = await handler.handlePost(invalidUtf8, signature);
+
+      expect(result.statusCode).toBe(400);
+      expect(result.body).toContain('UTF-8');
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+
     it('should log a warning when a signed body has unexpected structure', async () => {
       const warn = vi.fn();
       const logger = { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() };
