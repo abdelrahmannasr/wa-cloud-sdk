@@ -276,8 +276,71 @@ export interface FlowCompletionEvent {
   readonly timestamp: Date;
 }
 
+/**
+ * A single product line item in an order, as sent by the recipient.
+ *
+ * This is the canonical developer-facing type. The raw wire counterpart is
+ * `WebhookOrderProductItem`. Canonical home: `src/webhooks/types.ts`.
+ */
+export interface OrderItem {
+  /** Retailer-defined product identifier */
+  readonly product_retailer_id: string;
+  /** Quantity of this product in the order */
+  readonly quantity: number;
+  /** Unit price in minor units (e.g. 2999 = $29.99) */
+  readonly item_price: number;
+  /** ISO 4217 three-letter currency code */
+  readonly currency: string;
+}
+
+/**
+ * Parsed order event.
+ *
+ * Emitted when a customer submits a cart from a product or catalog message
+ * (messages[].type === 'order'). Routed to the `onOrder` callback and MUST NOT
+ * also be delivered to the `onMessage` callback (FR-013).
+ *
+ * Use `messageId` as an idempotency key — the platform delivers at-least-once.
+ * The SDK does NOT deduplicate (FR-015).
+ *
+ * @example
+ * ```ts
+ * wa.webhooks.onOrder(async (event) => {
+ *   if (await db.orderExists(event.messageId)) return; // dedup
+ *   await db.createOrder({
+ *     catalogId: event.catalogId,
+ *     items: event.items,
+ *     customer: event.from,
+ *   });
+ * });
+ * ```
+ */
+export interface OrderEvent {
+  readonly type: 'order';
+  readonly metadata: WebhookMetadata;
+  /** Stable platform identifier — use for idempotency */
+  readonly messageId: string;
+  /** E.164 sender phone number */
+  readonly from: string;
+  /** ISO 8601 timestamp */
+  readonly timestamp: string;
+  /** Sender profile from the webhook contact entry */
+  readonly contact?: WebhookContact;
+  /** Platform-assigned catalog ID the order was placed against */
+  readonly catalogId: string;
+  /**
+   * Parsed product line items. Empty array if the platform payload was
+   * malformed or `product_items` was missing — the event still surfaces.
+   */
+  readonly items: readonly OrderItem[];
+  /** Optional accompanying free-text from the customer */
+  readonly text?: string;
+  /** Original JSON-stringified order payload for verification, storage, or custom parsing */
+  readonly raw: string;
+}
+
 /** Discriminated union of all webhook events. */
-export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent | FlowCompletionEvent;
+export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent | FlowCompletionEvent | OrderEvent;
 
 // ════════════════════════════════════════════
 // HANDLER CONFIGURATION
@@ -301,6 +364,7 @@ export interface WebhookHandlerCallbacks {
   readonly onStatus?: (event: StatusEvent) => void | Promise<void>;
   readonly onError?: (event: ErrorEvent) => void | Promise<void>;
   readonly onFlowCompletion?: (event: FlowCompletionEvent) => void | Promise<void>;
+  readonly onOrder?: (event: OrderEvent) => void | Promise<void>;
 }
 
 // ════════════════════════════════════════════
