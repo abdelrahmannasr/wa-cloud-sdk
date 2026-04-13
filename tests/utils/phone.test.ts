@@ -51,6 +51,12 @@ describe('validatePhoneNumber', () => {
     expect(() => validatePhoneNumber('+1abc567890')).toThrow(ValidationError);
   });
 
+  it('should throw on leading zero after stripping formatting', () => {
+    // '+00 1234567' → '001234567' must be rejected as non-E.164
+    expect(() => validatePhoneNumber('+00 1234567')).toThrow(ValidationError);
+    expect(() => validatePhoneNumber('0123456789')).toThrow(ValidationError);
+  });
+
   it('should throw with field set to "phone"', () => {
     expect.assertions(2);
     try {
