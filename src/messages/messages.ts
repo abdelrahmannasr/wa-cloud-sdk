@@ -626,29 +626,31 @@ export class Messages {
       );
     }
     let totalItems = 0;
-    for (let i = 0; i < options.sections.length; i++) {
-      const section = options.sections[i]!;
+    let sectionIndex = 0;
+    for (const section of options.sections) {
+      const si = sectionIndex++;
       if (!section.title.trim()) {
-        throw new ValidationError(`sections[${i}].title must not be empty`, `sections[${i}].title`);
+        throw new ValidationError(`sections[${si}].title must not be empty`, `sections[${si}].title`);
       }
       if (section.title.trim().length > MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH) {
         throw new ValidationError(
-          `sections[${i}].title must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH} characters (got ${section.title.trim().length})`,
-          `sections[${i}].title`,
+          `sections[${si}].title must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH} characters (got ${section.title.trim().length})`,
+          `sections[${si}].title`,
         );
       }
       if (section.productRetailerIds.length < 1) {
         throw new ValidationError(
-          `sections[${i}].productRetailerIds must not be empty`,
-          `sections[${i}].productRetailerIds`,
+          `sections[${si}].productRetailerIds must not be empty`,
+          `sections[${si}].productRetailerIds`,
         );
       }
-      for (let j = 0; j < section.productRetailerIds.length; j++) {
-        const id = section.productRetailerIds[j];
-        if (!id?.trim()) {
+      let itemIndex = 0;
+      for (const id of section.productRetailerIds) {
+        const ji = itemIndex++;
+        if (!id.trim()) {
           throw new ValidationError(
-            `sections[${i}].productRetailerIds[${j}] must not be empty`,
-            `sections[${i}].productRetailerIds[${j}]`,
+            `sections[${si}].productRetailerIds[${ji}] must not be empty`,
+            `sections[${si}].productRetailerIds[${ji}]`,
           );
         }
       }
