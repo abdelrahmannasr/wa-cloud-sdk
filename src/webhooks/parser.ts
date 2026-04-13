@@ -75,9 +75,14 @@ function extractMessageEvents(
       message.interactive.nfm_reply
     ) {
       const nfm = message.interactive.nfm_reply;
+      // Coerce defensively: the interface types response_json as string, but
+      // runtime input from Meta or a fuzz test can still be null/undefined/
+      // non-string and we must not throw outside the try/catch below.
+      const rawResponseJson: string =
+        typeof nfm.response_json === 'string' ? nfm.response_json : '';
       let parsedResponse: Record<string, unknown> = {};
       try {
-        const parsed: unknown = JSON.parse(nfm.response_json);
+        const parsed: unknown = JSON.parse(rawResponseJson);
         if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
           parsedResponse = parsed as Record<string, unknown>;
         }
@@ -90,7 +95,7 @@ function extractMessageEvents(
         metadata,
         contact: contactInfo,
         messageId: message.id,
-        responseJson: nfm.response_json,
+        responseJson: rawResponseJson,
         response: parsedResponse,
         timestamp,
       };

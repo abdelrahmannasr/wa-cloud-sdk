@@ -462,6 +462,17 @@ describe('parseWebhookPayload', () => {
       expect(event.responseJson).toBe('[1, 2, 3]');
     });
 
+    it('should not throw when response_json is not a string at runtime', () => {
+      const payload = createNfmReplyPayload(null as unknown as string);
+      expect(() => parseWebhookPayload(payload)).not.toThrow();
+
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as FlowCompletionEvent;
+      expect(event.type).toBe('flow_completion');
+      expect(event.response).toStrictEqual({});
+      expect(event.responseJson).toBe('');
+    });
+
     it('should still parse button_reply as MessageEvent (regression)', () => {
       const payload = createPayload({
         contacts: [{ profile: { name: 'User' }, wa_id: '15559876543' }],
