@@ -28,12 +28,20 @@ export function verifyWebhook(
     throw new WebhookVerificationError('Invalid hub.mode');
   }
 
-  const tokenBuffer = Buffer.from(token ?? '');
-  const expectedBuffer = Buffer.from(expectedToken);
-  if (
-    tokenBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(tokenBuffer, expectedBuffer)
-  ) {
+  // Reject empty tokens explicitly so the comparison path never runs against
+  // an attacker-controlled zero-length input. Compare HMAC digests rather
+  // than the raw bytes so the length check itself cannot leak timing info
+  // about the expected token's UTF-8 byte length.
+  if (!token || !expectedToken) {
+    throw new WebhookVerificationError('Verify token mismatch');
+  }
+
+  const tokenDigest = createHmac('sha256', expectedToken).update(token, 'utf-8').digest();
+  const expectedDigest = createHmac('sha256', expectedToken)
+    .update(expectedToken, 'utf-8')
+    .digest();
+
+  if (!timingSafeEqual(tokenDigest, expectedDigest)) {
     throw new WebhookVerificationError('Verify token mismatch');
   }
 
