@@ -26,7 +26,9 @@ import type {
   MediaSource,
   InteractiveHeader,
   ProductMessageOptions,
+  ProductListMessageOptions,
 } from './types.js';
+import { MULTI_PRODUCT_LIMITS } from './types.js';
 import { ValidationError } from '../errors/errors.js';
 
 /** Meta's dynamic URL parameter placeholder for CTA URL buttons. */
@@ -573,6 +575,107 @@ export class Messages {
           product_retailer_id: options.productRetailerId,
         },
         ...(options.body !== undefined && { body: { text: options.body } }),
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send an interactive multi-product message.
+   *
+   * Displays a curated list of products organized in named sections.
+   * Client-side validation enforces all platform limits before any network call:
+   * up to 10 sections, up to 30 total items, section titles ≤ 24 characters.
+   *
+   * @example
+   * ```ts
+   * await messages.sendProductList({
+   *   to: '15550001234',
+   *   catalogId: '123456789',
+   *   header: "Today's specials",
+   *   body: 'Check out our recommended items',
+   *   sections: [
+   *     { title: 'Beverages', productRetailerIds: ['cola-001', 'juice-002'] },
+   *     { title: 'Snacks', productRetailerIds: ['chips-001'] },
+   *   ],
+   * });
+   * ```
+   */
+  async sendProductList(
+    options: ProductListMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    // Client-side validation — all checks run before any network call.
+    if (!options.catalogId.trim()) {
+      throw new ValidationError('catalogId must not be empty', 'catalogId');
+    }
+    if (!options.header.trim()) {
+      throw new ValidationError('header must not be empty', 'header');
+    }
+    if (!options.body.trim()) {
+      throw new ValidationError('body must not be empty', 'body');
+    }
+    if (options.sections.length < 1) {
+      throw new ValidationError('at least 1 section is required', 'sections');
+    }
+    if (options.sections.length > MULTI_PRODUCT_LIMITS.MAX_SECTIONS) {
+      throw new ValidationError(
+        `sections must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTIONS} (got ${options.sections.length})`,
+        'sections',
+      );
+    }
+    let totalItems = 0;
+    for (let i = 0; i < options.sections.length; i++) {
+      const section = options.sections[i]!;
+      if (!section.title.trim()) {
+        throw new ValidationError(`sections[${i}].title must not be empty`, `sections[${i}].title`);
+      }
+      if (section.title.trim().length > MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH) {
+        throw new ValidationError(
+          `sections[${i}].title must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH} characters (got ${section.title.trim().length})`,
+          `sections[${i}].title`,
+        );
+      }
+      if (section.productRetailerIds.length < 1) {
+        throw new ValidationError(
+          `sections[${i}].productRetailerIds must not be empty`,
+          `sections[${i}].productRetailerIds`,
+        );
+      }
+      for (let j = 0; j < section.productRetailerIds.length; j++) {
+        const id = section.productRetailerIds[j];
+        if (!id?.trim()) {
+          throw new ValidationError(
+            `sections[${i}].productRetailerIds[${j}] must not be empty`,
+            `sections[${i}].productRetailerIds[${j}]`,
+          );
+        }
+      }
+      totalItems += section.productRetailerIds.length;
+    }
+    if (totalItems > MULTI_PRODUCT_LIMITS.MAX_TOTAL_ITEMS) {
+      throw new ValidationError(
+        `total product items must not exceed ${MULTI_PRODUCT_LIMITS.MAX_TOTAL_ITEMS} across all sections (got ${totalItems})`,
+        'sections',
+      );
+    }
+
+    const wireSections = options.sections.map((section) => ({
+      title: section.title,
+      product_items: section.productRetailerIds.map((id) => ({ product_retailer_id: id })),
+    }));
+
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'product_list',
+        header: { type: 'text', text: options.header },
+        body: { text: options.body },
+        action: {
+          catalog_id: options.catalogId,
+          sections: wireSections,
+        },
         ...(options.footer !== undefined && { footer: { text: options.footer } }),
       },
     };
