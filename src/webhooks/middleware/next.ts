@@ -2,10 +2,25 @@ import { createWebhookHandler } from '../handler.js';
 import type { WebhookConfig, WebhookHandlerCallbacks } from '../types.js';
 
 /**
+ * Options for the Next.js route handler.
+ */
+export interface NextRouteHandlerOptions {
+  /**
+   * Observer for internal errors thrown during POST processing.
+   * Receives any error that escapes the webhook handler (typically a throw
+   * from a user-supplied callback). The POST handler still responds with 500.
+   * Use this to log to your observability pipeline instead of losing the
+   * error to a silent 500.
+   */
+  readonly onInternalError?: (error: unknown, request: Request) => void | Promise<void>;
+}
+
+/**
  * Create Next.js App Router route handlers for WhatsApp webhooks.
  *
  * Callback errors in the POST handler are caught and returned as a 500 response.
- * To handle callback errors yourself, wrap your callback logic in try/catch.
+ * Provide `options.onInternalError` to observe the underlying error; otherwise
+ * it is silently swallowed by the 500 response.
  *
  * @returns Object with GET and POST handler functions for use in route.ts
  *
@@ -17,12 +32,14 @@ import type { WebhookConfig, WebhookHandlerCallbacks } from '../types.js';
  * export const { GET, POST } = createNextRouteHandler(
  *   { appSecret: process.env.APP_SECRET!, verifyToken: process.env.VERIFY_TOKEN! },
  *   { onMessage: (event) => console.log(event) },
+ *   { onInternalError: (err) => logger.error('webhook failed', err) },
  * );
  * ```
  */
 export function createNextRouteHandler(
   config: WebhookConfig,
   callbacks: WebhookHandlerCallbacks,
+  options?: NextRouteHandlerOptions,
 ): {
   GET: (request: Request) => Response;
   POST: (request: Request) => Promise<Response>;
@@ -48,7 +65,14 @@ export function createNextRouteHandler(
 
         const result = await handler.handlePost(rawBody, signature);
         return new Response(String(result.body), { status: result.statusCode });
-      } catch {
+      } catch (error: unknown) {
+        if (options?.onInternalError) {
+          try {
+            await options.onInternalError(error, request);
+          } catch {
+            // Never let the observer's own failure change the response.
+          }
+        }
         return new Response('Internal Server Error', { status: 500 });
       }
     },

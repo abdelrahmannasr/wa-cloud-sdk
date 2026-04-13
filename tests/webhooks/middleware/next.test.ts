@@ -175,5 +175,105 @@ describe('createNextRouteHandler', () => {
       const text = await response.text();
       expect(text).toBe('Internal Server Error');
     });
+
+    it('should surface callback errors to onInternalError before returning 500', async () => {
+      const callbackError = new Error('callback boom');
+      const onMessage = vi.fn().mockRejectedValue(callbackError);
+      const onInternalError = vi.fn();
+      const { POST } = createNextRouteHandler(
+        CONFIG,
+        { onMessage },
+        { onInternalError },
+      );
+
+      const payload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.1',
+                      timestamp: '1700000000',
+                      type: 'text',
+                      text: { body: 'Hi' },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      };
+
+      const bodyStr = JSON.stringify(payload);
+      const request = new Request('https://example.com/api/webhook', {
+        method: 'POST',
+        headers: { 'x-hub-signature-256': signBody(bodyStr) },
+        body: bodyStr,
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(500);
+      expect(onInternalError).toHaveBeenCalledTimes(1);
+      expect(onInternalError).toHaveBeenCalledWith(callbackError, request);
+    });
+
+    it('should still return 500 if onInternalError itself throws', async () => {
+      const onMessage = vi.fn().mockRejectedValue(new Error('callback boom'));
+      const onInternalError = vi.fn().mockRejectedValue(new Error('observer boom'));
+      const { POST } = createNextRouteHandler(
+        CONFIG,
+        { onMessage },
+        { onInternalError },
+      );
+
+      const payload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'John' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.1',
+                      timestamp: '1700000000',
+                      type: 'text',
+                      text: { body: 'Hi' },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      };
+
+      const bodyStr = JSON.stringify(payload);
+      const request = new Request('https://example.com/api/webhook', {
+        method: 'POST',
+        headers: { 'x-hub-signature-256': signBody(bodyStr) },
+        body: bodyStr,
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(500);
+    });
   });
 });
