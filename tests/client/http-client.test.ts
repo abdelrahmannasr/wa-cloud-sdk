@@ -617,4 +617,101 @@ describe('HttpClient', () => {
       expect(() => client.destroy()).not.toThrow();
     });
   });
+
+  describe('Credential hygiene', () => {
+    // Sentinel token — distinctive enough that any leak into errors, stacks,
+    // or logger output is unambiguous even if Meta echoes request context.
+    const SENTINEL_TOKEN = 'SENTINEL_TOKEN_xyz987_leak_canary';
+
+    function assertNoToken(value: unknown): void {
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      expect(serialized ?? '').not.toContain(SENTINEL_TOKEN);
+    }
+
+    function captureLogger(): {
+      readonly logger: WhatsAppConfig['logger'];
+      readonly calls: unknown[];
+    } {
+      const calls: unknown[] = [];
+      const record = (...args: unknown[]): void => {
+        calls.push(args);
+      };
+      return {
+        calls,
+        logger: { debug: record, info: record, warn: record, error: record },
+      };
+    }
+
+    async function expectThrows(fn: () => Promise<unknown>): Promise<unknown> {
+      try {
+        await fn();
+      } catch (error) {
+        return error;
+      }
+      throw new Error('expected function to throw');
+    }
+
+    it('should not leak the access token into Meta-shaped error responses', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse(
+          { error: { message: 'Invalid parameter', type: 'OAuthException', code: 100 } },
+          400,
+        ),
+      );
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('test'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not leak the access token when the error body is not JSON', async () => {
+      const nonJsonResponse = {
+        ok: false,
+        status: 502,
+        headers: new Headers(),
+        json: vi.fn().mockRejectedValue(new Error('unexpected token')),
+        arrayBuffer: vi.fn(),
+        text: vi.fn().mockResolvedValue('<html>Bad Gateway</html>'),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(nonJsonResponse);
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('test'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not leak the access token on a 404 with no body', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({}, 404));
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('missing'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not log the access token on a successful request', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ ok: true }));
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      await client.get('test');
+
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+  });
 });
