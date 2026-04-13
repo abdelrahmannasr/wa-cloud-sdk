@@ -1070,4 +1070,115 @@ describe('Messages', () => {
       ).rejects.toThrow(ValidationError);
     });
   });
+
+  describe('sendProductList', () => {
+    const minimalOptions = {
+      to: '15551234567',
+      catalogId: 'cat-001',
+      header: 'Our picks',
+      body: 'Check these out',
+      sections: [{ title: 'Featured', productRetailerIds: ['SKU-001'] }],
+    };
+
+    it('should send a minimal valid product list with correct wire payload', async () => {
+      await messages.sendProductList(minimalOptions);
+
+      expect(postSpy).toHaveBeenCalledWith(
+        `${PHONE_NUMBER_ID}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: '15551234567',
+          type: 'interactive',
+          interactive: {
+            type: 'product_list',
+            header: { type: 'text', text: 'Our picks' },
+            body: { text: 'Check these out' },
+            action: {
+              catalog_id: 'cat-001',
+              sections: [{ title: 'Featured', product_items: [{ product_retailer_id: 'SKU-001' }] }],
+            },
+          },
+        },
+        undefined,
+      );
+    });
+
+    it('should accept max valid config (10 sections × 3 items = 30 total)', async () => {
+      const sections = Array.from({ length: 10 }, (_, i) => ({
+        title: `Section${i}`,
+        productRetailerIds: [`s${i}-a`, `s${i}-b`, `s${i}-c`],
+      }));
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).resolves.toBeDefined();
+      expect(postSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should include footer and context when provided', async () => {
+      await messages.sendProductList({
+        ...minimalOptions,
+        footer: 'See full catalog',
+        replyTo: 'wamid.ctx123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive['footer']).toEqual({ text: 'See full catalog' });
+      expect(payload['context']).toEqual({ message_id: 'wamid.ctx123' });
+    });
+
+    it('should throw ValidationError when sections is empty', async () => {
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections: [] }),
+      ).rejects.toThrow(ValidationError);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when sections exceeds 10', async () => {
+      const sections = Array.from({ length: 11 }, (_, i) => ({
+        title: `Sec${i}`,
+        productRetailerIds: [`sku${i}`],
+      }));
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).rejects.toThrow(/sections must not exceed 10/);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when total items exceeds 30', async () => {
+      const sections = [
+        { title: 'A', productRetailerIds: Array.from({ length: 16 }, (_, i) => `a${i}`) },
+        { title: 'B', productRetailerIds: Array.from({ length: 15 }, (_, i) => `b${i}`) },
+      ];
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).rejects.toThrow(/total product items must not exceed 30/);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when section title is empty', async () => {
+      const sections = [{ title: '', productRetailerIds: ['SKU-001'] }];
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).rejects.toThrow(/title must not be empty/);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when section title exceeds 24 characters', async () => {
+      const sections = [{ title: 'A'.repeat(25), productRetailerIds: ['SKU-001'] }];
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).rejects.toThrow(/must not exceed 24 characters/);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw ValidationError when a product retailer ID is empty', async () => {
+      const sections = [{ title: 'Valid', productRetailerIds: [''] }];
+      await expect(
+        messages.sendProductList({ ...minimalOptions, sections }),
+      ).rejects.toThrow(/productRetailerIds/);
+      expect(postSpy).not.toHaveBeenCalled();
+    });
+  });
 });
