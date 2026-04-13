@@ -171,13 +171,22 @@ export class HttpClient {
   }
 
   private assertMediaHostAllowed(url: string): void {
-    let hostname: string;
+    let parsed: URL;
     try {
-      hostname = new URL(url).hostname.toLowerCase();
+      parsed = new URL(url);
     } catch {
       throw new MediaError(`Media URL is not a valid URL: "${url}"`);
     }
 
+    // Always TLS: otherwise the bearer ships in plaintext to the allowlisted
+    // host, which a network attacker could intercept.
+    if (parsed.protocol !== 'https:') {
+      throw new MediaError(
+        `Refusing to send credentials over non-HTTPS media URL (got "${parsed.protocol}")`,
+      );
+    }
+
+    const hostname = parsed.hostname.toLowerCase();
     const allowed = this.allowedMediaHosts.some((entry) => {
       const normalized = entry.toLowerCase();
       return normalized.startsWith('.')

@@ -514,6 +514,18 @@ describe('HttpClient', () => {
       client.destroy();
     });
 
+    it('should reject non-HTTPS media URLs even on an allowlisted host', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      // http:// would ship the bearer token in plaintext even though the host
+      // is in the allowlist; the SDK must refuse before any network call.
+      await expect(
+        client.downloadMedia('http://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1'),
+      ).rejects.toThrow(/non-HTTPS media URL/);
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
     it('should respect a custom allowedMediaHosts override', async () => {
       const mockResponse = {
         ok: true,
