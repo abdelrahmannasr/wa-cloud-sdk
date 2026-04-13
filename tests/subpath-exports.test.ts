@@ -61,6 +61,21 @@ describe('multi-account subpath exports', () => {
   });
 });
 
+describe('flows subpath exports', () => {
+  it('should export Flows class', async () => {
+    const mod = await import('../src/flows/index.js');
+    expect(mod.Flows).toBeDefined();
+    expect(typeof mod.Flows).toBe('function');
+  });
+
+  it('should export all validation constants', async () => {
+    const mod = await import('../src/flows/index.js');
+    expect(typeof mod.MAX_FLOW_NAME_LENGTH).toBe('number');
+    expect(typeof mod.MAX_FLOW_CATEGORIES).toBe('number');
+    expect(typeof mod.MAX_FLOW_JSON_BYTES).toBe('number');
+  });
+});
+
 describe('existing subpath exports (regression)', () => {
   it('should export all error classes from errors subpath', async () => {
     const mod = await import('../src/errors/index.js');
@@ -107,6 +122,8 @@ describe('main entry point re-exports', () => {
     expect(mod.Webhooks).toBeDefined();
     expect(mod.parseWebhookPayload).toBeDefined();
     expect(mod.PhoneNumbers).toBeDefined();
+    expect(mod.Flows).toBeDefined();
+    expect(mod.MAX_FLOW_NAME_LENGTH).toBeDefined();
     expect(mod.WhatsAppMultiAccount).toBeDefined();
     expect(mod.RoundRobinStrategy).toBeDefined();
     expect(mod.WeightedStrategy).toBeDefined();
@@ -127,6 +144,7 @@ describe.skipIf(!distExists)('CJS require() resolution', () => {
     ['media', ['Media', 'MEDIA_CONSTRAINTS']],
     ['templates', ['Templates', 'TemplateBuilder']],
     ['phone-numbers', ['PhoneNumbers']],
+    ['flows', ['Flows', 'MAX_FLOW_NAME_LENGTH']],
     ['multi-account', ['WhatsAppMultiAccount', 'RoundRobinStrategy']],
     ['errors', ['WhatsAppError']],
     ['messages', ['Messages']],
@@ -144,6 +162,7 @@ describe('dual import (main + subpath)', () => {
     ['../src/media/index.js', ['Media']],
     ['../src/templates/index.js', ['Templates', 'TemplateBuilder']],
     ['../src/phone-numbers/index.js', ['PhoneNumbers']],
+    ['../src/flows/index.js', ['Flows', 'MAX_FLOW_NAME_LENGTH']],
     ['../src/multi-account/index.js', ['WhatsAppMultiAccount', 'RoundRobinStrategy']],
     ['../src/errors/index.js', ['WhatsAppError', 'ApiError']],
     ['../src/messages/index.js', ['Messages']],

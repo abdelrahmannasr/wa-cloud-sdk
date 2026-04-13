@@ -547,6 +547,17 @@ describe('Media', () => {
 
       expect(downloadMediaSpy).not.toHaveBeenCalled();
     });
+
+    it('should not guess a mediaType on the HTTPS-check MediaError', async () => {
+      try {
+        await media.download('http://insecure-url.example.com/media');
+        expect.fail('expected MediaError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(MediaError);
+        // mediaType is unknown from a raw URL — don't mislabel it as 'document'.
+        expect((error as MediaError).mediaType).toBeUndefined();
+      }
+    });
   });
 
   describe('delete', () => {

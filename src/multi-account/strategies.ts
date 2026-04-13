@@ -5,6 +5,14 @@ import type { DistributionStrategy } from './types.js';
  * Round-robin distribution strategy.
  * Cycles through accounts in order: A → B → C → A → B → C → ...
  *
+ * @remarks
+ * The internal counter is modulo the current account list length at call
+ * time. Adding or removing accounts between calls therefore shifts which
+ * account is "next" — the strategy does not reset to 0 on mutation, nor
+ * does it remember which account was served last. This is intentional: a
+ * reset would cause every client to re-hammer the first account whenever
+ * the account set changes.
+ *
  * @example
  * ```typescript
  * const strategy = new RoundRobinStrategy();
@@ -34,7 +42,7 @@ export class RoundRobinStrategy implements DistributionStrategy {
     if (!selected) {
       throw new ValidationError('Account selection failed', 'accountNames');
     }
-    // Increment with overflow protection (reset before MAX_SAFE_INTEGER)
+    // Reset before MAX_SAFE_INTEGER so index + 1 never silently loses precision.
     this.index = this.index < Number.MAX_SAFE_INTEGER - 1 ? this.index + 1 : 0;
     return selected;
   }
@@ -56,10 +64,18 @@ export class RoundRobinStrategy implements DistributionStrategy {
  * ```
  */
 export class WeightedStrategy implements DistributionStrategy {
+  private readonly rng: () => number;
+
   /**
    * @param weights - Map of account name → weight (default: 1, 0 = excluded)
+   * @param rng - Optional random source in [0, 1). Defaults to `Math.random`.
+   *              Inject a deterministic RNG to make distribution testable or
+   *              to plug in a seeded PRNG for reproducible audits.
    */
-  constructor(private readonly weights: ReadonlyMap<string, number>) {
+  constructor(
+    private readonly weights: ReadonlyMap<string, number>,
+    rng: () => number = Math.random,
+  ) {
     for (const [name, weight] of weights) {
       if (weight < 0) {
         throw new ValidationError(
@@ -68,6 +84,7 @@ export class WeightedStrategy implements DistributionStrategy {
         );
       }
     }
+    this.rng = rng;
   }
 
   /**
@@ -100,7 +117,7 @@ export class WeightedStrategy implements DistributionStrategy {
     }
 
     // Weighted random selection
-    const random = Math.random() * totalWeight;
+    const random = this.rng() * totalWeight;
     let cumulative = 0;
 
     for (const { name, weight } of accountWeights) {
@@ -123,6 +140,17 @@ export class WeightedStrategy implements DistributionStrategy {
  * Sticky routing strategy.
  * Deterministically maps each recipient to a consistent account via hashing.
  * Ensures the same recipient always routes to the same account for conversation continuity.
+ *
+ * @remarks
+ * Routing is computed as `hash(recipient) % accountNames.length`. Stickiness
+ * holds only **between mutations of the account set**: calling
+ * `addAccount()` or `removeAccount()` changes `accountNames.length`, which
+ * shifts the modulo result and reroutes most recipients to a different
+ * account. If you need stable routing across account-set changes — for
+ * example, to survive a rolling add/remove without breaking conversation
+ * continuity — replace the modulo with rendezvous (HRW) or consistent
+ * hashing, which rebinds only ~1/N of recipients on mutation. That is a
+ * larger refactor and is not provided by this built-in strategy.
  *
  * @example
  * ```typescript

@@ -281,6 +281,76 @@ export interface LocationRequestMessageOptions extends BaseMessageOptions {
   readonly body: string;
 }
 
+// ── Flow ──
+
+/**
+ * Initial screen and data passed to a flow when it opens.
+ *
+ * Used with `flowAction='navigate'` to open the flow on a specific screen
+ * with pre-populated context. When `flowAction='data_exchange'` is used
+ * instead, `screen` is ignored because the flow's backend decides which
+ * screen to render based on the exchanged data.
+ */
+export interface FlowActionPayload {
+  /** Screen name to open the flow on (ignored when flowAction='data_exchange') */
+  readonly screen: string;
+  /** Pre-populated data made available to the flow definition */
+  readonly data?: Record<string, unknown>;
+}
+
+/**
+ * Options for sendFlow — sends an interactive flow message.
+ *
+ * Delivers a WhatsApp Flow invitation to a recipient. The recipient sees a
+ * body message with a call-to-action button that, when tapped, opens the
+ * flow for them to complete.
+ *
+ * See https://developers.facebook.com/docs/whatsapp/flows/guides/sendingaflow/
+ */
+export interface FlowMessageOptions extends BaseMessageOptions {
+  /** Main message body text shown above the CTA button */
+  readonly body: string;
+  /** CTA button label (e.g. "Open", "Start", "View") */
+  readonly flowCta: string;
+  /** UUID of the published or draft flow */
+  readonly flowId: string;
+  /**
+   * Optional token transmitted with the flow for correlating sends with
+   * webhook responses. Note: Meta does NOT echo this token back in flow
+   * completion payloads by default; it is only returned if the flow's
+   * terminal screen or endpoint explicitly includes it in its response.
+   */
+  readonly flowToken?: string;
+  /**
+   * Flow testing mode. Omit to send the flow in its default ('published')
+   * mode. Set to 'draft' to test an unpublished flow before launch.
+   */
+  readonly mode?: 'draft' | 'published';
+  /**
+   * Flow navigation action:
+   * - `'navigate'` — open a specific screen; requires `flowActionPayload.screen`.
+   * - `'data_exchange'` — invoke the flow's backend endpoint on open; the
+   *   backend decides the initial screen, so `flowActionPayload.screen` is
+   *   ignored if supplied.
+   *
+   * Omit to let Meta apply its server-side default.
+   */
+  readonly flowAction?: 'navigate' | 'data_exchange';
+  /** Initial screen name and data (used when flowAction='navigate') */
+  readonly flowActionPayload?: FlowActionPayload;
+  /**
+   * Flow message protocol version. The SDK defaults to '3' and Meta only
+   * supports '3' today. Narrowed to the literal so unsupported values fail
+   * at compile time instead of producing a surprise 400 at runtime; widen
+   * to a literal union (e.g. `'3' | '4'`) when a new Meta version lands.
+   */
+  readonly flowMessageVersion?: '3';
+  /** Optional interactive header (text, image, video, or document) */
+  readonly header?: InteractiveHeader;
+  /** Optional footer text */
+  readonly footer?: string;
+}
+
 // ── Typing Indicator ──
 
 export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;

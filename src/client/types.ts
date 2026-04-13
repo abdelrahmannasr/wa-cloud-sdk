@@ -39,6 +39,13 @@ export interface WhatsAppConfig {
   readonly appSecret?: string;
   /** Webhook verify token */
   readonly webhookVerifyToken?: string;
+  /**
+   * Hostnames the bearer token may be sent to when downloading media.
+   * Entries starting with '.' are treated as suffix matches (e.g. '.fbcdn.net'
+   * matches 'cdn.fbcdn.net'); bare entries match the hostname exactly.
+   * Defaults to Meta's media CDN hosts. Override only for self-hosted sandboxes.
+   */
+  readonly allowedMediaHosts?: readonly string[];
 }
 
 export interface RequestOptions {

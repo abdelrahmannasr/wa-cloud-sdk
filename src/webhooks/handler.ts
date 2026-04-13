@@ -72,8 +72,21 @@ export function createWebhookHandler(
       }
 
       let body: WebhookPayload;
+      let text: string;
+      if (typeof rawBody === 'string') {
+        text = rawBody;
+      } else {
+        // A signed-but-non-UTF-8 body is garbage we cannot interpret —
+        // `Buffer.toString('utf-8')` would silently substitute U+FFFD.
+        // Use TextDecoder in fatal mode to reject cleanly.
+        try {
+          text = new TextDecoder('utf-8', { fatal: true }).decode(rawBody);
+        } catch {
+          config.logger?.warn('handlePost: signed webhook body is not valid UTF-8');
+          return { statusCode: 400, body: 'Webhook body must be UTF-8 encoded' };
+        }
+      }
       try {
-        const text = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf-8');
         const parsed: unknown = JSON.parse(text);
         if (
           typeof parsed !== 'object' ||
@@ -81,14 +94,18 @@ export function createWebhookHandler(
           !('object' in parsed) ||
           !('entry' in parsed)
         ) {
+          config.logger?.warn('handlePost: signed webhook body has unexpected structure');
           return { statusCode: 400, body: 'Invalid webhook payload structure' };
         }
         body = parsed as WebhookPayload;
-      } catch {
+      } catch (error: unknown) {
+        // Signed-but-unparseable bodies signal a real Meta/SDK contract break;
+        // surface for operators, never include the body (FR-030).
+        config.logger?.warn('handlePost: failed to parse signed webhook body as JSON', error);
         return { statusCode: 400, body: 'Invalid JSON' };
       }
 
-      const events = parseWebhookPayload(body);
+      const events = parseWebhookPayload(body, { logger: config.logger });
 
       for (const event of events) {
         switch (event.type) {
@@ -100,6 +117,9 @@ export function createWebhookHandler(
             break;
           case 'error':
             await callbacks.onError?.(event);
+            break;
+          case 'flow_completion':
+            await callbacks.onFlowCompletion?.(event);
             break;
         }
       }

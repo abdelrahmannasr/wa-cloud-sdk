@@ -37,6 +37,8 @@ export type {
   TemplateMessageOptions,
   CtaUrlButtonMessageOptions,
   LocationRequestMessageOptions,
+  FlowActionPayload,
+  FlowMessageOptions,
   TypingIndicatorOptions,
   MarkAsReadOptions,
   MessageType,

@@ -1,3 +1,5 @@
+import type { Logger } from '../client/types.js';
+
 // ════════════════════════════════════════════
 // RAW TYPES (match Meta's webhook JSON exactly)
 // ════════════════════════════════════════════
@@ -123,8 +125,14 @@ export interface WebhookContactCardPhone {
   readonly wa_id?: string;
 }
 
+export interface WebhookNfmReply {
+  readonly name: string;
+  readonly body: string;
+  readonly response_json: string;
+}
+
 export interface WebhookInteractivePayload {
-  readonly type: 'button_reply' | 'list_reply';
+  readonly type: 'button_reply' | 'list_reply' | 'nfm_reply';
   readonly button_reply?: {
     readonly id: string;
     readonly title: string;
@@ -134,6 +142,7 @@ export interface WebhookInteractivePayload {
     readonly title: string;
     readonly description?: string;
   };
+  readonly nfm_reply?: WebhookNfmReply;
 }
 
 export interface WebhookReactionPayload {
@@ -215,14 +224,16 @@ export interface EventMetadata {
   readonly displayPhoneNumber: string;
 }
 
+export interface EventContact {
+  readonly name: string;
+  readonly waId: string;
+}
+
 /** Parsed message event. */
 export interface MessageEvent {
   readonly type: 'message';
   readonly metadata: EventMetadata;
-  readonly contact: {
-    readonly name: string;
-    readonly waId: string;
-  };
+  readonly contact: EventContact;
   readonly message: WebhookMessage;
   readonly timestamp: Date;
 }
@@ -242,8 +253,31 @@ export interface ErrorEvent {
   readonly error: WebhookError;
 }
 
+/**
+ * Parsed flow completion event.
+ *
+ * Emitted when a user submits a WhatsApp Flow (interactive.type === 'nfm_reply').
+ * Routed to the `onFlowCompletion` callback instead of `onMessage`.
+ */
+export interface FlowCompletionEvent {
+  readonly type: 'flow_completion';
+  readonly metadata: EventMetadata;
+  readonly contact: EventContact;
+  readonly messageId: string;
+  /**
+   * Flow correlation token. Always `undefined` in this release — Meta does not
+   * echo flow_token back in nfm_reply payloads. The field exists for future use.
+   */
+  readonly flowToken?: string;
+  /** Raw response_json string as received from the platform. */
+  readonly responseJson: string;
+  /** Parsed response_json, or `{}` if JSON parsing failed. */
+  readonly response: Record<string, unknown>;
+  readonly timestamp: Date;
+}
+
 /** Discriminated union of all webhook events. */
-export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent;
+export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent | FlowCompletionEvent;
 
 // ════════════════════════════════════════════
 // HANDLER CONFIGURATION
@@ -254,12 +288,19 @@ export interface WebhookConfig {
   readonly appSecret: string;
   /** Verify token for GET challenge verification */
   readonly verifyToken: string;
+  /**
+   * Optional logger. Used for operator diagnostics (e.g. an unknown
+   * `payload.object` that the SDK silently skips). Never receives webhook
+   * body content — FR-030 logging hygiene applies.
+   */
+  readonly logger?: Logger;
 }
 
 export interface WebhookHandlerCallbacks {
   readonly onMessage?: (event: MessageEvent) => void | Promise<void>;
   readonly onStatus?: (event: StatusEvent) => void | Promise<void>;
   readonly onError?: (event: ErrorEvent) => void | Promise<void>;
+  readonly onFlowCompletion?: (event: FlowCompletionEvent) => void | Promise<void>;
 }
 
 // ════════════════════════════════════════════
@@ -272,7 +313,12 @@ export interface WebhookRequest {
   readonly query: Record<string, string | string[] | undefined>;
   readonly body: unknown;
   readonly headers: Record<string, string | string[] | undefined>;
-  /** Raw body buffer for signature verification. Must be set by body-parser. */
+  /**
+   * Raw body for signature verification. Must be set by body-parser.
+   * When provided as a Buffer, it MUST be UTF-8 encoded; the handler
+   * rejects non-UTF-8 bodies with 400 because JSON.parse would otherwise
+   * read U+FFFD-substituted mojibake.
+   */
   readonly rawBody?: Buffer | string;
 }
 

@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpClient } from '../../src/client/http-client.js';
 import type { WhatsAppConfig } from '../../src/client/types.js';
-import { ApiError, AuthenticationError, RateLimitError } from '../../src/errors/errors.js';
+import {
+  ApiError,
+  AuthenticationError,
+  MediaError,
+  RateLimitError,
+} from '../../src/errors/errors.js';
 
 const BASE_CONFIG: WhatsAppConfig = {
   accessToken: 'test-token',
@@ -69,6 +74,42 @@ describe('HttpClient', () => {
       client.destroy();
     });
 
+    it('should preserve a subpath in a custom base URL', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient({
+        ...BASE_CONFIG,
+        baseUrl: 'https://proxy.internal/sdk',
+        apiVersion: 'v21.0',
+      });
+
+      await client.get('messages');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://proxy.internal/sdk/v21.0/messages',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      client.destroy();
+    });
+
+    it('should resolve paths with a leading slash under the subpath', async () => {
+      // A leading slash would otherwise make `new URL(path, base)` resolve
+      // against origin only, dropping both the baseUrl subpath and apiVersion.
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient({
+        ...BASE_CONFIG,
+        baseUrl: 'https://proxy.internal/sdk',
+        apiVersion: 'v21.0',
+      });
+
+      await client.get('/messages');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://proxy.internal/sdk/v21.0/messages',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      client.destroy();
+    });
+
     it('should append query parameters', async () => {
       mockFetch.mockResolvedValue(createMockResponse({ success: true }));
       const client = new HttpClient(BASE_CONFIG);
@@ -111,6 +152,58 @@ describe('HttpClient', () => {
           Authorization: 'Bearer test-token',
           'X-Custom': 'value',
         }),
+      );
+      client.destroy();
+    });
+
+    it('should not let caller headers shadow Authorization on request()', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.get('test', { headers: { Authorization: 'Bearer attacker' } });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should not let caller headers shadow Authorization on upload()', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ id: 'media-1' }));
+      const client = new HttpClient(BASE_CONFIG);
+      const form = new FormData();
+      form.set('messaging_product', 'whatsapp');
+
+      await client.upload('123/media', form, {
+        headers: { Authorization: 'Bearer attacker' },
+      });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should not let caller headers shadow Authorization on downloadMedia()', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.downloadMedia('https://lookaside.fbsbx.com/x', {
+        headers: { Authorization: 'Bearer attacker' },
+      });
+
+      const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
+      expect(calledOptions.headers).toEqual(
+        expect.objectContaining({ Authorization: 'Bearer test-token' }),
       );
       client.destroy();
     });
@@ -358,7 +451,7 @@ describe('HttpClient', () => {
   });
 
   describe('Download', () => {
-    it('should download media with auth header', async () => {
+    it('should download media with auth header from a trusted Meta host', async () => {
       const mockResponse = {
         ok: true,
         status: 200,
@@ -370,13 +463,88 @@ describe('HttpClient', () => {
       mockFetch.mockResolvedValue(mockResponse);
       const client = new HttpClient(BASE_CONFIG);
 
-      const result = await client.downloadMedia('https://media.example.com/file.jpg');
+      const result = await client.downloadMedia(
+        'https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=123',
+      );
 
       expect(result.data).toBeInstanceOf(ArrayBuffer);
       expect(result.data.byteLength).toBe(16);
       const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.headers).toEqual(
         expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should accept hosts matching a suffix entry in the allowlist', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.downloadMedia('https://scontent-ams4-1.fbcdn.net/v/t66.jpg');
+
+      expect(mockFetch).toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should reject untrusted hosts without making a network call', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.downloadMedia('https://attacker.example.com/x')).rejects.toThrow(
+        MediaError,
+      );
+      await expect(client.downloadMedia('https://attacker.example.com/x')).rejects.toThrow(
+        'Refusing to send credentials to untrusted media host "attacker.example.com"',
+      );
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should reject malformed URLs', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.downloadMedia('not-a-url')).rejects.toThrow(MediaError);
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should reject non-HTTPS media URLs even on an allowlisted host', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      // http:// would ship the bearer token in plaintext even though the host
+      // is in the allowlist; the SDK must refuse before any network call.
+      await expect(
+        client.downloadMedia('http://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=1'),
+      ).rejects.toThrow(/non-HTTPS media URL/);
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should respect a custom allowedMediaHosts override', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient({
+        ...BASE_CONFIG,
+        allowedMediaHosts: ['sandbox.internal'],
+      });
+
+      await client.downloadMedia('https://sandbox.internal/media/1');
+      expect(mockFetch).toHaveBeenCalled();
+
+      await expect(client.downloadMedia('https://lookaside.fbsbx.com/x')).rejects.toThrow(
+        MediaError,
       );
       client.destroy();
     });
@@ -479,6 +647,32 @@ describe('HttpClient', () => {
 
       client.destroy();
     });
+
+    it('should detach the external abort listener after each request', async () => {
+      // Reusing one AbortController across many requests would accumulate
+      // one closure per call if the SDK forgot to call removeEventListener
+      // in its finally block. Track add/remove counts on the same signal.
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient(BASE_CONFIG);
+
+      const controller = new AbortController();
+      const addSpy = vi.spyOn(controller.signal, 'addEventListener');
+      const removeSpy = vi.spyOn(controller.signal, 'removeEventListener');
+
+      const n = 10;
+      for (let i = 0; i < n; i++) {
+        await client.get('test', { signal: controller.signal });
+      }
+
+      const abortAdds = addSpy.mock.calls.filter((c) => c[0] === 'abort').length;
+      const abortRemoves = removeSpy.mock.calls.filter((c) => c[0] === 'abort').length;
+      expect(abortAdds).toBe(n);
+      expect(abortRemoves).toBe(n);
+
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+      client.destroy();
+    });
   });
 
   describe('Destroy', () => {
@@ -495,6 +689,103 @@ describe('HttpClient', () => {
     it('should handle destroy when rate limiter is disabled', () => {
       const client = new HttpClient(BASE_CONFIG);
       expect(() => client.destroy()).not.toThrow();
+    });
+  });
+
+  describe('Credential hygiene', () => {
+    // Sentinel token — distinctive enough that any leak into errors, stacks,
+    // or logger output is unambiguous even if Meta echoes request context.
+    const SENTINEL_TOKEN = 'SENTINEL_TOKEN_xyz987_leak_canary';
+
+    function assertNoToken(value: unknown): void {
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      expect(serialized).not.toContain(SENTINEL_TOKEN);
+    }
+
+    function captureLogger(): {
+      readonly logger: WhatsAppConfig['logger'];
+      readonly calls: unknown[];
+    } {
+      const calls: unknown[] = [];
+      const record = (...args: unknown[]): void => {
+        calls.push(args);
+      };
+      return {
+        calls,
+        logger: { debug: record, info: record, warn: record, error: record },
+      };
+    }
+
+    async function expectThrows(fn: () => Promise<unknown>): Promise<unknown> {
+      try {
+        await fn();
+      } catch (error) {
+        return error;
+      }
+      throw new Error('expected function to throw');
+    }
+
+    it('should not leak the access token into Meta-shaped error responses', async () => {
+      mockFetch.mockResolvedValue(
+        createMockResponse(
+          { error: { message: 'Invalid parameter', type: 'OAuthException', code: 100 } },
+          400,
+        ),
+      );
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('test'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not leak the access token when the error body is not JSON', async () => {
+      const nonJsonResponse = {
+        ok: false,
+        status: 502,
+        headers: new Headers(),
+        json: vi.fn().mockRejectedValue(new Error('unexpected token')),
+        arrayBuffer: vi.fn(),
+        text: vi.fn().mockResolvedValue('<html>Bad Gateway</html>'),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(nonJsonResponse);
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('test'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not leak the access token on a 404 with no body', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({}, 404));
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      const error = (await expectThrows(() => client.get('missing'))) as Error;
+
+      assertNoToken(error.message);
+      assertNoToken(error.stack ?? '');
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
+    });
+
+    it('should not log the access token on a successful request', async () => {
+      mockFetch.mockResolvedValue(createMockResponse({ ok: true }));
+      const { logger, calls } = captureLogger();
+      const client = new HttpClient({ ...BASE_CONFIG, accessToken: SENTINEL_TOKEN, logger });
+
+      await client.get('test');
+
+      for (const call of calls) assertNoToken(call);
+      client.destroy();
     });
   });
 });

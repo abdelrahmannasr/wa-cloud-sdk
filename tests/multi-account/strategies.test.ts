@@ -144,6 +144,27 @@ describe('WeightedStrategy', () => {
     expect(ratioB).toBeLessThan(0.55);
   });
 
+  it('should use an injected RNG for deterministic selection', () => {
+    // Scripted RNG: first call returns 0.1 (→ account-a), then 0.9 (→ account-b)
+    // With weights 50/50 and totalWeight 100: 0.1 * 100 = 10 < 50 (a), 0.9 * 100 = 90 >= 50 (b)
+    const scripted = [0.1, 0.9, 0.1];
+    let index = 0;
+    const rng = (): number => scripted[index++ % scripted.length]!;
+
+    const strategy = new WeightedStrategy(
+      new Map([
+        ['account-a', 50],
+        ['account-b', 50],
+      ]),
+      rng,
+    );
+    const accounts = ['account-a', 'account-b'];
+
+    expect(strategy.select(accounts)).toBe('account-a');
+    expect(strategy.select(accounts)).toBe('account-b');
+    expect(strategy.select(accounts)).toBe('account-a');
+  });
+
   it('should throw ValidationError when all weights are 0', () => {
     const strategy = new WeightedStrategy(
       new Map([

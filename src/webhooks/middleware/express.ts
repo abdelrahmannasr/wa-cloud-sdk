@@ -32,6 +32,9 @@ export function createExpressMiddleware(
   callbacks: WebhookHandlerCallbacks,
 ): (req: WebhookRequest, res: WebhookResponse, next: WebhookNextFunction) => void {
   const handler = createWebhookHandler(config, callbacks);
+  // Warn once per factory instance on the first request missing `rawBody`.
+  // Firing per-request would flood logs under a misconfigured deploy.
+  let rawBodyWarned = false;
 
   return (req, res, next) => {
     if (req.method === 'GET') {
@@ -42,8 +45,17 @@ export function createExpressMiddleware(
 
     if (req.method === 'POST') {
       if (!req.rawBody) {
+        // Operator misconfiguration (body-parser not wired). 400 signals
+        // "your request cannot be served" so Meta does not retry a request
+        // that will never succeed until the server is redeployed.
+        if (!rawBodyWarned) {
+          rawBodyWarned = true;
+          config.logger?.warn(
+            'createExpressMiddleware: req.rawBody missing — configure body-parser with a verify callback that sets req.rawBody',
+          );
+        }
         res
-          .status(500)
+          .status(400)
           .send(
             'Raw body is required for signature verification. ' +
               'Configure body-parser with a verify callback that sets req.rawBody.',

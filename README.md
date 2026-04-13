@@ -13,7 +13,8 @@ A comprehensive, zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp
 - **Messages** — Send text, media (images, videos, audio, documents, stickers), locations, contacts, reactions, interactive buttons/lists, and templates
 - **Media** — Upload, download, retrieve URLs, and delete media assets with client-side validation
 - **Templates** — Create, list, update, and delete message templates with a fluent TemplateBuilder API
-- **Webhooks** — Parse incoming events, verify signatures, and integrate with Express or Next.js App Router
+- **Flows** — Create, publish, update, deprecate, and delete WhatsApp Flows; send flow messages; receive flow completions as typed events
+- **Webhooks** — Parse incoming events (including flow completions), verify signatures, and integrate with Express or Next.js App Router
 - **Phone Numbers** — List, manage business profiles, request verification codes, and register/deregister numbers
 - **Multi-Account** — Manage multiple WABAs with distribution strategies (round-robin, weighted, sticky), broadcast messaging with concurrency control, and dynamic account management
 
@@ -303,6 +304,121 @@ await wa.templates.delete('old_template');
 
 **TemplateBuilder methods:** `setName()`, `setLanguage()`, `setCategory()`, `allowCategoryChange()`, `addHeaderText()`, `addHeaderMedia(format, example?)`, `addBody(text, example?)`, `addFooter()`, `addQuickReplyButton()` (max 3), `addUrlButton()` (max 2), `addPhoneNumberButton()` (max 1).
 
+## Flows
+
+Create and manage WhatsApp Flows for interactive forms, surveys, and guided journeys:
+
+### Send a Flow
+
+```typescript
+// Send a published flow to a user
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Please complete your appointment booking.',
+  flowCta: 'Book Now',
+  flowId: '9876543210',
+});
+
+// Test a draft flow before publishing
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Preview the onboarding flow',
+  flowCta: 'Start',
+  flowId: '9876543210',
+  mode: 'draft',
+});
+
+// Pre-populate initial screen data
+await wa.messages.sendFlow({
+  to: '1234567890',
+  body: 'Review your profile',
+  flowCta: 'Continue',
+  flowId: '9876543210',
+  flowActionPayload: {
+    screen: 'EDIT_PROFILE',
+    data: { name: 'Alice', email: 'alice@example.com' },
+  },
+});
+```
+
+### Receive Flow Completions
+
+Flow completions arrive as a dedicated `FlowCompletionEvent` via the `onFlowCompletion` callback (NOT via `onMessage`):
+
+```typescript
+const handler = wa.webhooks.createHandler({
+  onMessage: async (event) => {
+    // Text, images, button/list replies — unchanged
+  },
+  onFlowCompletion: async (event) => {
+    // Deduplicate (Meta retries on errors)
+    if (await db.isProcessed(event.messageId)) return;
+    await db.markProcessed(event.messageId);
+
+    // event.response is the parsed form data (or {} if malformed)
+    // event.responseJson is the raw string, preserved exactly
+    await saveSubmission(event.contact.waId, event.response);
+  },
+});
+```
+
+### Flow Lifecycle (CRUD)
+
+Requires `businessAccountId` in the client config:
+
+```typescript
+const wa = new WhatsApp({
+  accessToken: '...',
+  phoneNumberId: '...',
+  businessAccountId: 'YOUR_WABA_ID',
+});
+
+// Create a flow
+const created = await wa.flows.create({
+  name: 'customer_onboarding',
+  categories: ['SIGN_UP'],
+});
+
+// Upload flow JSON (accepts string or object — SDK stringifies objects)
+await wa.flows.updateAssets(created.data.id, {
+  flow_json: { version: '3.0', screens: [/* ... */] },
+});
+
+// Publish
+await wa.flows.publish(created.data.id);
+
+// List, get, update metadata, preview, deprecate, delete
+const list = await wa.flows.list({ limit: 10 });
+const flow = await wa.flows.get('flow_id');
+await wa.flows.updateMetadata('flow_id', { name: 'new_name' });
+const preview = await wa.flows.getPreview('flow_id');
+await wa.flows.deprecate('flow_id');
+await wa.flows.delete('draft_flow_id'); // Only draft flows can be deleted
+```
+
+### Multi-Account Broadcast with Flows
+
+Flow IDs are scoped to a single WABA. When broadcasting across accounts, maintain a per-account flow ID mapping:
+
+```typescript
+const flowIdByAccount = {
+  us: 'flow_id_in_us_account',
+  eu: 'flow_id_in_eu_account',
+};
+
+const result = await manager.broadcast(
+  ['15551234567', '442071234567'],
+  (account, recipient) => account.messages.sendFlow({
+    to: recipient,
+    body: 'Complete your registration',
+    flowCta: 'Get Started',
+    flowId: flowIdByAccount[account.name as keyof typeof flowIdByAccount],
+  }),
+);
+```
+
+**Flows methods:** `list()`, `get()`, `create()`, `updateMetadata()`, `updateAssets()`, `publish()`, `deprecate()`, `delete()`, `getPreview()`.
+
 ## Webhooks
 
 Handle incoming webhook events from WhatsApp:
@@ -420,7 +536,7 @@ await wa.phoneNumbers.updateBusinessProfile('phone_number_id', {
 
 // Request verification code
 await wa.phoneNumbers.requestVerificationCode('phone_number_id', {
-  codeMethod: 'SMS',
+  code_method: 'SMS',
   language: 'en',
 });
 
@@ -569,6 +685,15 @@ const wa = manager.getNext('1234567890');
 await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 ```
 
+> **Stickiness is not stable across account-set mutations.** `StickyStrategy`
+> uses a simple `hash(recipient) % accountNames.length` mapping, so calling
+> `addAccount()` or `removeAccount()` shifts the modulo result and reroutes
+> most recipients to a different account. If your deployment adds or removes
+> accounts while conversations are in flight and you need routing to survive
+> those changes, implement a custom `DistributionStrategy` using rendezvous
+> (HRW) or consistent hashing — they rebind only ~1/N of recipients on
+> mutation.
+
 ### Broadcast
 
 Send a message to many recipients in parallel, distributed across accounts:
@@ -645,10 +770,19 @@ WhatsAppError (base)
 ├── ApiError (API response errors)
 │   ├── RateLimitError (429 Too Many Requests)
 │   └── AuthenticationError (401 Unauthorized)
+├── NotFoundError (semantic "resource missing" — see note below)
 ├── ValidationError (client-side validation)
 ├── WebhookVerificationError (signature verification)
 └── MediaError (media upload/download)
 ```
+
+> **Note on `NotFoundError`:** It deliberately does **not** extend `ApiError`.
+> Meta's API returns 200 with an empty `data` array for several "missing
+> resource" cases (e.g. `getBusinessProfile` when the profile is not
+> provisioned). The SDK surfaces those as `NotFoundError`, which a
+> `catch (err) { if (err instanceof ApiError && err.statusCode === 404) }`
+> branch will **not** catch. See the example under "Error Handling Patterns"
+> below for the recommended dual-catch shape.
 
 ### Error Properties
 
@@ -658,6 +792,7 @@ WhatsAppError (base)
 | `ApiError`                 | `WhatsAppError` | `statusCode: number`<br>`errorType: string`<br>`errorSubcode?: number`<br>`fbTraceId?: string` |
 | `RateLimitError`           | `ApiError`      | All ApiError properties<br>`retryAfterMs?: number`                                             |
 | `AuthenticationError`      | `ApiError`      | All ApiError properties                                                                        |
+| `NotFoundError`            | `WhatsAppError` | `resource?: string`                                                                            |
 | `ValidationError`          | `WhatsAppError` | `field?: string`                                                                               |
 | `WebhookVerificationError` | `WhatsAppError` | None                                                                                           |
 | `MediaError`               | `WhatsAppError` | `mediaType?: string`                                                                           |
@@ -723,6 +858,28 @@ try {
     if (error.field) {
       console.error(`Invalid field: ${error.field}`);
     }
+  } else {
+    throw error;
+  }
+}
+```
+
+**4. Handling "resource missing" responses separately from 404s:**
+
+```typescript
+import { ApiError, NotFoundError } from '@abdelrahmannasr-wa/cloud-api';
+
+try {
+  const profile = await wa.phoneNumbers.getBusinessProfile(phoneNumberId);
+  console.log(profile.data.description);
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    // Meta returned 200 with an empty data array — the resource simply
+    // isn't provisioned. `error.resource` names the specific resource.
+    console.log(`No ${error.resource} configured yet`);
+  } else if (error instanceof ApiError && error.statusCode === 404) {
+    // Explicit wire-level 404 from Meta — e.g. the phoneNumberId is bogus.
+    console.error('Unknown phone number ID');
   } else {
     throw error;
   }

@@ -125,9 +125,13 @@ describe('createExpressMiddleware', () => {
     expect(onMessage).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 500 when rawBody is absent', () => {
+  it('should return 400 when rawBody is absent (operator misconfiguration)', () => {
     const next: WebhookNextFunction = vi.fn();
-    const middleware = createExpressMiddleware(CONFIG, {});
+    const warn = vi.fn();
+    const middleware = createExpressMiddleware(
+      { ...CONFIG, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+      {},
+    );
 
     const payload = {
       object: 'whatsapp_business_account',
@@ -146,8 +150,34 @@ describe('createExpressMiddleware', () => {
 
     middleware(req, res, next);
 
-    expect(res.statusCode).toBe(500);
+    expect(res.statusCode).toBe(400);
     expect(res.body).toContain('Raw body is required');
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('should warn only once per factory when rawBody is repeatedly absent', () => {
+    const next: WebhookNextFunction = vi.fn();
+    const warn = vi.fn();
+    const middleware = createExpressMiddleware(
+      { ...CONFIG, logger: { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() } },
+      {},
+    );
+
+    const buildReq = (): WebhookRequest => ({
+      method: 'POST',
+      query: {},
+      body: {},
+      headers: {},
+      // rawBody intentionally omitted
+    });
+
+    for (let i = 0; i < 3; i++) {
+      const res = createMockRes();
+      middleware(buildReq(), res, next);
+      expect(res.statusCode).toBe(400);
+    }
+
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 
   it('should return 405 for non-GET/POST methods', () => {

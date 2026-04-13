@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { withRetry } from '../../src/utils/retry.js';
+import { withRetry, calculateDelay } from '../../src/utils/retry.js';
 import { ApiError, RateLimitError, ValidationError } from '../../src/errors/errors.js';
 
 describe('withRetry', () => {
@@ -117,6 +117,31 @@ describe('withRetry', () => {
     const result = await promise;
     expect(result).toBe('ok');
     expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('should spread jitter symmetrically around the clamped delay', () => {
+    // Jitter of 0.5 should produce delays in [baseDelay*0.5, baseDelay*1.5],
+    // straddling the base delay on both sides over many samples.
+    const config = {
+      maxRetries: 3,
+      baseDelayMs: 1000,
+      maxDelayMs: 30000,
+      jitterFactor: 0.5,
+    };
+
+    let min = Number.POSITIVE_INFINITY;
+    let max = Number.NEGATIVE_INFINITY;
+    for (let i = 0; i < 1000; i++) {
+      const delay = calculateDelay(0, config);
+      if (delay < min) min = delay;
+      if (delay > max) max = delay;
+    }
+
+    // Straddles base delay on both sides → jitter is symmetric, not one-sided.
+    expect(min).toBeLessThan(config.baseDelayMs);
+    expect(max).toBeGreaterThan(config.baseDelayMs);
+    expect(min).toBeGreaterThanOrEqual(config.baseDelayMs * 0.5);
+    expect(max).toBeLessThanOrEqual(config.baseDelayMs * 1.5);
   });
 
   it('should apply exponential backoff between retries', async () => {

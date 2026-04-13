@@ -28,6 +28,7 @@ export type {
   WebhookContactCard,
   WebhookContactCardPhone,
   WebhookInteractivePayload,
+  WebhookNfmReply,
   WebhookReactionPayload,
   WebhookButtonPayload,
   WebhookOrderPayload,
@@ -41,9 +42,11 @@ export type {
 // Types — Parsed
 export type {
   EventMetadata,
+  EventContact,
   MessageEvent,
   StatusEvent,
   ErrorEvent,
+  FlowCompletionEvent,
   WebhookEvent,
 } from './types.js';
 

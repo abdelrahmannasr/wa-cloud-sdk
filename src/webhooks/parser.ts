@@ -1,9 +1,22 @@
-import type { WebhookPayload, WebhookEvent, WebhookChangeValue, EventMetadata } from './types.js';
+import type { Logger } from '../client/types.js';
+import type {
+  WebhookPayload,
+  WebhookEvent,
+  WebhookChangeValue,
+  EventMetadata,
+  FlowCompletionEvent,
+} from './types.js';
+
+export interface ParseWebhookPayloadOptions {
+  /** Optional logger for operator diagnostics (no body content is logged). */
+  readonly logger?: Logger;
+}
 
 /**
  * Parse a raw webhook payload from Meta into an array of typed events.
  *
  * @param payload - The raw JSON body from the webhook POST
+ * @param options - Optional parser options (logger for operator diagnostics)
  * @returns Array of parsed WebhookEvent objects (may be empty if no recognized events)
  *
  * @example
@@ -14,8 +27,20 @@ import type { WebhookPayload, WebhookEvent, WebhookChangeValue, EventMetadata } 
  * }
  * ```
  */
-export function parseWebhookPayload(payload: WebhookPayload): WebhookEvent[] {
+export function parseWebhookPayload(
+  payload: WebhookPayload,
+  options?: ParseWebhookPayloadOptions,
+): WebhookEvent[] {
   if (payload.object !== 'whatsapp_business_account') {
+    // Meta only documents `whatsapp_business_account`; log so operators can
+    // spot misconfigured subscriptions instead of returning a silent 200.
+    // JSON.stringify + slice caps length and escapes ANSI/newlines so an
+    // attacker cannot inject control bytes into operator log streams. We log
+    // the literal value only — never the payload body (FR-030).
+    const safeObject = JSON.stringify(payload.object).slice(0, 66);
+    options?.logger?.debug(
+      `parseWebhookPayload: unknown payload.object ${safeObject}, skipping`,
+    );
     return [];
   }
 
@@ -57,16 +82,52 @@ function extractMessageEvents(
 
   for (const message of value.messages) {
     const contact = value.contacts?.find((c) => c.wa_id === message.from);
+    const contactInfo = {
+      name: contact?.profile.name ?? 'Unknown',
+      waId: contact?.wa_id ?? message.from,
+    };
+    const timestamp = new Date(parseInt(message.timestamp, 10) * 1000);
+
+    if (
+      message.type === 'interactive' &&
+      message.interactive?.type === 'nfm_reply' &&
+      message.interactive.nfm_reply
+    ) {
+      const nfm = message.interactive.nfm_reply;
+      // Coerce defensively: the interface types response_json as string, but
+      // runtime input from Meta or a fuzz test can still be null/undefined/
+      // non-string and we must not throw outside the try/catch below.
+      const rawResponseJson: string =
+        typeof nfm.response_json === 'string' ? nfm.response_json : '';
+      let parsedResponse: Record<string, unknown> = {};
+      try {
+        const parsed: unknown = JSON.parse(rawResponseJson);
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+          parsedResponse = parsed as Record<string, unknown>;
+        }
+      } catch {
+        // Leave parsedResponse as empty object; raw string still in responseJson.
+      }
+
+      const flowEvent: FlowCompletionEvent = {
+        type: 'flow_completion',
+        metadata,
+        contact: contactInfo,
+        messageId: message.id,
+        responseJson: rawResponseJson,
+        response: parsedResponse,
+        timestamp,
+      };
+      events.push(flowEvent);
+      continue;
+    }
 
     events.push({
       type: 'message',
       metadata,
-      contact: {
-        name: contact?.profile.name ?? 'Unknown',
-        waId: contact?.wa_id ?? message.from,
-      },
+      contact: contactInfo,
       message,
-      timestamp: new Date(parseInt(message.timestamp, 10) * 1000),
+      timestamp,
     });
   }
 }

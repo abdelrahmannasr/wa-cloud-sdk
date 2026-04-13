@@ -74,6 +74,8 @@ export type {
   TypingIndicatorOptions,
   MarkAsReadOptions,
   MessageType,
+  FlowActionPayload,
+  FlowMessageOptions,
 } from './messages/index.js';
 
 // Media
@@ -120,6 +122,28 @@ export {
   MAX_PHONE_NUMBER_BUTTONS,
 } from './templates/index.js';
 
+// Flows
+export { Flows } from './flows/index.js';
+export type {
+  Flow,
+  FlowCategory,
+  FlowStatus,
+  FlowValidationError,
+  FlowListParams,
+  FlowListResponse,
+  FlowGetOptions,
+  CreateFlowRequest,
+  CreateFlowResponse,
+  UpdateFlowMetadataRequest,
+  UpdateFlowAssetsRequest,
+  UpdateFlowAssetsResponse,
+  FlowDeleteResponse,
+  FlowPublishResponse,
+  FlowDeprecateResponse,
+  FlowPreviewResponse,
+} from './flows/index.js';
+export { MAX_FLOW_NAME_LENGTH, MAX_FLOW_CATEGORIES, MAX_FLOW_JSON_BYTES } from './flows/index.js';
+
 // Webhooks
 export { Webhooks } from './webhooks/index.js';
 export {
@@ -147,6 +171,7 @@ export type {
   WebhookContactCard,
   WebhookContactCardPhone,
   WebhookInteractivePayload,
+  WebhookNfmReply,
   WebhookReactionPayload,
   WebhookButtonPayload,
   WebhookOrderPayload,
@@ -156,9 +181,11 @@ export type {
   WebhookStatus,
   WebhookError,
   EventMetadata,
+  EventContact,
   MessageEvent,
   StatusEvent,
   ErrorEvent,
+  FlowCompletionEvent,
   WebhookEvent,
   WebhookConfig,
   WebhookHandlerCallbacks,

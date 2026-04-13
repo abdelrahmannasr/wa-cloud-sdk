@@ -1,6 +1,6 @@
 import type { HttpClient } from '../client/http-client.js';
 import type { RequestOptions, ApiResponse } from '../client/types.js';
-import { ValidationError } from '../errors/errors.js';
+import { NotFoundError, ValidationError } from '../errors/errors.js';
 import type {
   PhoneNumber,
   PhoneNumberListParams,
@@ -138,7 +138,7 @@ export class PhoneNumbers {
    * ```typescript
    * // Get full phone number details
    * const phone = await phoneNumbers.get('PHONE_NUMBER_ID');
-   * console.log(phone.data.verifiedName);
+   * console.log(phone.data.verified_name);
    *
    * // Get specific fields only
    * const phone = await phoneNumbers.get('PHONE_NUMBER_ID', {
@@ -208,10 +208,12 @@ export class PhoneNumbers {
       options,
     );
 
-    // Unwrap the single-element data array from Meta API
+    // Unwrap the single-element data array from Meta API. An empty array is
+    // a platform-side "no such resource" response, not caller input
+    // validation, so surface it as NotFoundError.
     const profile = response.data.data[0];
     if (!profile) {
-      throw new ValidationError(
+      throw new NotFoundError(
         'Business profile not found - Meta API returned empty data array',
         'businessProfile',
       );
@@ -288,13 +290,13 @@ export class PhoneNumbers {
    * ```typescript
    * // Request code via SMS
    * await phoneNumbers.requestVerificationCode('PHONE_NUMBER_ID', {
-   *   codeMethod: 'SMS',
+   *   code_method: 'SMS',
    *   language: 'en_US',
    * });
    *
    * // Request code via voice call
    * await phoneNumbers.requestVerificationCode('PHONE_NUMBER_ID', {
-   *   codeMethod: 'VOICE',
+   *   code_method: 'VOICE',
    *   language: 'es_ES',
    * });
    * ```
@@ -309,22 +311,17 @@ export class PhoneNumbers {
     }
 
     const validMethods: ReadonlyArray<string> = ['SMS', 'VOICE'];
-    if (!validMethods.includes(options.codeMethod)) {
-      throw new ValidationError('codeMethod must be either "SMS" or "VOICE"', 'codeMethod');
+    if (!validMethods.includes(options.code_method)) {
+      throw new ValidationError('code_method must be either "SMS" or "VOICE"', 'code_method');
     }
 
     if (!options.language || options.language.trim() === '') {
       throw new ValidationError('language is required and cannot be empty', 'language');
     }
 
-    const payload = {
-      code_method: options.codeMethod,
-      language: options.language,
-    };
-
     return this.client.post<SuccessResponse>(
       `${phoneNumberId}/request_code`,
-      payload,
+      { code_method: options.code_method, language: options.language },
       requestOptions,
     );
   }

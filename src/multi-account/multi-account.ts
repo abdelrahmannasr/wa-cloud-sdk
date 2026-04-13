@@ -347,7 +347,10 @@ export class WhatsAppMultiAccount {
    * ```
    */
   getAccounts(): ReadonlyMap<string, AccountConfig> {
-    return this.accountConfigs;
+    // Return a snapshot so a caller that casts the return type cannot mutate
+    // the manager's internal state, and so iteration is stable even if
+    // addAccount/removeAccount is called during iteration.
+    return new Map(this.accountConfigs);
   }
 
   /**
@@ -460,37 +463,49 @@ export class WhatsAppMultiAccount {
     const successes: BroadcastSuccess[] = [];
     const failures: BroadcastFailure[] = [];
 
-    // Promise-based concurrency pool
-    const results: Promise<void>[] = [];
+    // Promise-based concurrency pool. Wait for a slot BEFORE launching the
+    // next factory call so in-flight count never exceeds concurrency — even
+    // when factories resolve synchronously under microtask-ordering edge cases.
+    // Only the `executing` Set retains promise references; once a promise
+    // settles it is removed and eligible for GC, so memory stays O(concurrency)
+    // regardless of recipient count.
     const executing = new Set<Promise<void>>();
 
     for (const recipient of recipients) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can change during async iteration
       if (this.destroyed) break;
 
+      while (executing.size >= concurrency) {
+        await Promise.race(executing);
+      }
+
       const p = (async () => {
+        // Split the catch so a programmer error from getNext (e.g. strategy
+        // returned an unknown account name) is recorded with kind 'selection'
+        // and is distinguishable from a Meta/HTTP failure inside the factory.
+        let wa: WhatsApp;
         try {
-          const wa = this.getNext(recipient);
+          wa = this.getNext(recipient);
+        } catch (error) {
+          failures.push({ recipient, error, kind: 'selection' });
+          return;
+        }
+        try {
           const response = await factory(wa, recipient);
           successes.push({ recipient, response });
         } catch (error) {
-          failures.push({ recipient, error });
+          failures.push({ recipient, error, kind: 'api' });
         }
       })();
 
-      results.push(p);
       executing.add(p);
-      const cleanup = () => {
+      const cleanup = (): void => {
         executing.delete(p);
       };
       p.then(cleanup, cleanup);
-
-      if (executing.size >= concurrency) {
-        await Promise.race(executing);
-      }
     }
 
-    await Promise.all(results);
+    await Promise.all([...executing]);
 
     return { successes, failures, total: recipients.length };
   }

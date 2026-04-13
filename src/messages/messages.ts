@@ -19,6 +19,8 @@ import type {
   TemplateMessageOptions,
   CtaUrlButtonMessageOptions,
   LocationRequestMessageOptions,
+  FlowActionPayload,
+  FlowMessageOptions,
   TypingIndicatorOptions,
   MarkAsReadOptions,
   MediaSource,
@@ -424,6 +426,68 @@ export class Messages {
         type: 'location_request_message',
         body: { text: options.body },
         action: { name: 'send_location' },
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send a WhatsApp Flow as an interactive message.
+   *
+   * Delivers a flow invitation to the recipient with a call-to-action button
+   * that opens the flow. Supports draft and published modes, optional initial
+   * screen and data, correlation tokens, reply-to, and optional header/footer.
+   *
+   * Defaults: `flowMessageVersion='3'`. `mode` and `flowAction` are omitted
+   * from the wire payload unless explicitly set, letting Meta apply its
+   * server-side defaults. When `flowAction='navigate'`, you MUST supply
+   * `flowActionPayload.screen` — Meta rejects navigate calls without it.
+   *
+   * @example
+   * ```ts
+   * await messages.sendFlow({
+   *   to: '+1234567890',
+   *   body: 'Complete your appointment booking',
+   *   flowCta: 'Book Now',
+   *   flowId: '1234567890',
+   *   flowAction: 'navigate',
+   *   flowActionPayload: {
+   *     screen: 'SELECT_DATE',
+   *     data: { default_date: '2026-04-15' },
+   *   },
+   * });
+   * ```
+   */
+  async sendFlow(
+    options: FlowMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    const parameters: {
+      flow_message_version: string;
+      flow_id: string;
+      flow_cta: string;
+      mode?: 'draft';
+      flow_action?: 'navigate' | 'data_exchange';
+      flow_token?: string;
+      flow_action_payload?: FlowActionPayload;
+    } = {
+      // Default kept so a future widening of the flowMessageVersion union
+      // does not silently drop the version when the caller omits it.
+      flow_message_version: options.flowMessageVersion ?? '3',
+      flow_id: options.flowId,
+      flow_cta: options.flowCta,
+      ...(options.mode === 'draft' ? { mode: 'draft' } : {}),
+      ...(options.flowAction !== undefined ? { flow_action: options.flowAction } : {}),
+      ...(options.flowToken ? { flow_token: options.flowToken } : {}),
+      ...(options.flowActionPayload ? { flow_action_payload: options.flowActionPayload } : {}),
+    };
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'flow',
+        body: { text: options.body },
+        action: { name: 'flow', parameters },
+        ...this.buildInteractiveOptionals(options.header, options.footer),
       },
     };
     return this.send(payload, requestOptions);

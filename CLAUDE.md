@@ -70,6 +70,10 @@ src/
 │   ├── templates.ts      # Templates class with list, get, create, update, delete
 │   ├── builder.ts        # TemplateBuilder fluent API with client-side validation
 │   └── index.ts
+├── flows/                # WhatsApp Flows lifecycle management
+│   ├── types.ts          # Flow, FlowCategory, FlowStatus, CRUD request/response types, validation constants
+│   ├── flows.ts          # Flows class with list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview
+│   └── index.ts
 ├── phone-numbers/        # Phone number management
 │   ├── types.ts          # PhoneNumber, BusinessProfile, request/response types
 │   ├── phone-numbers.ts  # PhoneNumbers class with list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister
@@ -89,10 +93,10 @@ src/
     └── index.ts
 ```
 
-**Subpath exports:** `./errors`, `./messages`, `./webhooks` have dedicated subpath exports in package.json. All other modules (media, templates, phone-numbers, multi-account) are accessible via the main `.` export only.
+**Subpath exports:** `./errors`, `./messages`, `./webhooks`, `./media`, `./templates`, `./flows`, `./phone-numbers`, `./multi-account` all have dedicated subpath exports in package.json.
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages, webhooks (with Express + Next.js middleware + Webhooks wrapper class), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control)
+- **Implemented:** client, errors, utils, messages (sendText, sendImage, sendTemplate, sendFlow, etc.), webhooks (with Express + Next.js middleware + Webhooks wrapper class + FlowCompletionEvent/onFlowCompletion), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), flows (list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control)
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
@@ -155,6 +159,14 @@ src/
 - Verify code: `POST /{phone_number_id}/verify_code`
 - Business profile get: `GET /{phone_number_id}/whatsapp_business_profile`
 - Business profile update: `POST /{phone_number_id}/whatsapp_business_profile`
+- Flows list: `GET /{waba_id}/flows`
+- Flow get: `GET /{flow_id}`
+- Flow create: `POST /{waba_id}/flows`
+- Flow update metadata: `POST /{flow_id}`
+- Flow update assets: `POST /{flow_id}/assets` (multipart/form-data)
+- Flow publish: `POST /{flow_id}/publish`
+- Flow deprecate: `POST /{flow_id}/deprecate`
+- Flow delete: `DELETE /{flow_id}`
 - Webhook verification: `GET /webhook` with hub.mode, hub.verify_token, hub.challenge
 - Webhook events: `POST /webhook` with X-Hub-Signature-256 header
 - All message sends require body: `{ messaging_product: "whatsapp", to, type, [type_data] }`

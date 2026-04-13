@@ -776,6 +776,188 @@ describe('Messages', () => {
     });
   });
 
+  // ── Flow ──
+
+  describe('sendFlow', () => {
+    it('should send flow with minimal options and omit mode/flow_action by default', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Complete your booking',
+        flowCta: 'Book Now',
+        flowId: 'flow_abc_123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toMatchObject({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: '15551234567',
+        type: 'interactive',
+        interactive: {
+          type: 'flow',
+          body: { text: 'Complete your booking' },
+          action: { name: 'flow' },
+        },
+      });
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      // toStrictEqual pins the exact key set so any future leak (mode,
+      // flow_action, etc.) fails the test without needing a new assertion.
+      expect(action['parameters']).toStrictEqual({
+        flow_message_version: '3',
+        flow_id: 'flow_abc_123',
+        flow_cta: 'Book Now',
+      });
+    });
+
+    it('should send flow in draft mode when specified', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Test flow',
+        flowCta: 'Start',
+        flowId: 'flow_abc_123',
+        mode: 'draft',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters['mode']).toBe('draft');
+    });
+
+    it('should explicitly emit flow_message_version "3" when provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Test flow',
+        flowCta: 'Start',
+        flowId: 'flow_abc_123',
+        flowMessageVersion: '3',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters['flow_message_version']).toBe('3');
+    });
+
+    it('should emit flow_action only when explicitly set (data_exchange)', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Fetch offers',
+        flowCta: 'Continue',
+        flowId: 'flow_abc_123',
+        flowAction: 'data_exchange',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      // toStrictEqual pins both the presence of flow_action and the
+      // absence of mode/flow_action_payload in a single assertion.
+      expect(action['parameters']).toStrictEqual({
+        flow_message_version: '3',
+        flow_id: 'flow_abc_123',
+        flow_cta: 'Continue',
+        flow_action: 'data_exchange',
+      });
+    });
+
+    it('should include flow_token when provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Survey',
+        flowCta: 'Take Survey',
+        flowId: 'flow_abc_123',
+        flowToken: 'correlation-xyz-789',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters['flow_token']).toBe('correlation-xyz-789');
+    });
+
+    it('should omit flow_token when not provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Flow',
+        flowCta: 'Open',
+        flowId: 'flow_abc_123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters).not.toHaveProperty('flow_token');
+    });
+
+    it('should include flow_action_payload when provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Edit profile',
+        flowCta: 'Continue',
+        flowId: 'flow_abc_123',
+        flowActionPayload: {
+          screen: 'EDIT_PROFILE',
+          data: { name: 'Alice', email: 'alice@example.com' },
+        },
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      const action = interactive['action'] as Record<string, unknown>;
+      const parameters = action['parameters'] as Record<string, unknown>;
+      expect(parameters['flow_action_payload']).toEqual({
+        screen: 'EDIT_PROFILE',
+        data: { name: 'Alice', email: 'alice@example.com' },
+      });
+    });
+
+    it('should include context when replyTo is provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Follow-up flow',
+        flowCta: 'Continue',
+        flowId: 'flow_abc_123',
+        replyTo: 'wamid.prev123',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      expect(payload).toHaveProperty('context', { message_id: 'wamid.prev123' });
+    });
+
+    it('should include header and footer when provided', async () => {
+      await messages.sendFlow({
+        to: '15551234567',
+        body: 'Register now',
+        flowCta: 'Sign Up',
+        flowId: 'flow_abc_123',
+        header: { type: 'text', text: 'Welcome!' },
+        footer: 'Terms apply',
+      });
+
+      const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
+      const interactive = payload['interactive'] as Record<string, unknown>;
+      expect(interactive).toHaveProperty('header', { type: 'text', text: 'Welcome!' });
+      expect(interactive).toHaveProperty('footer', { text: 'Terms apply' });
+    });
+
+    it('should reject invalid phone number', async () => {
+      await expect(
+        messages.sendFlow({
+          to: '12',
+          body: 'Flow',
+          flowCta: 'Open',
+          flowId: 'flow_abc_123',
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+  });
+
   // ── Typing Indicator ──
 
   describe('sendTypingIndicator', () => {

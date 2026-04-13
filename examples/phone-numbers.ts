@@ -30,18 +30,18 @@ async function main() {
 
     console.log(`✓ Found ${numbers.data.data.length} phone number(s):`);
     numbers.data.data.forEach((number) => {
-      console.log(`  - ${number.displayPhoneNumber}`);
+      console.log(`  - ${number.display_phone_number}`);
       console.log(`    ID: ${number.id}`);
-      console.log(`    Verified: ${number.codeVerificationStatus}`);
-      console.log(`    Quality: ${number.qualityRating}`);
+      console.log(`    Verified: ${number.code_verification_status}`);
+      console.log(`    Quality: ${number.quality_rating}`);
     });
 
     // Get details for a specific phone number
     console.log('\nFetching phone number details...');
     const phoneDetails = await wa.phoneNumbers.get(process.env.WHATSAPP_PHONE_NUMBER_ID!);
 
-    console.log('✓ Phone number:', phoneDetails.data.displayPhoneNumber);
-    console.log('  Verified:', phoneDetails.data.codeVerificationStatus);
+    console.log('✓ Phone number:', phoneDetails.data.display_phone_number);
+    console.log('  Verified:', phoneDetails.data.code_verification_status);
 
     // Get business profile
     console.log('\nFetching business profile...');
@@ -70,7 +70,7 @@ async function main() {
     await wa.phoneNumbers.requestVerificationCode(
       process.env.WHATSAPP_PHONE_NUMBER_ID!,
       {
-        codeMethod: 'SMS',
+        code_method: 'SMS',
         language: 'en',
       }
     );

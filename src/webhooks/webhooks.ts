@@ -144,7 +144,7 @@ export class Webhooks {
    * ```
    */
   parse(payload: WebhookPayload): WebhookEvent[] {
-    return parseWebhookPayload(payload);
+    return parseWebhookPayload(payload, { logger: this.config.logger });
   }
 
   /**
@@ -167,7 +167,10 @@ export class Webhooks {
    */
   createHandler(callbacks: WebhookHandlerCallbacks): WebhookHandler {
     const { appSecret, verifyToken } = this.requireWebhookConfig();
-    return createWebhookHandler({ appSecret, verifyToken }, callbacks);
+    return createWebhookHandler(
+      { appSecret, verifyToken, logger: this.config.logger },
+      callbacks,
+    );
   }
 
   /**
@@ -195,7 +198,10 @@ export class Webhooks {
     callbacks: WebhookHandlerCallbacks,
   ): (req: WebhookRequest, res: WebhookResponse, next: WebhookNextFunction) => void {
     const { appSecret, verifyToken } = this.requireWebhookConfig();
-    return createExpressMiddlewareUtil({ appSecret, verifyToken }, callbacks);
+    return createExpressMiddlewareUtil(
+      { appSecret, verifyToken, logger: this.config.logger },
+      callbacks,
+    );
   }
 
   /**
@@ -218,10 +224,13 @@ export class Webhooks {
    * ```
    */
   createNextRouteHandler(callbacks: WebhookHandlerCallbacks): {
-    GET: (request: Request) => Response;
+    GET: (request: Request) => Promise<Response>;
     POST: (request: Request) => Promise<Response>;
   } {
     const { appSecret, verifyToken } = this.requireWebhookConfig();
-    return createNextRouteHandlerUtil({ appSecret, verifyToken }, callbacks);
+    return createNextRouteHandlerUtil(
+      { appSecret, verifyToken, logger: this.config.logger },
+      callbacks,
+    );
   }
 }

@@ -64,6 +64,50 @@ describe('verifyWebhook', () => {
 
     expect(verifyWebhook(params, VERIFY_TOKEN)).toBe('challenge_abc');
   });
+
+  it('should reject an empty hub.verify_token without running the compare', () => {
+    const params = {
+      'hub.mode': 'subscribe',
+      'hub.verify_token': '',
+      'hub.challenge': 'challenge',
+    };
+
+    expect(() => verifyWebhook(params, VERIFY_TOKEN)).toThrow('Verify token mismatch');
+  });
+
+  it('should reject a missing hub.verify_token', () => {
+    const params = {
+      'hub.mode': 'subscribe',
+      'hub.challenge': 'challenge',
+    };
+
+    expect(() => verifyWebhook(params, VERIFY_TOKEN)).toThrow('Verify token mismatch');
+  });
+
+  it('should reject when the configured expected token is empty', () => {
+    const params = {
+      'hub.mode': 'subscribe',
+      'hub.verify_token': 'whatever',
+      'hub.challenge': 'challenge',
+    };
+
+    expect(() => verifyWebhook(params, '')).toThrow('Verify token mismatch');
+  });
+
+  it('should reject a UTF-8-length-matched but byte-different token', () => {
+    // Multi-byte chars: length in characters can match while byte length
+    // differs. Previously the raw-buffer length check could fire before
+    // timingSafeEqual; the HMAC-digest compare makes this path constant-time.
+    const expected = 'abcd'; // 4 bytes
+    const candidate = 'abç'; // 4 bytes (ç = 2 bytes) but 3 chars
+    const params = {
+      'hub.mode': 'subscribe',
+      'hub.verify_token': candidate,
+      'hub.challenge': 'challenge',
+    };
+
+    expect(() => verifyWebhook(params, expected)).toThrow('Verify token mismatch');
+  });
 });
 
 describe('verifySignature', () => {

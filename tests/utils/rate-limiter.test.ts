@@ -137,6 +137,42 @@ describe('TokenBucketRateLimiter', () => {
     expect(limiter.tryAcquire()).toBe(false);
   });
 
+  it('should honor FIFO when fresh acquires arrive with queued waiters', async () => {
+    // Once a caller is queued, a subsequent acquire must not take a token
+    // that just refilled — it belongs to the queue head.
+    const limiter = new TokenBucketRateLimiter({ maxTokens: 1, refillRate: 2 });
+    await limiter.acquire();
+
+    const order: string[] = [];
+    const queued = limiter.acquire().then(() => order.push('queued'));
+    const latecomer = limiter.acquire().then(() => order.push('latecomer'));
+
+    // Refill 2 tokens over 1s (rate 2/s). Both should drain in insertion order.
+    vi.advanceTimersByTime(500);
+    await queued;
+    vi.advanceTimersByTime(500);
+    await latecomer;
+
+    expect(order).toEqual(['queued', 'latecomer']);
+    limiter.destroy();
+  });
+
+  it('should make tryAcquire yield to queued waiters', async () => {
+    const limiter = new TokenBucketRateLimiter({ maxTokens: 1, refillRate: 1 });
+    await limiter.acquire();
+
+    // Queue a waiter.
+    const queued = limiter.acquire();
+
+    // Refill a token, but before the queue drains, a sync tryAcquire must
+    // refuse it — otherwise the queued waiter can be starved.
+    vi.advanceTimersByTime(1000);
+    expect(limiter.tryAcquire()).toBe(false);
+
+    await queued;
+    limiter.destroy();
+  });
+
   it('should handle burst capacity correctly', () => {
     const limiter = new TokenBucketRateLimiter({ maxTokens: 80, refillRate: 80 });
 

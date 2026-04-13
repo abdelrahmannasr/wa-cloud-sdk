@@ -641,6 +641,28 @@ describe('WhatsAppMultiAccount', () => {
 
       expect(result.failures[0]!.recipient).toBe('2222222222');
       expect(result.failures[0]!.error).toBeInstanceOf(Error);
+      expect(result.failures[0]!.kind).toBe('api');
+    });
+
+    it('should record selection errors with kind="selection"', async () => {
+      // Strategy returns an unknown account name → getNext() throws with
+      // kind 'selection' instead of the factory's 'api' kind.
+      const badStrategy = {
+        select: vi.fn().mockReturnValue('nonexistent-account'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: badStrategy,
+      });
+
+      const factory = vi.fn();
+      const result = await manager.broadcast(['1111111111'], factory);
+
+      expect(factory).not.toHaveBeenCalled();
+      expect(result.failures.length).toBe(1);
+      expect(result.failures[0]!.kind).toBe('selection');
+      expect(result.failures[0]!.recipient).toBe('1111111111');
     });
 
     it('should return empty result for empty recipients array', async () => {
@@ -695,6 +717,41 @@ describe('WhatsAppMultiAccount', () => {
       await manager.broadcast(recipients, mockFactory, { concurrency: 5 });
 
       expect(maxConcurrent).toBeLessThanOrEqual(5);
+    });
+
+    it('should strictly cap in-flight count even with microtask-only factories', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      let activeCalls = 0;
+      let maxConcurrent = 0;
+      const concurrency = 3;
+
+      // No setTimeout — factory resolves on the microtask queue only. Exercises
+      // the path where a naive pool that adds before awaiting can briefly go
+      // over the cap.
+      const mockFactory = vi.fn().mockImplementation(async () => {
+        activeCalls++;
+        maxConcurrent = Math.max(maxConcurrent, activeCalls);
+        await Promise.resolve();
+        await Promise.resolve();
+        activeCalls--;
+        return {
+          success: true,
+          data: { messaging_product: 'whatsapp', messages: [{ id: 'msg' }] },
+        };
+      });
+
+      const recipients = Array.from({ length: 25 }, (_, i) => `r-${i}`);
+      await manager.broadcast(recipients, mockFactory, { concurrency });
+
+      expect(maxConcurrent).toBeLessThanOrEqual(concurrency);
     });
 
     it('should allow per-recipient factory customization', async () => {
@@ -879,6 +936,64 @@ describe('WhatsAppMultiAccount', () => {
       await expect(
         manager.broadcast(['1111111111'], mockFactory, { concurrency: -1 }),
       ).rejects.toThrow('concurrency must be a positive integer');
+    });
+
+    it('should support broadcasting flows with per-account flow-ID mapping', async () => {
+      // A flow identifier is scoped to a single WhatsApp Business Account,
+      // so multi-account platforms must maintain a mapping from conceptual
+      // flow name to per-account flow identifier and look up the correct
+      // identifier inside the broadcast factory. This test verifies the
+      // pattern works end-to-end for FR-007a / SC-016.
+      const flowIdByAccount: Record<string, string> = {
+        'business-a': 'flow_in_waba_a',
+        'business-b': 'flow_in_waba_b',
+      };
+
+      const selections = ['business-a', 'business-b', 'business-a'];
+      let callIndex = 0;
+      const mockStrategy = {
+        select: vi.fn().mockImplementation(() => selections[callIndex++]),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      const sendsReceived: Array<{
+        phoneNumberId: string;
+        recipient: string;
+        flowId: string;
+      }> = [];
+
+      const mockFactory = vi.fn().mockImplementation((wa, recipient: string) => {
+        const phoneNumberId = (wa as { config: { phoneNumberId: string } }).config.phoneNumberId;
+        const account = validAccounts.find((a) => a.phoneNumberId === phoneNumberId)!;
+        const flowId = flowIdByAccount[account.name]!;
+        sendsReceived.push({ phoneNumberId, recipient, flowId });
+        return Promise.resolve({
+          success: true,
+          data: {
+            messaging_product: 'whatsapp',
+            messages: [{ id: `msg_${recipient}` }],
+          },
+        });
+      });
+
+      const recipients = ['1111111111', '2222222222', '3333333333'];
+      const result = await manager.broadcast(recipients, mockFactory);
+
+      expect(result.total).toBe(3);
+      expect(result.successes.length).toBe(3);
+      expect(result.failures.length).toBe(0);
+
+      // Verify each recipient was sent the flow from the correct account
+      // using its own per-account flow identifier.
+      expect(sendsReceived).toEqual([
+        { phoneNumberId: 'PHONE_A', recipient: '1111111111', flowId: 'flow_in_waba_a' },
+        { phoneNumberId: 'PHONE_B', recipient: '2222222222', flowId: 'flow_in_waba_b' },
+        { phoneNumberId: 'PHONE_A', recipient: '3333333333', flowId: 'flow_in_waba_a' },
+      ]);
     });
   });
 });

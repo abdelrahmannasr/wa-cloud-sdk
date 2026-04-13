@@ -428,4 +428,72 @@ describe('TemplateBuilder', () => {
       }
     });
   });
+
+  describe('sealing after build', () => {
+    it('should throw ValidationError if a setter is called after build', () => {
+      const builder = new TemplateBuilder()
+        .setName('sealed_template')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('hello');
+
+      builder.build();
+
+      expect(() => builder.addBody('mutation after build')).toThrow(ValidationError);
+      expect(() => builder.setName('different')).toThrow(ValidationError);
+      expect(() => builder.addQuickReplyButton('Yes')).toThrow(ValidationError);
+    });
+
+    it('should return independent component arrays on repeated build calls', () => {
+      const builder = new TemplateBuilder()
+        .setName('repeat_build')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('hello')
+        .addQuickReplyButton('Yes');
+
+      const first = builder.build();
+      const second = builder.build();
+
+      expect(first.components).not.toBe(second.components);
+      expect(first.components).toEqual(second.components);
+    });
+
+    it('should detach body example from caller mutation after addBody', () => {
+      const example: { body_text: string[][] } = { body_text: [['John']] };
+
+      const request = new TemplateBuilder()
+        .setName('detach_example')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('Hi {{1}}', example)
+        .build();
+
+      // Mutate the caller-owned example payload after build.
+      example.body_text[0]![0] = 'Attacker';
+      example.body_text.push(['Extra']);
+
+      const body = request.components.find((c) => c.type === 'BODY');
+      expect(body?.example).toEqual({ body_text: [['John']] });
+    });
+
+    it('should freeze the returned request so the components array is immutable', () => {
+      const request = new TemplateBuilder()
+        .setName('frozen_request')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('hello')
+        .addQuickReplyButton('Yes')
+        .build();
+
+      expect(Object.isFrozen(request)).toBe(true);
+      expect(Object.isFrozen(request.components)).toBe(true);
+      expect(() => {
+        (request.components as unknown as Array<unknown>).push({ type: 'BODY', text: 'evil' });
+      }).toThrow();
+      const buttons = request.components.find((c) => c.type === 'BUTTONS');
+      expect(buttons && Object.isFrozen(buttons)).toBe(true);
+      expect(buttons?.buttons && Object.isFrozen(buttons.buttons)).toBe(true);
+    });
+  });
 });

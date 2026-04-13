@@ -54,6 +54,16 @@ export class TemplateBuilder {
   private category?: TemplateCategory;
   private allowCategoryChangeFlag?: boolean;
   private components: CreateTemplateComponent[] = [];
+  private sealed = false;
+
+  private assertMutable(): void {
+    if (this.sealed) {
+      throw new ValidationError(
+        'TemplateBuilder is sealed after build() — create a new builder to make changes',
+        'builder',
+      );
+    }
+  }
 
   /**
    * Set the template name
@@ -70,6 +80,7 @@ export class TemplateBuilder {
    * ```
    */
   setName(name: string): this {
+    this.assertMutable();
     this.name = name;
     return this;
   }
@@ -88,6 +99,7 @@ export class TemplateBuilder {
    * ```
    */
   setLanguage(language: string): this {
+    this.assertMutable();
     this.language = language;
     return this;
   }
@@ -106,6 +118,7 @@ export class TemplateBuilder {
    * ```
    */
   setCategory(category: TemplateCategory): this {
+    this.assertMutable();
     this.category = category;
     return this;
   }
@@ -125,6 +138,7 @@ export class TemplateBuilder {
    * ```
    */
   allowCategoryChange(allow: boolean): this {
+    this.assertMutable();
     this.allowCategoryChangeFlag = allow;
     return this;
   }
@@ -143,6 +157,7 @@ export class TemplateBuilder {
    * ```
    */
   addHeaderText(text: string): this {
+    this.assertMutable();
     this.components.push({
       type: 'HEADER',
       format: 'TEXT',
@@ -168,11 +183,14 @@ export class TemplateBuilder {
    * ```
    */
   addHeaderMedia(format: string, example?: unknown): this {
+    this.assertMutable();
     if (example !== undefined) {
       this.components.push({
         type: 'HEADER',
         format,
-        example,
+        // Clone so a caller mutating their example payload later cannot
+        // silently alter the builder's recorded state.
+        example: structuredClone(example),
       });
     } else {
       this.components.push({
@@ -201,11 +219,12 @@ export class TemplateBuilder {
    * ```
    */
   addBody(text: string, example?: unknown): this {
+    this.assertMutable();
     if (example !== undefined) {
       this.components.push({
         type: 'BODY',
         text,
-        example,
+        example: structuredClone(example),
       });
     } else {
       this.components.push({
@@ -230,6 +249,7 @@ export class TemplateBuilder {
    * ```
    */
   addFooter(text: string): this {
+    this.assertMutable();
     this.components.push({
       type: 'FOOTER',
       text,
@@ -254,6 +274,7 @@ export class TemplateBuilder {
    * ```
    */
   addQuickReplyButton(text: string): this {
+    this.assertMutable();
     this.addButton({ type: 'QUICK_REPLY', text });
     return this;
   }
@@ -275,6 +296,7 @@ export class TemplateBuilder {
    * ```
    */
   addUrlButton(text: string, url: string): this {
+    this.assertMutable();
     this.addButton({ type: 'URL', text, url });
     return this;
   }
@@ -296,6 +318,7 @@ export class TemplateBuilder {
    * ```
    */
   addPhoneNumberButton(text: string, phoneNumber: string): this {
+    this.assertMutable();
     this.addButton({ type: 'PHONE_NUMBER', text, phone_number: phoneNumber });
     return this;
   }
@@ -446,22 +469,45 @@ export class TemplateBuilder {
       }
     }
 
-    // Build the request
-    if (this.allowCategoryChangeFlag !== undefined) {
-      return {
-        name: this.name,
-        language: this.language,
-        category: this.category,
-        allow_category_change: this.allowCategoryChangeFlag,
-        components: this.components,
-      };
-    }
+    // Seal so subsequent mutation throws instead of silently altering the
+    // request that was already returned.
+    this.sealed = true;
 
-    return {
-      name: this.name,
-      language: this.language,
-      category: this.category,
-      components: this.components,
-    };
+    // Deep-clone all components so the returned request is fully detached
+    // from builder state — then freeze, so callers cannot mutate the object
+    // or the nested components/buttons arrays in place.
+    const components = structuredClone(this.components);
+    deepFreezeComponents(components);
+
+    const request: CreateTemplateRequest =
+      this.allowCategoryChangeFlag !== undefined
+        ? {
+            name: this.name,
+            language: this.language,
+            category: this.category,
+            allow_category_change: this.allowCategoryChangeFlag,
+            components,
+          }
+        : {
+            name: this.name,
+            language: this.language,
+            category: this.category,
+            components,
+          };
+
+    return Object.freeze(request);
   }
+}
+
+function deepFreezeComponents(components: CreateTemplateComponent[]): void {
+  for (const component of components) {
+    if (component.buttons) {
+      for (const button of component.buttons) {
+        Object.freeze(button);
+      }
+      Object.freeze(component.buttons);
+    }
+    Object.freeze(component);
+  }
+  Object.freeze(components);
 }
