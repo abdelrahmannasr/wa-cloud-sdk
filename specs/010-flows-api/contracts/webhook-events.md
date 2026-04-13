@@ -209,6 +209,21 @@ const payload = createPayload({
 });
 ```
 
+## Middleware HTTP status contract
+
+The handler and both middlewares (Express, Next.js) use the following status codes, which match Meta's documented webhook contract. Do not "correct" these to match generic REST conventions:
+
+| Outcome                                              | Status |
+|------------------------------------------------------|--------|
+| GET verification success                             | 200    |
+| GET verification mismatch (wrong token/mode)         | **403** — matches Meta's docs; not 401 |
+| POST valid signature, handled successfully           | 200    |
+| POST invalid or missing `X-Hub-Signature-256` header | 403    |
+| POST malformed JSON or payload structure             | 400    |
+| POST callback throws (Next.js)                       | 500 (observable via `onInternalError`) |
+| POST callback throws (Express)                       | forwarded via `next(error)` |
+| Non-GET/POST method                                  | 405    |
+
 ## Logging audit checklist (implementation verification)
 
 Before merging, run:
