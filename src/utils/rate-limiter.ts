@@ -50,7 +50,9 @@ export class TokenBucketRateLimiter {
 
     this.refill();
 
-    if (this.tokens >= 1) {
+    // Only take the fast path when no one is waiting — otherwise fresh callers
+    // would jump ahead of queued entries and starve them under sustained load.
+    if (this.queue.length === 0 && this.tokens >= 1) {
       this.tokens -= 1;
       return;
     }
@@ -63,6 +65,9 @@ export class TokenBucketRateLimiter {
 
   /**
    * Try to acquire a token immediately. Returns true if successful, false otherwise.
+   *
+   * Honors FIFO: returns false whenever another caller is queued, even if
+   * tokens happen to be available (they belong to the queue head).
    */
   tryAcquire(): boolean {
     if (this.destroyed) {
@@ -71,7 +76,7 @@ export class TokenBucketRateLimiter {
 
     this.refill();
 
-    if (this.tokens >= 1) {
+    if (this.queue.length === 0 && this.tokens >= 1) {
       this.tokens -= 1;
       return true;
     }
