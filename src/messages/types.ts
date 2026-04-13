@@ -351,6 +351,21 @@ export interface FlowMessageOptions extends BaseMessageOptions {
   readonly footer?: string;
 }
 
+// ── Commerce: Limits ──
+
+/**
+ * Client-side enforcement limits for multi-product messages.
+ * These are validated before any network call is made.
+ */
+export const MULTI_PRODUCT_LIMITS = {
+  /** Maximum number of product sections per message */
+  MAX_SECTIONS: 10,
+  /** Maximum total product items across all sections */
+  MAX_TOTAL_ITEMS: 30,
+  /** Maximum characters in a section title */
+  MAX_SECTION_TITLE_LENGTH: 24,
+} as const;
+
 // ── Commerce: Single Product ──
 
 /**
@@ -379,6 +394,52 @@ export interface ProductMessageOptions extends BaseMessageOptions {
   readonly body?: string;
   /** Optional footer text */
   readonly footer?: string;
+}
+
+// ── Commerce: Multi-Product ──
+
+/**
+ * A named group of product retailer IDs within a multi-product message.
+ * Sections are for display organization only — they are not persisted in the catalog.
+ */
+export interface ProductSection {
+  /** Section title (1–24 characters, required by Meta) */
+  readonly title: string;
+  /** Retailer-defined product IDs within this section */
+  readonly productRetailerIds: readonly string[];
+}
+
+/**
+ * Options for sendProductList — sends an interactive multi-product message.
+ *
+ * Displays a curated list of up to 30 products organized in up to 10 named sections.
+ * Client-side validation enforces all limits before making a network call.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendProductList({
+ *   to: '15550001234',
+ *   catalogId: '123456789',
+ *   header: 'Today\'s specials',
+ *   body: 'Check out our recommended items',
+ *   sections: [
+ *     { title: 'Beverages', productRetailerIds: ['cola-001', 'juice-002'] },
+ *     { title: 'Snacks', productRetailerIds: ['chips-001'] },
+ *   ],
+ * });
+ * ```
+ */
+export interface ProductListMessageOptions extends BaseMessageOptions {
+  /** Platform-assigned catalog ID (scoped to the WABA) */
+  readonly catalogId: string;
+  /** Required text header (Meta only supports text headers for product_list) */
+  readonly header: string;
+  /** Required body text */
+  readonly body: string;
+  /** Optional footer text */
+  readonly footer?: string;
+  /** Product sections — at least 1, at most MULTI_PRODUCT_LIMITS.MAX_SECTIONS (10) */
+  readonly sections: readonly ProductSection[];
 }
 
 // ── Typing Indicator ──
