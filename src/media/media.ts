@@ -192,13 +192,13 @@ export class Media {
     mediaUrl: string,
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<ArrayBuffer>> {
-    // Validate URL to prevent credential leakage to untrusted hosts
+    // Validate URL to prevent credential leakage to untrusted hosts. We do
+    // not know the media category from a raw URL, so we omit `mediaType` on
+    // the error rather than labeling it as 'document' — the URL itself is in
+    // the message for diagnostic context.
     const parsed = new URL(mediaUrl);
     if (parsed.protocol !== 'https:') {
-      throw new MediaError(
-        `Media download URL must use HTTPS, got "${parsed.protocol}"`,
-        'document',
-      );
+      throw new MediaError(`Media download URL must use HTTPS, got "${parsed.protocol}"`);
     }
 
     return this.client.downloadMedia(mediaUrl, requestOptions);
