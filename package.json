@@ -125,6 +125,16 @@
         "types": "./dist/multi-account/index.d.cts",
         "default": "./dist/multi-account/index.cjs"
       }
+    },
+    "./catalog": {
+      "import": {
+        "types": "./dist/catalog/index.d.ts",
+        "default": "./dist/catalog/index.js"
+      },
+      "require": {
+        "types": "./dist/catalog/index.d.cts",
+        "default": "./dist/catalog/index.cjs"
+      }
     }
   },
   "files": [
