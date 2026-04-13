@@ -42,8 +42,14 @@ export function createExpressMiddleware(
 
     if (req.method === 'POST') {
       if (!req.rawBody) {
+        // Operator misconfiguration (body-parser not wired). 400 signals
+        // "your request cannot be served" so Meta does not retry a request
+        // that will never succeed until the server is redeployed.
+        config.logger?.warn(
+          'createExpressMiddleware: req.rawBody missing — configure body-parser with a verify callback that sets req.rawBody',
+        );
         res
-          .status(500)
+          .status(400)
           .send(
             'Raw body is required for signature verification. ' +
               'Configure body-parser with a verify callback that sets req.rawBody.',
