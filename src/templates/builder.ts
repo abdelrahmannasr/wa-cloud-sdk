@@ -188,7 +188,9 @@ export class TemplateBuilder {
       this.components.push({
         type: 'HEADER',
         format,
-        example,
+        // Clone so a caller mutating their example payload later cannot
+        // silently alter the builder's recorded state.
+        example: structuredClone(example),
       });
     } else {
       this.components.push({
@@ -222,7 +224,7 @@ export class TemplateBuilder {
       this.components.push({
         type: 'BODY',
         text,
-        example,
+        example: structuredClone(example),
       });
     } else {
       this.components.push({
@@ -471,25 +473,41 @@ export class TemplateBuilder {
     // request that was already returned.
     this.sealed = true;
 
-    // Defensive copy so the returned array is detached from any future
-    // addButton() call that swaps an entry in this.components.
-    const components = [...this.components];
+    // Deep-clone all components so the returned request is fully detached
+    // from builder state — then freeze, so callers cannot mutate the object
+    // or the nested components/buttons arrays in place.
+    const components = structuredClone(this.components);
+    deepFreezeComponents(components);
 
-    if (this.allowCategoryChangeFlag !== undefined) {
-      return {
-        name: this.name,
-        language: this.language,
-        category: this.category,
-        allow_category_change: this.allowCategoryChangeFlag,
-        components,
-      };
-    }
+    const request: CreateTemplateRequest =
+      this.allowCategoryChangeFlag !== undefined
+        ? {
+            name: this.name,
+            language: this.language,
+            category: this.category,
+            allow_category_change: this.allowCategoryChangeFlag,
+            components,
+          }
+        : {
+            name: this.name,
+            language: this.language,
+            category: this.category,
+            components,
+          };
 
-    return {
-      name: this.name,
-      language: this.language,
-      category: this.category,
-      components,
-    };
+    return Object.freeze(request);
   }
+}
+
+function deepFreezeComponents(components: CreateTemplateComponent[]): void {
+  for (const component of components) {
+    if (component.buttons) {
+      for (const button of component.buttons) {
+        Object.freeze(button);
+      }
+      Object.freeze(component.buttons);
+    }
+    Object.freeze(component);
+  }
+  Object.freeze(components);
 }
