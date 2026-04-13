@@ -40,7 +40,10 @@ export class HttpClient {
 
   constructor(config: WhatsAppConfig) {
     this.accessToken = config.accessToken;
-    this.baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
+    // Normalize with a trailing slash so `new URL(path, baseUrl)` does not
+    // silently drop subpath segments (e.g. 'https://host/sub' + 'v21.0/x'
+    // would otherwise resolve to 'https://host/v21.0/x').
+    this.baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/?$/, '/');
     this.apiVersion = config.apiVersion ?? DEFAULT_API_VERSION;
     this.logger = config.logger ?? noopLogger;
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
