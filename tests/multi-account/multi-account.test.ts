@@ -697,6 +697,41 @@ describe('WhatsAppMultiAccount', () => {
       expect(maxConcurrent).toBeLessThanOrEqual(5);
     });
 
+    it('should strictly cap in-flight count even with microtask-only factories', async () => {
+      const mockStrategy = {
+        select: vi.fn().mockReturnValue('business-a'),
+      };
+
+      const manager = new WhatsAppMultiAccount({
+        accounts: validAccounts,
+        strategy: mockStrategy,
+      });
+
+      let activeCalls = 0;
+      let maxConcurrent = 0;
+      const concurrency = 3;
+
+      // No setTimeout — factory resolves on the microtask queue only. Exercises
+      // the path where a naive pool that adds before awaiting can briefly go
+      // over the cap.
+      const mockFactory = vi.fn().mockImplementation(async () => {
+        activeCalls++;
+        maxConcurrent = Math.max(maxConcurrent, activeCalls);
+        await Promise.resolve();
+        await Promise.resolve();
+        activeCalls--;
+        return {
+          success: true,
+          data: { messaging_product: 'whatsapp', messages: [{ id: 'msg' }] },
+        };
+      });
+
+      const recipients = Array.from({ length: 25 }, (_, i) => `r-${i}`);
+      await manager.broadcast(recipients, mockFactory, { concurrency });
+
+      expect(maxConcurrent).toBeLessThanOrEqual(concurrency);
+    });
+
     it('should allow per-recipient factory customization', async () => {
       const mockStrategy = {
         select: vi.fn().mockReturnValue('business-a'),

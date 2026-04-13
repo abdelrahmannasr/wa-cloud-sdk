@@ -460,13 +460,19 @@ export class WhatsAppMultiAccount {
     const successes: BroadcastSuccess[] = [];
     const failures: BroadcastFailure[] = [];
 
-    // Promise-based concurrency pool
+    // Promise-based concurrency pool. Wait for a slot BEFORE launching the
+    // next factory call so in-flight count never exceeds concurrency — even
+    // when factories resolve synchronously under microtask-ordering edge cases.
     const results: Promise<void>[] = [];
     const executing = new Set<Promise<void>>();
 
     for (const recipient of recipients) {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- can change during async iteration
       if (this.destroyed) break;
+
+      while (executing.size >= concurrency) {
+        await Promise.race(executing);
+      }
 
       const p = (async () => {
         try {
@@ -480,14 +486,10 @@ export class WhatsAppMultiAccount {
 
       results.push(p);
       executing.add(p);
-      const cleanup = () => {
+      const cleanup = (): void => {
         executing.delete(p);
       };
       p.then(cleanup, cleanup);
-
-      if (executing.size >= concurrency) {
-        await Promise.race(executing);
-      }
     }
 
     await Promise.all(results);
