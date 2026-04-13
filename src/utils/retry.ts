@@ -21,14 +21,20 @@ export const DEFAULT_RETRY_CONFIG: RetryConfig = {
 };
 
 /**
- * Calculate delay with exponential backoff and jitter.
- * Formula: min(baseDelay * 2^attempt, maxDelay) * (1 + random * jitterFactor)
+ * Calculate delay with exponential backoff and equal jitter.
+ * Spreads around the clamped delay so coordinated retry waves actually
+ * decorrelate instead of all waiting ≥ clampedDelay.
+ *
+ * Formula: clampedDelay * (1 - jitter + 2 * jitter * random())
+ *   → range [clampedDelay * (1 - jitter), clampedDelay * (1 + jitter)]
+ *
+ * @internal Exported for statistical testing; not part of the public API.
  */
-function calculateDelay(attempt: number, config: RetryConfig): number {
+export function calculateDelay(attempt: number, config: RetryConfig): number {
   const exponentialDelay = config.baseDelayMs * Math.pow(2, attempt);
   const clampedDelay = Math.min(exponentialDelay, config.maxDelayMs);
-  const jitter = clampedDelay * config.jitterFactor * Math.random();
-  return clampedDelay + jitter;
+  const jitterMultiplier = 1 - config.jitterFactor + 2 * config.jitterFactor * Math.random();
+  return clampedDelay * jitterMultiplier;
 }
 
 /**
