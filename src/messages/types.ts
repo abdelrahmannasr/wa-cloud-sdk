@@ -339,12 +339,12 @@ export interface FlowMessageOptions extends BaseMessageOptions {
   /** Initial screen name and data (used when flowAction='navigate') */
   readonly flowActionPayload?: FlowActionPayload;
   /**
-   * Flow message protocol version. The SDK defaults to '3'. Override only
-   * if you need to test or adopt a newer Meta version before the SDK
-   * updates its pinned default. Typed as a string union to preserve
-   * autocomplete for the default while still allowing any string.
+   * Flow message protocol version. The SDK defaults to '3' and Meta only
+   * supports '3' today. Narrowed to the literal so unsupported values fail
+   * at compile time instead of producing a surprise 400 at runtime; widen
+   * to a literal union (e.g. `'3' | '4'`) when a new Meta version lands.
    */
-  readonly flowMessageVersion?: '3' | (string & {});
+  readonly flowMessageVersion?: '3';
   /** Optional interactive header (text, image, video, or document) */
   readonly header?: InteractiveHeader;
   /** Optional footer text */

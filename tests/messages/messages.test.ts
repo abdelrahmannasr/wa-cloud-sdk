@@ -826,20 +826,20 @@ describe('Messages', () => {
       expect(parameters['mode']).toBe('draft');
     });
 
-    it('should allow per-call flow_message_version override', async () => {
+    it('should explicitly emit flow_message_version "3" when provided', async () => {
       await messages.sendFlow({
         to: '15551234567',
         body: 'Test flow',
         flowCta: 'Start',
         flowId: 'flow_abc_123',
-        flowMessageVersion: '4',
+        flowMessageVersion: '3',
       });
 
       const payload = postSpy.mock.calls[0]![1] as Record<string, unknown>;
       const interactive = payload['interactive'] as Record<string, unknown>;
       const action = interactive['action'] as Record<string, unknown>;
       const parameters = action['parameters'] as Record<string, unknown>;
-      expect(parameters['flow_message_version']).toBe('4');
+      expect(parameters['flow_message_version']).toBe('3');
     });
 
     it('should emit flow_action only when explicitly set (data_exchange)', async () => {
