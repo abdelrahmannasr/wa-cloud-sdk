@@ -71,6 +71,26 @@ export class AuthenticationError extends ApiError {
  * (e.g. an empty `data` array where the SDK expected a single element).
  * Semantically distinct from `ApiError` (explicit 4xx/5xx from the wire)
  * and `ValidationError` (caller passed invalid input).
+ *
+ * @remarks
+ * `NotFoundError` deliberately extends `WhatsAppError` directly — **not**
+ * `ApiError`. The Meta API did not return a 404; it returned a 200 with an
+ * empty result set, and the SDK is translating that into a semantic
+ * "resource missing" signal. Because of this, code that narrows by HTTP
+ * status (`err instanceof ApiError && err.statusCode === 404`) will **not**
+ * catch this error. Consumers should add a dedicated branch:
+ *
+ * ```ts
+ * try {
+ *   await wa.phoneNumbers.getBusinessProfile(id);
+ * } catch (err) {
+ *   if (err instanceof NotFoundError) {
+ *     // empty data array from Meta
+ *   } else if (err instanceof ApiError && err.statusCode === 404) {
+ *     // explicit wire-level 404
+ *   }
+ * }
+ * ```
  */
 export class NotFoundError extends WhatsAppError {
   public readonly resource?: string;

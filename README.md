@@ -761,10 +761,19 @@ WhatsAppError (base)
 ├── ApiError (API response errors)
 │   ├── RateLimitError (429 Too Many Requests)
 │   └── AuthenticationError (401 Unauthorized)
+├── NotFoundError (semantic "resource missing" — see note below)
 ├── ValidationError (client-side validation)
 ├── WebhookVerificationError (signature verification)
 └── MediaError (media upload/download)
 ```
+
+> **Note on `NotFoundError`:** It deliberately does **not** extend `ApiError`.
+> Meta's API returns 200 with an empty `data` array for several "missing
+> resource" cases (e.g. `getBusinessProfile` when the profile is not
+> provisioned). The SDK surfaces those as `NotFoundError`, which a
+> `catch (err) { if (err instanceof ApiError && err.statusCode === 404) }`
+> branch will **not** catch. See the example under "Error Handling Patterns"
+> below for the recommended dual-catch shape.
 
 ### Error Properties
 
@@ -774,6 +783,7 @@ WhatsAppError (base)
 | `ApiError`                 | `WhatsAppError` | `statusCode: number`<br>`errorType: string`<br>`errorSubcode?: number`<br>`fbTraceId?: string` |
 | `RateLimitError`           | `ApiError`      | All ApiError properties<br>`retryAfterMs?: number`                                             |
 | `AuthenticationError`      | `ApiError`      | All ApiError properties                                                                        |
+| `NotFoundError`            | `WhatsAppError` | `resource?: string`                                                                            |
 | `ValidationError`          | `WhatsAppError` | `field?: string`                                                                               |
 | `WebhookVerificationError` | `WhatsAppError` | None                                                                                           |
 | `MediaError`               | `WhatsAppError` | `mediaType?: string`                                                                           |
@@ -839,6 +849,28 @@ try {
     if (error.field) {
       console.error(`Invalid field: ${error.field}`);
     }
+  } else {
+    throw error;
+  }
+}
+```
+
+**4. Handling "resource missing" responses separately from 404s:**
+
+```typescript
+import { ApiError, NotFoundError } from '@abdelrahmannasr-wa/cloud-api';
+
+try {
+  const profile = await wa.phoneNumbers.getBusinessProfile(phoneNumberId);
+  console.log(profile.data.description);
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    // Meta returned 200 with an empty data array — the resource simply
+    // isn't provisioned. `error.resource` names the specific resource.
+    console.log(`No ${error.resource} configured yet`);
+  } else if (error instanceof ApiError && error.statusCode === 404) {
+    // Explicit wire-level 404 from Meta — e.g. the phoneNumberId is bogus.
+    console.error('Unknown phone number ID');
   } else {
     throw error;
   }
