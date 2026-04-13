@@ -25,7 +25,9 @@ import type {
   MarkAsReadOptions,
   MediaSource,
   InteractiveHeader,
+  ProductMessageOptions,
 } from './types.js';
+import { ValidationError } from '../errors/errors.js';
 
 /** Meta's dynamic URL parameter placeholder for CTA URL buttons. */
 const CTA_URL_DYNAMIC_SUFFIX = '{{1}}';
@@ -532,6 +534,49 @@ export class Messages {
       message_id: options.messageId,
     };
     return this.send<MarkAsReadResponse>(payload, requestOptions);
+  }
+
+  /**
+   * Send an interactive single-product message.
+   *
+   * Displays a rich product card for a single item from the catalog.
+   * The platform resolves the product name, price, and image from the catalog
+   * using the provided retailer ID.
+   *
+   * @example
+   * ```ts
+   * await messages.sendProduct({
+   *   to: '15550001234',
+   *   catalogId: '123456789',
+   *   productRetailerId: 'SKU-001',
+   *   body: 'Check out this item!',
+   *   footer: 'Limited stock',
+   * });
+   * ```
+   */
+  async sendProduct(
+    options: ProductMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    if (!options.catalogId.trim()) {
+      throw new ValidationError('catalogId must not be empty', 'catalogId');
+    }
+    if (!options.productRetailerId.trim()) {
+      throw new ValidationError('productRetailerId must not be empty', 'productRetailerId');
+    }
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'product',
+        action: {
+          catalog_id: options.catalogId,
+          product_retailer_id: options.productRetailerId,
+        },
+        ...(options.body !== undefined && { body: { text: options.body } }),
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
+    };
+    return this.send(payload, requestOptions);
   }
 
   // ── Private helpers ──

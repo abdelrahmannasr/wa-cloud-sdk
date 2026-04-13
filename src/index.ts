@@ -78,6 +78,7 @@ export type {
   MessageType,
   FlowActionPayload,
   FlowMessageOptions,
+  ProductMessageOptions,
 } from './messages/index.js';
 
 // Media

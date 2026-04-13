@@ -42,4 +42,5 @@ export type {
   TypingIndicatorOptions,
   MarkAsReadOptions,
   MessageType,
+  ProductMessageOptions,
 } from './types.js';
