@@ -7,4 +7,5 @@ export {
   NotFoundError,
   WebhookVerificationError,
   MediaError,
+  ConflictError,
 } from './errors.js';

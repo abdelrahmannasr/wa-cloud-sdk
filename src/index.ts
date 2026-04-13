@@ -18,8 +18,10 @@ export {
   RateLimitError,
   AuthenticationError,
   ValidationError,
+  NotFoundError,
   WebhookVerificationError,
   MediaError,
+  ConflictError,
 } from './errors/index.js';
 
 // Utilities
