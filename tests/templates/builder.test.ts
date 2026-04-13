@@ -428,4 +428,35 @@ describe('TemplateBuilder', () => {
       }
     });
   });
+
+  describe('sealing after build', () => {
+    it('should throw ValidationError if a setter is called after build', () => {
+      const builder = new TemplateBuilder()
+        .setName('sealed_template')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('hello');
+
+      builder.build();
+
+      expect(() => builder.addBody('mutation after build')).toThrow(ValidationError);
+      expect(() => builder.setName('different')).toThrow(ValidationError);
+      expect(() => builder.addQuickReplyButton('Yes')).toThrow(ValidationError);
+    });
+
+    it('should return independent component arrays on repeated build calls', () => {
+      const builder = new TemplateBuilder()
+        .setName('repeat_build')
+        .setLanguage('en_US')
+        .setCategory('UTILITY')
+        .addBody('hello')
+        .addQuickReplyButton('Yes');
+
+      const first = builder.build();
+      const second = builder.build();
+
+      expect(first.components).not.toBe(second.components);
+      expect(first.components).toEqual(second.components);
+    });
+  });
 });
