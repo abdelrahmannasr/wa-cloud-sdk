@@ -270,6 +270,26 @@ describe('parseWebhookPayload', () => {
       expect(debug.mock.calls[0]![0]).toContain('instagram');
     });
 
+    it('should sanitize attacker-controlled payload.object before logging', () => {
+      const hostile = `\u001b[31mred\u001b[0m${'x'.repeat(500)}\nextra`;
+      const payload = {
+        object: hostile,
+        entry: [],
+      } as unknown as WebhookPayload;
+
+      const debug = vi.fn();
+      const logger = { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+      expect(parseWebhookPayload(payload, { logger })).toEqual([]);
+      expect(debug).toHaveBeenCalledTimes(1);
+      const logged = debug.mock.calls[0]![0] as string;
+      // No raw ANSI escape byte (0x1b) or raw newline bleed into the log line.
+      expect(logged).not.toContain('\u001b');
+      expect(logged.split('\n')).toHaveLength(1);
+      // Length is bounded (prefix + up to 66 chars for the JSON slice + suffix).
+      expect(logged.length).toBeLessThan(150);
+    });
+
     it('should return empty array when messages and statuses are both absent', () => {
       const payload = createPayload({});
       expect(parseWebhookPayload(payload)).toEqual([]);

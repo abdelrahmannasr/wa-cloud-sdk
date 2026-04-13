@@ -34,9 +34,12 @@ export function parseWebhookPayload(
   if (payload.object !== 'whatsapp_business_account') {
     // Meta only documents `whatsapp_business_account`; log so operators can
     // spot misconfigured subscriptions instead of returning a silent 200.
-    // We log the literal value only — never the payload body (FR-030).
+    // JSON.stringify + slice caps length and escapes ANSI/newlines so an
+    // attacker cannot inject control bytes into operator log streams. We log
+    // the literal value only — never the payload body (FR-030).
+    const safeObject = JSON.stringify(String(payload.object)).slice(0, 66);
     options?.logger?.debug(
-      `parseWebhookPayload: unknown payload.object "${payload.object}", skipping`,
+      `parseWebhookPayload: unknown payload.object ${safeObject}, skipping`,
     );
     return [];
   }
