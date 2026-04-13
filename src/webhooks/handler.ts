@@ -121,6 +121,9 @@ export function createWebhookHandler(
           case 'flow_completion':
             await callbacks.onFlowCompletion?.(event);
             break;
+          case 'order':
+            await callbacks.onOrder?.(event);
+            break;
         }
       }
 
