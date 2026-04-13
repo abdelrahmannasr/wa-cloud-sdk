@@ -99,6 +99,37 @@ describe('createWebhookHandler', () => {
       expect(result.body).toBe('Invalid JSON');
     });
 
+    it('should log a warning when a signed body fails to parse as JSON', async () => {
+      const warn = vi.fn();
+      const logger = { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() };
+      const handler = createWebhookHandler({ ...config, logger }, {});
+      const rawBody = 'not json{{{';
+
+      const result = await handler.handlePost(rawBody, signBody(rawBody));
+
+      expect(result.statusCode).toBe(400);
+      expect(warn).toHaveBeenCalledTimes(1);
+      // FR-030: the raw body must not appear in the log message.
+      const message = warn.mock.calls[0]![0] as string;
+      expect(message).toContain('failed to parse');
+      expect(message).not.toContain(rawBody);
+    });
+
+    it('should log a warning when a signed body has unexpected structure', async () => {
+      const warn = vi.fn();
+      const logger = { debug: vi.fn(), info: vi.fn(), warn, error: vi.fn() };
+      const handler = createWebhookHandler({ ...config, logger }, {});
+      const rawBody = JSON.stringify({ hello: 'world' });
+
+      const result = await handler.handlePost(rawBody, signBody(rawBody));
+
+      expect(result.statusCode).toBe(400);
+      expect(warn).toHaveBeenCalledTimes(1);
+      const message = warn.mock.calls[0]![0] as string;
+      expect(message).toContain('unexpected structure');
+      expect(message).not.toContain('world');
+    });
+
     it('should call onMessage callback for message events', async () => {
       const onMessage = vi.fn();
       const handler = createWebhookHandler(config, { onMessage });

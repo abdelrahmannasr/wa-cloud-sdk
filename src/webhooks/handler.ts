@@ -81,10 +81,14 @@ export function createWebhookHandler(
           !('object' in parsed) ||
           !('entry' in parsed)
         ) {
+          config.logger?.warn('handlePost: signed webhook body has unexpected structure');
           return { statusCode: 400, body: 'Invalid webhook payload structure' };
         }
         body = parsed as WebhookPayload;
-      } catch {
+      } catch (error: unknown) {
+        // Signed-but-unparseable bodies signal a real Meta/SDK contract break;
+        // surface for operators, never include the body (FR-030).
+        config.logger?.warn('handlePost: failed to parse signed webhook body as JSON', error);
         return { statusCode: 400, body: 'Invalid JSON' };
       }
 
