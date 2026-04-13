@@ -79,7 +79,10 @@ export type {
   FlowActionPayload,
   FlowMessageOptions,
   ProductMessageOptions,
+  ProductSection,
+  ProductListMessageOptions,
 } from './messages/index.js';
+export { MULTI_PRODUCT_LIMITS } from './messages/index.js';
 
 // Media
 export { Media } from './media/index.js';

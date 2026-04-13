@@ -43,4 +43,7 @@ export type {
   MarkAsReadOptions,
   MessageType,
   ProductMessageOptions,
+  ProductSection,
+  ProductListMessageOptions,
 } from './types.js';
+export { MULTI_PRODUCT_LIMITS } from './types.js';
