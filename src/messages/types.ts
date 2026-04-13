@@ -442,6 +442,37 @@ export interface ProductListMessageOptions extends BaseMessageOptions {
   readonly sections: readonly ProductSection[];
 }
 
+// ── Commerce: Catalog Message ──
+
+/**
+ * Options for sendCatalogMessage — sends an interactive catalog browse invitation.
+ *
+ * The recipient sees a "View catalog" entry point that opens the business's full catalog.
+ * Optionally pin a thumbnail product to display alongside the invitation.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendCatalogMessage({
+ *   to: '15550001234',
+ *   body: 'Browse our full collection',
+ *   footer: 'Free shipping on orders over $50',
+ *   thumbnailProductRetailerId: 'featured-item-001',
+ * });
+ * ```
+ */
+export interface CatalogMessageOptions extends BaseMessageOptions {
+  /** Required body text explaining the catalog offer */
+  readonly body: string;
+  /** Optional footer text */
+  readonly footer?: string;
+  /**
+   * Optional retailer ID of a product to use as the thumbnail preview.
+   * The product must exist in the WABA's catalog.
+   * If present, must not be empty.
+   */
+  readonly thumbnailProductRetailerId?: string;
+}
+
 // ── Typing Indicator ──
 
 export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;
