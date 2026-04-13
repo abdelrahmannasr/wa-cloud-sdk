@@ -91,6 +91,25 @@ describe('HttpClient', () => {
       client.destroy();
     });
 
+    it('should resolve paths with a leading slash under the subpath', async () => {
+      // A leading slash would otherwise make `new URL(path, base)` resolve
+      // against origin only, dropping both the baseUrl subpath and apiVersion.
+      mockFetch.mockResolvedValue(createMockResponse({ success: true }));
+      const client = new HttpClient({
+        ...BASE_CONFIG,
+        baseUrl: 'https://proxy.internal/sdk',
+        apiVersion: 'v21.0',
+      });
+
+      await client.get('/messages');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://proxy.internal/sdk/v21.0/messages',
+        expect.objectContaining({ method: 'GET' }),
+      );
+      client.destroy();
+    });
+
     it('should append query parameters', async () => {
       mockFetch.mockResolvedValue(createMockResponse({ success: true }));
       const client = new HttpClient(BASE_CONFIG);

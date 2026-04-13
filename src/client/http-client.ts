@@ -280,7 +280,10 @@ export class HttpClient {
   }
 
   private buildUrl(path: string, params?: Record<string, string>): string {
-    const url = new URL(`${this.apiVersion}/${path}`, this.baseUrl);
+    // Strip leading slashes so `new URL('/foo', 'https://host/sub/')` does not
+    // resolve against origin only and drop both apiVersion and the subpath.
+    const relativePath = path.replace(/^\/+/, '');
+    const url = new URL(`${this.apiVersion}/${relativePath}`, this.baseUrl);
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
