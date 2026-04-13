@@ -6,6 +6,7 @@ import type {
   StatusEvent,
   ErrorEvent,
   FlowCompletionEvent,
+  OrderEvent,
 } from '../../src/webhooks/types.js';
 
 const APP_SECRET = 'test_secret';
@@ -386,6 +387,94 @@ describe('createWebhookHandler', () => {
 
       expect(onMessage).toHaveBeenCalledTimes(1);
       expect(onFlowCompletion).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('onOrder callback', () => {
+    function createOrderBody(withText = false): string {
+      return JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'Bob' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.order001',
+                      timestamp: '1712620800',
+                      type: 'order',
+                      order: {
+                        catalog_id: 'cat-001',
+                        product_items: [
+                          { product_retailer_id: 'SKU-A', quantity: 2, item_price: 999, currency: 'USD' },
+                        ],
+                        ...(withText && { text: 'Please rush' }),
+                      },
+                    },
+                  ],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    it('should invoke onOrder callback once for an order event', async () => {
+      const onOrder = vi.fn();
+      const handler = createWebhookHandler(config, { onOrder });
+      const body = createOrderBody();
+
+      await handler.handlePost(body, signBody(body));
+
+      expect(onOrder).toHaveBeenCalledTimes(1);
+      const event = onOrder.mock.calls[0]![0] as OrderEvent;
+      expect(event.type).toBe('order');
+      expect(event.messageId).toBe('wamid.order001');
+      expect(event.catalogId).toBe('cat-001');
+      expect(event.items).toHaveLength(1);
+    });
+
+    it('should NOT invoke onMessage for an order event', async () => {
+      const onMessage = vi.fn();
+      const onOrder = vi.fn();
+      const handler = createWebhookHandler(config, { onMessage, onOrder });
+      const body = createOrderBody();
+
+      await handler.handlePost(body, signBody(body));
+
+      expect(onOrder).toHaveBeenCalledTimes(1);
+      expect(onMessage).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when no onOrder callback is registered', async () => {
+      const handler = createWebhookHandler(config, {});
+      const body = createOrderBody();
+
+      await expect(handler.handlePost(body, signBody(body))).resolves.toMatchObject({
+        statusCode: 200,
+      });
+    });
+
+    it('should await async onOrder callback', async () => {
+      let resolved = false;
+      const onOrder = vi.fn().mockImplementation(async () => {
+        await new Promise<void>((r) => setTimeout(r, 10));
+        resolved = true;
+      });
+      const handler = createWebhookHandler(config, { onOrder });
+      const body = createOrderBody();
+
+      await handler.handlePost(body, signBody(body));
+
+      expect(resolved).toBe(true);
     });
   });
 });
