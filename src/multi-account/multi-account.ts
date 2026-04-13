@@ -466,7 +466,9 @@ export class WhatsAppMultiAccount {
     // Promise-based concurrency pool. Wait for a slot BEFORE launching the
     // next factory call so in-flight count never exceeds concurrency — even
     // when factories resolve synchronously under microtask-ordering edge cases.
-    const results: Promise<void>[] = [];
+    // Only the `executing` Set retains promise references; once a promise
+    // settles it is removed and eligible for GC, so memory stays O(concurrency)
+    // regardless of recipient count.
     const executing = new Set<Promise<void>>();
 
     for (const recipient of recipients) {
@@ -496,7 +498,6 @@ export class WhatsAppMultiAccount {
         }
       })();
 
-      results.push(p);
       executing.add(p);
       const cleanup = (): void => {
         executing.delete(p);
@@ -504,7 +505,7 @@ export class WhatsAppMultiAccount {
       p.then(cleanup, cleanup);
     }
 
-    await Promise.all(results);
+    await Promise.all([...executing]);
 
     return { successes, failures, total: recipients.length };
   }
