@@ -419,6 +419,126 @@ const result = await manager.broadcast(
 
 **Flows methods:** `list()`, `get()`, `create()`, `updateMetadata()`, `updateAssets()`, `publish()`, `deprecate()`, `delete()`, `getPreview()`.
 
+## Commerce & Catalogs
+
+Send product messages, receive order notifications, and manage your product catalog programmatically. All catalog operations require `businessAccountId` in the client config.
+
+### Send a Single Product Message
+
+```typescript
+// Display one product card to a recipient
+await wa.messages.sendProduct({
+  to: '1234567890',
+  catalogId: 'CATALOG_ID',
+  productRetailerId: 'SKU-001',
+  body: 'Check out this item — just restocked!',
+  footer: 'Limited stock',
+});
+```
+
+### Send a Multi-Product List
+
+Up to 30 products across up to 10 named sections (validated client-side before the API call):
+
+```typescript
+await wa.messages.sendProductList({
+  to: '1234567890',
+  catalogId: 'CATALOG_ID',
+  header: "Today's Specials",
+  body: "Here's our curated selection.",
+  sections: [
+    {
+      title: 'Beverages',
+      productRetailerIds: ['cola-001', 'juice-002'],
+    },
+    {
+      title: 'Snacks',
+      productRetailerIds: ['chips-001', 'nuts-002'],
+    },
+  ],
+});
+```
+
+### Send a Catalog Message
+
+Invite the recipient to browse your entire catalog. Optionally pin a featured product as a thumbnail:
+
+```typescript
+await wa.messages.sendCatalogMessage({
+  to: '1234567890',
+  body: 'Browse our full collection.',
+  footer: 'Free shipping on orders over $50',
+  thumbnailProductRetailerId: 'featured-item-001', // optional
+});
+```
+
+### Receive Order Notifications
+
+When a recipient submits a cart, the SDK fires a dedicated `OrderEvent` via `onOrder`. This event is **never** delivered to the generic `onMessage` callback:
+
+```typescript
+wa.webhooks.onOrder(async (event) => {
+  // Deduplicate using the stable platform message ID
+  if (await db.isProcessed(event.messageId)) return;
+  await db.markProcessed(event.messageId);
+
+  console.log(`Order from ${event.from}: ${event.items.length} item(s)`);
+  for (const item of event.items) {
+    console.log(`  ${item.product_retailer_id} × ${item.quantity} @ ${item.item_price} ${item.currency}`);
+  }
+
+  // Reply to confirm
+  await wa.messages.sendText({
+    to: event.from,
+    body: `Thanks! We received your order and will process it shortly.`,
+  });
+});
+```
+
+`event.raw` preserves the original JSON-stringified payload for storage or auditing. If `product_items` is malformed, `event.items` is `[]` and `event.raw` is still preserved.
+
+### Catalog Management
+
+Create, update, and delete products from code. Requires `businessAccountId`:
+
+```typescript
+// List catalogs connected to the WABA
+const { data } = await wa.catalog.listCatalogs();
+
+// Create a product (strict — throws ConflictError on duplicate retailer_id)
+try {
+  await wa.catalog.createProduct('CATALOG_ID', {
+    retailer_id: 'SKU-001',
+    name: 'Wireless Headphones',
+    image_url: 'https://example.com/sku-001.jpg',
+    price: 4999,       // integer minor units ($49.99)
+    currency: 'USD',
+    availability: 'in stock',
+  });
+} catch (err) {
+  if (err instanceof ConflictError) {
+    // Fall back to upsert (create-or-update)
+    await wa.catalog.upsertProduct('CATALOG_ID', { /* same payload */ });
+  }
+}
+
+// Partial update
+await wa.catalog.updateProduct('PRODUCT_ID', { price: 3999 });
+
+// Delete
+await wa.catalog.deleteProduct('PRODUCT_ID');
+```
+
+**Catalog methods:** `listCatalogs()`, `getCatalog()`, `listProducts()`, `getProduct()`, `createProduct()`, `upsertProduct()`, `updateProduct()`, `deleteProduct()`.
+
+### Limitations
+
+- **No bulk product mutations** — single-product CRUD only; compose multiple calls for bulk sync.
+- **No product image hosting** — `image_url` must be a publicly accessible HTTPS URL hosted by the consumer (own CDN, S3, Cloudflare R2, etc.).
+- **No order acknowledgement messages** — reply to orders with any existing message type (e.g., `sendText`); dedicated `sendOrderStatusMessage` is out of scope for v0.4.0.
+- **No lookup by `retailer_id`** — use `listProducts` with a filter to find a product by its retailer ID, or use `upsertProduct` for create-or-update semantics.
+- **Catalog IDs are WABA-scoped** — when broadcasting across multiple accounts in different WABAs, maintain a per-account catalog ID mapping.
+
 ## Webhooks
 
 Handle incoming webhook events from WhatsApp:
