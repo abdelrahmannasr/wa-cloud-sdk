@@ -412,7 +412,12 @@ describe('createWebhookHandler', () => {
                       order: {
                         catalog_id: 'cat-001',
                         product_items: [
-                          { product_retailer_id: 'SKU-A', quantity: 2, item_price: 999, currency: 'USD' },
+                          {
+                            product_retailer_id: 'SKU-A',
+                            quantity: 2,
+                            item_price: 999,
+                            currency: 'USD',
+                          },
                         ],
                         ...(withText && { text: 'Please rush' }),
                       },

@@ -426,9 +426,7 @@ describe('parseWebhookPayload', () => {
       form: { full_name: 'Alice Example', email: 'alice@example.com' },
     };
 
-    function createNfmReplyPayload(
-      responseJson: string = JSON.stringify(flowResponseData),
-    ) {
+    function createNfmReplyPayload(responseJson: string = JSON.stringify(flowResponseData)) {
       return createPayload({
         contacts: [{ profile: { name: 'Alice' }, wa_id: '15559876543' }],
         messages: [
@@ -601,7 +599,9 @@ describe('parseWebhookPayload', () => {
       expect(event.raw).toBe(
         JSON.stringify({
           catalog_id: 'cat-001',
-          product_items: [{ product_retailer_id: 'SKU-A', quantity: 2, item_price: 999, currency: 'USD' }],
+          product_items: [
+            { product_retailer_id: 'SKU-A', quantity: 2, item_price: 999, currency: 'USD' },
+          ],
         }),
       );
     });
@@ -666,7 +666,14 @@ describe('parseWebhookPayload', () => {
                       type: 'order',
                       order: {
                         catalog_id: 'cat-001',
-                        product_items: [{ product_retailer_id: 'SKU-A', quantity: 1, item_price: 999, currency: 'USD' }],
+                        product_items: [
+                          {
+                            product_retailer_id: 'SKU-A',
+                            quantity: 1,
+                            item_price: 999,
+                            currency: 'USD',
+                          },
+                        ],
                       },
                     },
                     {

@@ -102,10 +102,7 @@ export class Flows {
       });
     }
 
-    return this.client.get<FlowListResponse>(
-      `${this.businessAccountId}/flows`,
-      requestOptions,
-    );
+    return this.client.get<FlowListResponse>(`${this.businessAccountId}/flows`, requestOptions);
   }
 
   /**
@@ -223,9 +220,7 @@ export class Flows {
     requestOptions?: RequestOptions,
   ): Promise<ApiResponse<UpdateFlowAssetsResponse>> {
     const jsonString =
-      typeof request.flow_json === 'string'
-        ? request.flow_json
-        : JSON.stringify(request.flow_json);
+      typeof request.flow_json === 'string' ? request.flow_json : JSON.stringify(request.flow_json);
 
     const blob = new Blob([jsonString], { type: 'application/json' });
     const formData = new FormData();

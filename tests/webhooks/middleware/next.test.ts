@@ -200,11 +200,7 @@ describe('createNextRouteHandler', () => {
       const callbackError = new Error('callback boom');
       const onMessage = vi.fn().mockRejectedValue(callbackError);
       const onInternalError = vi.fn();
-      const { POST } = createNextRouteHandler(
-        CONFIG,
-        { onMessage },
-        { onInternalError },
-      );
+      const { POST } = createNextRouteHandler(CONFIG, { onMessage }, { onInternalError });
 
       const payload = {
         object: 'whatsapp_business_account',
@@ -251,11 +247,7 @@ describe('createNextRouteHandler', () => {
     it('should still return 500 if onInternalError itself throws', async () => {
       const onMessage = vi.fn().mockRejectedValue(new Error('callback boom'));
       const onInternalError = vi.fn().mockRejectedValue(new Error('observer boom'));
-      const { POST } = createNextRouteHandler(
-        CONFIG,
-        { onMessage },
-        { onInternalError },
-      );
+      const { POST } = createNextRouteHandler(CONFIG, { onMessage }, { onInternalError });
 
       const payload = {
         object: 'whatsapp_business_account',

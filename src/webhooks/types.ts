@@ -340,7 +340,12 @@ export interface OrderEvent {
 }
 
 /** Discriminated union of all webhook events. */
-export type WebhookEvent = MessageEvent | StatusEvent | ErrorEvent | FlowCompletionEvent | OrderEvent;
+export type WebhookEvent =
+  | MessageEvent
+  | StatusEvent
+  | ErrorEvent
+  | FlowCompletionEvent
+  | OrderEvent;
 
 // ════════════════════════════════════════════
 // HANDLER CONFIGURATION

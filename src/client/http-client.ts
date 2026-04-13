@@ -195,9 +195,7 @@ export class HttpClient {
     });
 
     if (!allowed) {
-      throw new MediaError(
-        `Refusing to send credentials to untrusted media host "${hostname}"`,
-      );
+      throw new MediaError(`Refusing to send credentials to untrusted media host "${hostname}"`);
     }
   }
 

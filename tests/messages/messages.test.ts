@@ -1096,7 +1096,9 @@ describe('Messages', () => {
             body: { text: 'Check these out' },
             action: {
               catalog_id: 'cat-001',
-              sections: [{ title: 'Featured', product_items: [{ product_retailer_id: 'SKU-001' }] }],
+              sections: [
+                { title: 'Featured', product_items: [{ product_retailer_id: 'SKU-001' }] },
+              ],
             },
           },
         },
@@ -1129,9 +1131,9 @@ describe('Messages', () => {
     });
 
     it('should throw ValidationError when sections is empty', async () => {
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections: [] }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendProductList({ ...minimalOptions, sections: [] })).rejects.toThrow(
+        ValidationError,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 
@@ -1140,9 +1142,9 @@ describe('Messages', () => {
         title: `Sec${i}`,
         productRetailerIds: [`sku${i}`],
       }));
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections }),
-      ).rejects.toThrow(/sections must not exceed 10/);
+      await expect(messages.sendProductList({ ...minimalOptions, sections })).rejects.toThrow(
+        /sections must not exceed 10/,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 
@@ -1151,33 +1153,33 @@ describe('Messages', () => {
         { title: 'A', productRetailerIds: Array.from({ length: 16 }, (_, i) => `a${i}`) },
         { title: 'B', productRetailerIds: Array.from({ length: 15 }, (_, i) => `b${i}`) },
       ];
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections }),
-      ).rejects.toThrow(/total product items must not exceed 30/);
+      await expect(messages.sendProductList({ ...minimalOptions, sections })).rejects.toThrow(
+        /total product items must not exceed 30/,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError when section title is empty', async () => {
       const sections = [{ title: '', productRetailerIds: ['SKU-001'] }];
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections }),
-      ).rejects.toThrow(/title must not be empty/);
+      await expect(messages.sendProductList({ ...minimalOptions, sections })).rejects.toThrow(
+        /title must not be empty/,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError when section title exceeds 24 characters', async () => {
       const sections = [{ title: 'A'.repeat(25), productRetailerIds: ['SKU-001'] }];
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections }),
-      ).rejects.toThrow(/must not exceed 24 characters/);
+      await expect(messages.sendProductList({ ...minimalOptions, sections })).rejects.toThrow(
+        /must not exceed 24 characters/,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 
     it('should throw ValidationError when a product retailer ID is empty', async () => {
       const sections = [{ title: 'Valid', productRetailerIds: [''] }];
-      await expect(
-        messages.sendProductList({ ...minimalOptions, sections }),
-      ).rejects.toThrow(/productRetailerIds/);
+      await expect(messages.sendProductList({ ...minimalOptions, sections })).rejects.toThrow(
+        /productRetailerIds/,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
   });
@@ -1236,9 +1238,9 @@ describe('Messages', () => {
     });
 
     it('should throw ValidationError when body is empty', async () => {
-      await expect(
-        messages.sendCatalogMessage({ to: '15551234567', body: '' }),
-      ).rejects.toThrow(ValidationError);
+      await expect(messages.sendCatalogMessage({ to: '15551234567', body: '' })).rejects.toThrow(
+        ValidationError,
+      );
       expect(postSpy).not.toHaveBeenCalled();
     });
 

@@ -204,10 +204,7 @@ export class Webhooks {
   createHandler(callbacks: WebhookHandlerCallbacks): WebhookHandler {
     const merged: WebhookHandlerCallbacks = { ...this._pendingCallbacks, ...callbacks };
     const { appSecret, verifyToken } = this.requireWebhookConfig();
-    return createWebhookHandler(
-      { appSecret, verifyToken, logger: this.config.logger },
-      merged,
-    );
+    return createWebhookHandler({ appSecret, verifyToken, logger: this.config.logger }, merged);
   }
 
   /**

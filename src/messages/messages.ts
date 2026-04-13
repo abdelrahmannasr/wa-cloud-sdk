@@ -687,7 +687,10 @@ export class Messages {
     for (const section of options.sections) {
       const si = sectionIndex++;
       if (!section.title.trim()) {
-        throw new ValidationError(`sections[${si}].title must not be empty`, `sections[${si}].title`);
+        throw new ValidationError(
+          `sections[${si}].title must not be empty`,
+          `sections[${si}].title`,
+        );
       }
       if (section.title.trim().length > MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH) {
         throw new ValidationError(

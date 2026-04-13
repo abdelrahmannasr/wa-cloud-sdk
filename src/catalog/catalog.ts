@@ -361,10 +361,7 @@ export class Catalog {
 
     const keys = Object.keys(updates);
     if (keys.length === 0) {
-      throw new ValidationError(
-        'At least one field must be provided for updateProduct',
-        'updates',
-      );
+      throw new ValidationError('At least one field must be provided for updateProduct', 'updates');
     }
 
     this.validateUpdateFields(updates);
@@ -414,13 +411,13 @@ export class Catalog {
     }
 
     if (!request.image_url && !request.url) {
-      throw new ValidationError(
-        'At least one of image_url or url must be provided',
-        'image_url',
-      );
+      throw new ValidationError('At least one of image_url or url must be provided', 'image_url');
     }
 
-    if (request.currency !== undefined && !CATALOG_VALIDATION.CURRENCY_PATTERN.test(request.currency)) {
+    if (
+      request.currency !== undefined &&
+      !CATALOG_VALIDATION.CURRENCY_PATTERN.test(request.currency)
+    ) {
       throw new ValidationError(
         `currency must be a valid ISO 4217 three-letter code (got "${request.currency}")`,
         'currency',

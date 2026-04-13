@@ -40,9 +40,7 @@ export function parseWebhookPayload(
     // attacker cannot inject control bytes into operator log streams. We log
     // the literal value only — never the payload body (FR-030).
     const safeObject = JSON.stringify(payload.object).slice(0, 66);
-    options?.logger?.debug(
-      `parseWebhookPayload: unknown payload.object ${safeObject}, skipping`,
-    );
+    options?.logger?.debug(`parseWebhookPayload: unknown payload.object ${safeObject}, skipping`);
     return [];
   }
 

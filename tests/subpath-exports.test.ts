@@ -87,10 +87,7 @@ describe('catalog subpath exports', () => {
 
   it('should export all documented catalog types and constants', async () => {
     const mod = (await import('../src/catalog/index.js')) as Record<string, unknown>;
-    const expectedKeys = [
-      'Catalog',
-      'CATALOG_VALIDATION',
-    ];
+    const expectedKeys = ['Catalog', 'CATALOG_VALIDATION'];
     for (const key of expectedKeys) {
       expect(mod[key], `Expected export "${key}" to be defined`).toBeDefined();
     }

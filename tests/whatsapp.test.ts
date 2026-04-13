@@ -252,9 +252,7 @@ describe('WhatsApp', () => {
       });
 
       expect(() => wa.flows).toThrow(ValidationError);
-      expect(() => wa.flows).toThrow(
-        'businessAccountId is required for flow operations',
-      );
+      expect(() => wa.flows).toThrow('businessAccountId is required for flow operations');
 
       try {
         void wa.flows;

@@ -215,7 +215,9 @@ describe('Catalog', () => {
   describe('getProduct', () => {
     it('should call GET {productId} with no fields', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      getSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }));
+      getSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }),
+      );
 
       await catalog.getProduct(PRODUCT_ID);
 
@@ -224,7 +226,9 @@ describe('Catalog', () => {
 
     it('should pass fields when provided', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      getSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }));
+      getSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }),
+      );
 
       await catalog.getProduct(PRODUCT_ID, ['id', 'name', 'price']);
 
@@ -262,7 +266,9 @@ describe('Catalog', () => {
 
     it('should accept request with url instead of image_url', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }),
+      );
 
       await catalog.createProduct(CATALOG_ID, {
         retailer_id: RETAILER_ID,
@@ -275,7 +281,9 @@ describe('Catalog', () => {
 
     it('should accept full optional fields', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }),
+      );
 
       await catalog.createProduct(CATALOG_ID, {
         retailer_id: RETAILER_ID,
@@ -298,15 +306,14 @@ describe('Catalog', () => {
         new ApiError('Product with retailer_id already exists', 400, 'OAuthException'),
       );
 
-      await expect(catalog.createProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST))
-        .rejects.toThrow(ConflictError);
+      await expect(catalog.createProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST)).rejects.toThrow(
+        ConflictError,
+      );
     });
 
     it('should set resource to retailer_id on ConflictError', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockRejectedValueOnce(
-        new ApiError('Product already exists', 400, 'OAuthException'),
-      );
+      postSpy.mockRejectedValueOnce(new ApiError('Product already exists', 400, 'OAuthException'));
 
       try {
         await catalog.createProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST);
@@ -321,14 +328,16 @@ describe('Catalog', () => {
       const apiErr = new ApiError('Invalid catalog', 400, 'OAuthException');
       postSpy.mockRejectedValueOnce(apiErr);
 
-      await expect(catalog.createProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST))
-        .rejects.toThrow(ApiError);
+      await expect(catalog.createProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST)).rejects.toThrow(
+        ApiError,
+      );
     });
 
     it('should throw ValidationError when catalogId is empty', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      await expect(catalog.createProduct('', MINIMAL_CREATE_REQUEST))
-        .rejects.toThrow(ValidationError);
+      await expect(catalog.createProduct('', MINIMAL_CREATE_REQUEST)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw ValidationError when retailer_id is empty', async () => {
@@ -386,7 +395,9 @@ describe('Catalog', () => {
   describe('upsertProduct', () => {
     it('should call POST {catalogId}/products?retailer_id={id}', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }),
+      );
 
       await catalog.upsertProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST);
 
@@ -401,7 +412,9 @@ describe('Catalog', () => {
 
     it('should not throw ConflictError (upsert semantics)', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Headphones' }),
+      );
 
       // Should succeed without ConflictError even if it creates or updates
       const result = await catalog.upsertProduct(CATALOG_ID, MINIMAL_CREATE_REQUEST);
@@ -417,7 +430,9 @@ describe('Catalog', () => {
 
     it('should throw ValidationError when catalogId is empty', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      await expect(catalog.upsertProduct('', MINIMAL_CREATE_REQUEST)).rejects.toThrow(ValidationError);
+      await expect(catalog.upsertProduct('', MINIMAL_CREATE_REQUEST)).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -426,15 +441,13 @@ describe('Catalog', () => {
   describe('updateProduct', () => {
     it('should call POST {productId} with partial update', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Updated', price: 3999 }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Updated', price: 3999 }),
+      );
 
       await catalog.updateProduct(PRODUCT_ID, { price: 3999, currency: 'USD' });
 
-      expect(postSpy).toHaveBeenCalledWith(
-        PRODUCT_ID,
-        { price: 3999, currency: 'USD' },
-        undefined,
-      );
+      expect(postSpy).toHaveBeenCalledWith(PRODUCT_ID, { price: 3999, currency: 'USD' }, undefined);
     });
 
     it('should throw ValidationError when productId is empty', async () => {
@@ -449,16 +462,16 @@ describe('Catalog', () => {
 
     it('should throw ValidationError for invalid currency in update', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      await expect(
-        catalog.updateProduct(PRODUCT_ID, { currency: 'usd' }),
-      ).rejects.toThrow(ValidationError);
+      await expect(catalog.updateProduct(PRODUCT_ID, { currency: 'usd' })).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw ValidationError for negative price in update', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      await expect(
-        catalog.updateProduct(PRODUCT_ID, { price: -500 }),
-      ).rejects.toThrow(ValidationError);
+      await expect(catalog.updateProduct(PRODUCT_ID, { price: -500 })).rejects.toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -496,7 +509,9 @@ describe('Catalog', () => {
   describe('validation edge cases', () => {
     it('should accept zero price as valid', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Free' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Free' }),
+      );
 
       // price === 0 is valid (free item)
       await expect(
@@ -506,7 +521,9 @@ describe('Catalog', () => {
 
     it('should accept valid 3-letter uppercase currency', async () => {
       const catalog = new Catalog(client, WABA_ID);
-      postSpy.mockResolvedValueOnce(makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }));
+      postSpy.mockResolvedValueOnce(
+        makeResponse({ id: PRODUCT_ID, retailer_id: RETAILER_ID, name: 'Product' }),
+      );
 
       await expect(
         catalog.createProduct(CATALOG_ID, { ...MINIMAL_CREATE_REQUEST, currency: 'EUR' }),

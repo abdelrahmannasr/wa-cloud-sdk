@@ -351,11 +351,9 @@ describe('Flows', () => {
       const flows = new Flows(client, BUSINESS_ACCOUNT_ID);
       await flows.updateAssets('flow_123', { flow_json: '{}' }, { timeoutMs: 5000 });
 
-      expect(uploadSpy).toHaveBeenCalledWith(
-        'flow_123/assets',
-        expect.any(FormData),
-        { timeoutMs: 5000 },
-      );
+      expect(uploadSpy).toHaveBeenCalledWith('flow_123/assets', expect.any(FormData), {
+        timeoutMs: 5000,
+      });
     });
   });
 
@@ -402,7 +400,10 @@ describe('Flows', () => {
   describe('getPreview', () => {
     it('should GET {flowId} with preview.invalidate(false) field', async () => {
       getSpy.mockResolvedValue({
-        data: { id: 'flow_123', preview: { preview_url: 'https://example.com', expires_at: '2026-04-10' } },
+        data: {
+          id: 'flow_123',
+          preview: { preview_url: 'https://example.com', expires_at: '2026-04-10' },
+        },
       });
 
       const flows = new Flows(client, BUSINESS_ACCOUNT_ID);
