@@ -81,6 +81,7 @@ export type {
   ProductMessageOptions,
   ProductSection,
   ProductListMessageOptions,
+  CatalogMessageOptions,
 } from './messages/index.js';
 export { MULTI_PRODUCT_LIMITS } from './messages/index.js';
 
