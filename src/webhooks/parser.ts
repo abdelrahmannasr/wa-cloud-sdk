@@ -37,7 +37,7 @@ export function parseWebhookPayload(
     // JSON.stringify + slice caps length and escapes ANSI/newlines so an
     // attacker cannot inject control bytes into operator log streams. We log
     // the literal value only — never the payload body (FR-030).
-    const safeObject = JSON.stringify(String(payload.object)).slice(0, 66);
+    const safeObject = JSON.stringify(payload.object).slice(0, 66);
     options?.logger?.debug(
       `parseWebhookPayload: unknown payload.object ${safeObject}, skipping`,
     );
