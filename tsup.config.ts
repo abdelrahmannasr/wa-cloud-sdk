@@ -12,6 +12,7 @@ export default defineConfig({
     'flows/index': 'src/flows/index.ts',
     'phone-numbers/index': 'src/phone-numbers/index.ts',
     'multi-account/index': 'src/multi-account/index.ts',
+    'catalog/index': 'src/catalog/index.ts',
   },
   format: ['cjs', 'esm'],
   dts: true,
