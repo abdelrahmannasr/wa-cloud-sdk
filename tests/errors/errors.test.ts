@@ -5,6 +5,7 @@ import {
   RateLimitError,
   AuthenticationError,
   ValidationError,
+  NotFoundError,
   WebhookVerificationError,
   MediaError,
 } from '../../src/errors/errors.js';
@@ -117,6 +118,28 @@ describe('ValidationError', () => {
 
   it('should be an instance of WhatsAppError but not ApiError', () => {
     const error = new ValidationError('test');
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toBeInstanceOf(WhatsAppError);
+    expect(error).not.toBeInstanceOf(ApiError);
+  });
+});
+
+describe('NotFoundError', () => {
+  it('should set resource and code', () => {
+    const error = new NotFoundError('profile missing', 'businessProfile');
+    expect(error.message).toBe('profile missing');
+    expect(error.resource).toBe('businessProfile');
+    expect(error.code).toBe('NOT_FOUND_ERROR');
+    expect(error.name).toBe('NotFoundError');
+  });
+
+  it('should work without resource', () => {
+    const error = new NotFoundError('not found');
+    expect(error.resource).toBeUndefined();
+  });
+
+  it('should be an instance of WhatsAppError but not ApiError', () => {
+    const error = new NotFoundError('test');
     expect(error).toBeInstanceOf(Error);
     expect(error).toBeInstanceOf(WhatsAppError);
     expect(error).not.toBeInstanceOf(ApiError);

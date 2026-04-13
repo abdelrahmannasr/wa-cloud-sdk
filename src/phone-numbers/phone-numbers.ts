@@ -1,6 +1,6 @@
 import type { HttpClient } from '../client/http-client.js';
 import type { RequestOptions, ApiResponse } from '../client/types.js';
-import { ValidationError } from '../errors/errors.js';
+import { NotFoundError, ValidationError } from '../errors/errors.js';
 import type {
   PhoneNumber,
   PhoneNumberListParams,
@@ -208,10 +208,12 @@ export class PhoneNumbers {
       options,
     );
 
-    // Unwrap the single-element data array from Meta API
+    // Unwrap the single-element data array from Meta API. An empty array is
+    // a platform-side "no such resource" response, not caller input
+    // validation, so surface it as NotFoundError.
     const profile = response.data.data[0];
     if (!profile) {
-      throw new ValidationError(
+      throw new NotFoundError(
         'Business profile not found - Meta API returned empty data array',
         'businessProfile',
       );

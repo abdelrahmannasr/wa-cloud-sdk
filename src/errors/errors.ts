@@ -67,6 +67,22 @@ export class AuthenticationError extends ApiError {
 }
 
 /**
+ * Thrown when a platform response contains no matching resource
+ * (e.g. an empty `data` array where the SDK expected a single element).
+ * Semantically distinct from `ApiError` (explicit 4xx/5xx from the wire)
+ * and `ValidationError` (caller passed invalid input).
+ */
+export class NotFoundError extends WhatsAppError {
+  public readonly resource?: string;
+
+  constructor(message: string, resource?: string) {
+    super(message, 'NOT_FOUND_ERROR');
+    this.name = 'NotFoundError';
+    this.resource = resource;
+  }
+}
+
+/**
  * Thrown when input validation fails before making an API request.
  */
 export class ValidationError extends WhatsAppError {

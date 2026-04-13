@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PhoneNumbers } from '../../src/phone-numbers/phone-numbers.js';
 import type { HttpClient } from '../../src/client/http-client.js';
-import { ValidationError, ApiError } from '../../src/errors/errors.js';
+import { ApiError, NotFoundError, ValidationError } from '../../src/errors/errors.js';
 import type { PhoneNumber, BusinessProfile } from '../../src/phone-numbers/types.js';
 
 const BUSINESS_ACCOUNT_ID = '123456789';
@@ -329,6 +329,24 @@ describe('PhoneNumbers', () => {
       await expect(phoneNumbers.getBusinessProfile('')).rejects.toThrow(
         'phoneNumberId is required and cannot be empty',
       );
+    });
+
+    it('should throw NotFoundError when Meta returns empty data array', async () => {
+      getSpy.mockResolvedValue({
+        data: { data: [] },
+        status: 200,
+        headers: new Headers(),
+      });
+
+      await expect(phoneNumbers.getBusinessProfile(PHONE_NUMBER_ID)).rejects.toThrow(NotFoundError);
+
+      try {
+        await phoneNumbers.getBusinessProfile(PHONE_NUMBER_ID);
+        expect.fail('Should have thrown NotFoundError');
+      } catch (error) {
+        expect(error).toBeInstanceOf(NotFoundError);
+        expect((error as NotFoundError).resource).toBe('businessProfile');
+      }
     });
 
     it('should propagate 400 error', async () => {
