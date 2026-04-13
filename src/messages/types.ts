@@ -351,6 +351,36 @@ export interface FlowMessageOptions extends BaseMessageOptions {
   readonly footer?: string;
 }
 
+// ── Commerce: Single Product ──
+
+/**
+ * Options for sendProduct — sends an interactive single-product message.
+ *
+ * The recipient sees a rich product card for one specific item from the catalog.
+ * The platform looks up product details (name, price, image) from the catalog.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendProduct({
+ *   to: '15550001234',
+ *   catalogId: '123456789',
+ *   productRetailerId: 'SKU-001',
+ *   body: 'Check out this item!',
+ *   footer: 'Limited stock',
+ * });
+ * ```
+ */
+export interface ProductMessageOptions extends BaseMessageOptions {
+  /** Platform-assigned catalog ID (scoped to the WABA) */
+  readonly catalogId: string;
+  /** Retailer-defined product identifier within the catalog */
+  readonly productRetailerId: string;
+  /** Optional body text shown above the product card */
+  readonly body?: string;
+  /** Optional footer text */
+  readonly footer?: string;
+}
+
 // ── Typing Indicator ──
 
 export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;
