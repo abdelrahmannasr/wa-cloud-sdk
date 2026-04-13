@@ -9,11 +9,17 @@ import type {
 import { TokenBucketRateLimiter } from '../utils/rate-limiter.js';
 import { withRetry } from '../utils/retry.js';
 import type { RetryConfig } from '../utils/retry.js';
-import { ApiError, AuthenticationError, RateLimitError } from '../errors/errors.js';
+import { ApiError, AuthenticationError, MediaError, RateLimitError } from '../errors/errors.js';
 
 const DEFAULT_BASE_URL = 'https://graph.facebook.com';
 const DEFAULT_API_VERSION = 'v21.0';
 const DEFAULT_TIMEOUT_MS = 30000;
+const DEFAULT_ALLOWED_MEDIA_HOSTS: readonly string[] = [
+  'lookaside.fbsbx.com',
+  '.fbcdn.net',
+  '.facebook.com',
+  '.whatsapp.net',
+];
 
 const noopLogger: Logger = {
   debug: () => {},
@@ -30,6 +36,7 @@ export class HttpClient {
   private readonly timeoutMs: number;
   private readonly rateLimiter: TokenBucketRateLimiter | null;
   private readonly retryConfig: Partial<RetryConfig>;
+  private readonly allowedMediaHosts: readonly string[];
 
   constructor(config: WhatsAppConfig) {
     this.accessToken = config.accessToken;
@@ -37,6 +44,7 @@ export class HttpClient {
     this.apiVersion = config.apiVersion ?? DEFAULT_API_VERSION;
     this.logger = config.logger ?? noopLogger;
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.allowedMediaHosts = config.allowedMediaHosts ?? DEFAULT_ALLOWED_MEDIA_HOSTS;
 
     // Set up rate limiter
     const rateLimitEnabled = config.rateLimitConfig?.enabled !== false;
@@ -131,11 +139,12 @@ export class HttpClient {
    * Download binary data from a URL (for media downloads).
    * The URL must include the full path (not relative to the base URL).
    *
-   * @remarks The bearer token is sent to the provided URL. Callers should
-   * validate that the URL originates from a trusted source (e.g., Meta's CDN)
-   * to avoid leaking credentials to untrusted hosts.
+   * @remarks The bearer token is only sent to hosts in `allowedMediaHosts`
+   * (defaults to Meta's CDN). Requests to other hosts throw `MediaError`
+   * before any network call is made.
    */
   async downloadMedia(url: string, options?: RequestOptions): Promise<ApiResponse<ArrayBuffer>> {
+    this.assertMediaHostAllowed(url);
     return this.executeWithLifecycle<ArrayBuffer>(
       (signal) => {
         this.logger.debug(`GET (download) ${url}`);
@@ -156,6 +165,28 @@ export class HttpClient {
   /** Destroy the client, cleaning up rate limiter timers. */
   destroy(): void {
     this.rateLimiter?.destroy();
+  }
+
+  private assertMediaHostAllowed(url: string): void {
+    let hostname: string;
+    try {
+      hostname = new URL(url).hostname.toLowerCase();
+    } catch {
+      throw new MediaError(`Media URL is not a valid URL: "${url}"`);
+    }
+
+    const allowed = this.allowedMediaHosts.some((entry) => {
+      const normalized = entry.toLowerCase();
+      return normalized.startsWith('.')
+        ? hostname.endsWith(normalized) || hostname === normalized.slice(1)
+        : hostname === normalized;
+    });
+
+    if (!allowed) {
+      throw new MediaError(
+        `Refusing to send credentials to untrusted media host "${hostname}"`,
+      );
+    }
   }
 
   /**

@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { HttpClient } from '../../src/client/http-client.js';
 import type { WhatsAppConfig } from '../../src/client/types.js';
-import { ApiError, AuthenticationError, RateLimitError } from '../../src/errors/errors.js';
+import {
+  ApiError,
+  AuthenticationError,
+  MediaError,
+  RateLimitError,
+} from '../../src/errors/errors.js';
 
 const BASE_CONFIG: WhatsAppConfig = {
   accessToken: 'test-token',
@@ -358,7 +363,7 @@ describe('HttpClient', () => {
   });
 
   describe('Download', () => {
-    it('should download media with auth header', async () => {
+    it('should download media with auth header from a trusted Meta host', async () => {
       const mockResponse = {
         ok: true,
         status: 200,
@@ -370,13 +375,76 @@ describe('HttpClient', () => {
       mockFetch.mockResolvedValue(mockResponse);
       const client = new HttpClient(BASE_CONFIG);
 
-      const result = await client.downloadMedia('https://media.example.com/file.jpg');
+      const result = await client.downloadMedia(
+        'https://lookaside.fbsbx.com/whatsapp_business/attachments/?mid=123',
+      );
 
       expect(result.data).toBeInstanceOf(ArrayBuffer);
       expect(result.data.byteLength).toBe(16);
       const calledOptions = mockFetch.mock.calls[0]![1] as RequestInit;
       expect(calledOptions.headers).toEqual(
         expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      );
+      client.destroy();
+    });
+
+    it('should accept hosts matching a suffix entry in the allowlist', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient(BASE_CONFIG);
+
+      await client.downloadMedia('https://scontent-ams4-1.fbcdn.net/v/t66.jpg');
+
+      expect(mockFetch).toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should reject untrusted hosts without making a network call', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.downloadMedia('https://attacker.example.com/x')).rejects.toThrow(
+        MediaError,
+      );
+      await expect(client.downloadMedia('https://attacker.example.com/x')).rejects.toThrow(
+        'Refusing to send credentials to untrusted media host "attacker.example.com"',
+      );
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should reject malformed URLs', async () => {
+      const client = new HttpClient(BASE_CONFIG);
+
+      await expect(client.downloadMedia('not-a-url')).rejects.toThrow(MediaError);
+      expect(mockFetch).not.toHaveBeenCalled();
+      client.destroy();
+    });
+
+    it('should respect a custom allowedMediaHosts override', async () => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0)),
+        json: vi.fn(),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(mockResponse);
+      const client = new HttpClient({
+        ...BASE_CONFIG,
+        allowedMediaHosts: ['sandbox.internal'],
+      });
+
+      await client.downloadMedia('https://sandbox.internal/media/1');
+      expect(mockFetch).toHaveBeenCalled();
+
+      await expect(client.downloadMedia('https://lookaside.fbsbx.com/x')).rejects.toThrow(
+        MediaError,
       );
       client.destroy();
     });
