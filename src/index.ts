@@ -245,3 +245,17 @@ export type {
   BroadcastFailure,
   BroadcastResult,
 } from './multi-account/index.js';
+
+// Catalog
+export { Catalog } from './catalog/index.js';
+export type {
+  Catalog as CatalogResource,
+  Product,
+  ProductAvailability,
+  CreateProductRequest,
+  UpdateProductRequest,
+  ListProductsParams,
+  ListProductsResponse,
+  ListCatalogsResponse,
+} from './catalog/index.js';
+export { CATALOG_VALIDATION } from './catalog/index.js';
