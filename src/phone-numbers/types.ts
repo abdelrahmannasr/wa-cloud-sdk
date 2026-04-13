@@ -44,41 +44,45 @@ export interface Throughput {
 }
 
 /**
- * A WhatsApp-enabled phone number registered under a WABA
+ * A WhatsApp-enabled phone number registered under a WABA.
+ * Fields mirror Meta's wire format (snake_case) so responses pass through
+ * without transformation.
  */
 export interface PhoneNumber {
   readonly id: string;
-  readonly displayPhoneNumber: string;
-  readonly verifiedName: string;
-  readonly qualityRating: QualityRating;
-  readonly codeVerificationStatus: CodeVerificationStatus;
-  readonly isOfficialBusinessAccount: boolean;
-  readonly nameStatus: NameStatus;
-  readonly newNameStatus?: string;
-  readonly platformType: PlatformType;
+  readonly display_phone_number: string;
+  readonly verified_name: string;
+  readonly quality_rating: QualityRating;
+  readonly code_verification_status: CodeVerificationStatus;
+  readonly is_official_business_account: boolean;
+  readonly name_status: NameStatus;
+  readonly new_name_status?: string;
+  readonly platform_type: PlatformType;
   readonly throughput?: Throughput;
-  readonly accountMode?: AccountMode;
-  readonly messagingLimitTier?: MessagingLimitTier;
-  readonly isPinEnabled?: boolean;
-  readonly lastOnboardedTime?: string;
+  readonly account_mode?: AccountMode;
+  readonly messaging_limit_tier?: MessagingLimitTier;
+  readonly is_pin_enabled?: boolean;
+  readonly last_onboarded_time?: string;
 }
 
 /**
- * Business profile information for a phone number
+ * Business profile information for a phone number.
+ * Fields mirror Meta's wire format (snake_case).
  */
 export interface BusinessProfile {
-  readonly messagingProduct: string;
+  readonly messaging_product: string;
   readonly about?: string;
   readonly address?: string;
   readonly description?: string;
   readonly email?: string;
-  readonly profilePictureUrl?: string;
+  readonly profile_picture_url?: string;
   readonly websites?: readonly string[];
   readonly vertical?: BusinessVertical;
 }
 
 /**
- * Partial update payload for business profile
+ * Partial update payload for business profile.
+ * Fields use snake_case to match Meta's POST body.
  */
 export interface BusinessProfileUpdate {
   readonly about?: string;
@@ -87,7 +91,7 @@ export interface BusinessProfileUpdate {
   readonly email?: string;
   readonly vertical?: BusinessVertical;
   readonly websites?: readonly string[];
-  readonly profilePictureHandle?: string;
+  readonly profile_picture_handle?: string;
 }
 
 /**
@@ -124,7 +128,7 @@ export interface BusinessProfileResponse {
  * Request to initiate phone number verification
  */
 export interface VerificationCodeRequest {
-  readonly codeMethod: CodeMethod;
+  readonly code_method: CodeMethod;
   readonly language: string;
 }
 

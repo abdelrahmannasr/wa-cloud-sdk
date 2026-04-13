@@ -98,13 +98,13 @@ describe('PhoneNumbers', () => {
     it('should return phone number list with data', async () => {
       const mockPhone: PhoneNumber = {
         id: PHONE_NUMBER_ID,
-        displayPhoneNumber: '+1 631-555-5555',
-        verifiedName: 'Test Business',
-        qualityRating: 'GREEN',
-        codeVerificationStatus: 'VERIFIED',
-        isOfficialBusinessAccount: true,
-        nameStatus: 'APPROVED',
-        platformType: 'CLOUD_API',
+        display_phone_number: '+1 631-555-5555',
+        verified_name: 'Test Business',
+        quality_rating: 'GREEN',
+        code_verification_status: 'VERIFIED',
+        is_official_business_account: true,
+        name_status: 'APPROVED',
+        platform_type: 'CLOUD_API',
       };
 
       const mockResponse = {
@@ -191,14 +191,14 @@ describe('PhoneNumbers', () => {
     it('should call client.get with correct phoneNumberId', async () => {
       const mockPhone: PhoneNumber = {
         id: PHONE_NUMBER_ID,
-        displayPhoneNumber: '+1 631-555-5555',
-        verifiedName: 'Test Business',
-        qualityRating: 'GREEN',
-        codeVerificationStatus: 'VERIFIED',
-        isOfficialBusinessAccount: true,
-        nameStatus: 'APPROVED',
-        platformType: 'CLOUD_API',
-        messagingLimitTier: 'TIER_1K',
+        display_phone_number: '+1 631-555-5555',
+        verified_name: 'Test Business',
+        quality_rating: 'GREEN',
+        code_verification_status: 'VERIFIED',
+        is_official_business_account: true,
+        name_status: 'APPROVED',
+        platform_type: 'CLOUD_API',
+        messaging_limit_tier: 'TIER_1K',
       };
 
       const mockResponse = {
@@ -279,7 +279,7 @@ describe('PhoneNumbers', () => {
 
     it('should call client.get and unwrap data array', async () => {
       const mockProfile: BusinessProfile = {
-        messagingProduct: 'whatsapp',
+        messaging_product: 'whatsapp',
         description: 'Test business description',
         address: '123 Main St',
         websites: ['https://example.com'],
@@ -308,7 +308,7 @@ describe('PhoneNumbers', () => {
     it('should pass fields filter to query params', async () => {
       const mockResponse = {
         data: {
-          data: [{ messagingProduct: 'whatsapp' }],
+          data: [{ messaging_product: 'whatsapp' }],
         },
         status: 200,
         headers: new Headers(),
@@ -468,7 +468,7 @@ describe('PhoneNumbers', () => {
       postSpy.mockResolvedValue(mockResponse);
 
       await phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-        codeMethod: 'SMS',
+        code_method: 'SMS',
         language: 'en_US',
       });
 
@@ -491,7 +491,7 @@ describe('PhoneNumbers', () => {
       postSpy.mockResolvedValue(mockResponse);
 
       await phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-        codeMethod: 'VOICE',
+        code_method: 'VOICE',
         language: 'es_ES',
       });
 
@@ -505,9 +505,9 @@ describe('PhoneNumbers', () => {
       );
     });
 
-    it('should throw ValidationError for invalid codeMethod', async () => {
+    it('should throw ValidationError for invalid code_method', async () => {
       const invalidRequest = {
-        codeMethod: 'EMAIL' as 'SMS',
+        code_method: 'EMAIL' as 'SMS',
         language: 'en_US',
       };
 
@@ -517,32 +517,32 @@ describe('PhoneNumbers', () => {
 
       await expect(
         phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, invalidRequest),
-      ).rejects.toThrow('codeMethod must be either "SMS" or "VOICE"');
+      ).rejects.toThrow('code_method must be either "SMS" or "VOICE"');
 
       try {
         const anotherInvalidRequest = {
-          codeMethod: 'INVALID' as 'VOICE',
+          code_method: 'INVALID' as 'VOICE',
           language: 'en_US',
         };
         await phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, anotherInvalidRequest);
         expect.fail('Should have thrown ValidationError');
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).field).toBe('codeMethod');
+        expect((error as ValidationError).field).toBe('code_method');
       }
     });
 
     it('should throw ValidationError for empty language', async () => {
       await expect(
         phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-          codeMethod: 'SMS',
+          code_method: 'SMS',
           language: '',
         }),
       ).rejects.toThrow(ValidationError);
 
       try {
         await phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-          codeMethod: 'SMS',
+          code_method: 'SMS',
           language: '   ',
         });
         expect.fail('Should have thrown ValidationError');
@@ -555,7 +555,7 @@ describe('PhoneNumbers', () => {
     it('should throw ValidationError for empty phoneNumberId', async () => {
       await expect(
         phoneNumbers.requestVerificationCode('', {
-          codeMethod: 'SMS',
+          code_method: 'SMS',
           language: 'en_US',
         }),
       ).rejects.toThrow('phoneNumberId is required and cannot be empty');
@@ -567,7 +567,7 @@ describe('PhoneNumbers', () => {
 
       await expect(
         phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-          codeMethod: 'SMS',
+          code_method: 'SMS',
           language: 'en_US',
         }),
       ).rejects.toThrow(ApiError);
@@ -579,7 +579,7 @@ describe('PhoneNumbers', () => {
 
       await expect(
         phoneNumbers.requestVerificationCode(PHONE_NUMBER_ID, {
-          codeMethod: 'SMS',
+          code_method: 'SMS',
           language: 'en_US',
         }),
       ).rejects.toThrow('Too Many Requests');

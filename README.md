@@ -536,7 +536,7 @@ await wa.phoneNumbers.updateBusinessProfile('phone_number_id', {
 
 // Request verification code
 await wa.phoneNumbers.requestVerificationCode('phone_number_id', {
-  codeMethod: 'SMS',
+  code_method: 'SMS',
   language: 'en',
 });
 
