@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { parseWebhookPayload } from '../../src/webhooks/parser.js';
 import type {
   WebhookPayload,
@@ -254,6 +254,20 @@ describe('parseWebhookPayload', () => {
       };
 
       expect(parseWebhookPayload(payload)).toEqual([]);
+    });
+
+    it('should log the unknown object value when a logger is provided', () => {
+      const payload: WebhookPayload = {
+        object: 'instagram',
+        entry: [],
+      };
+
+      const debug = vi.fn();
+      const logger = { debug, info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+      expect(parseWebhookPayload(payload, { logger })).toEqual([]);
+      expect(debug).toHaveBeenCalledTimes(1);
+      expect(debug.mock.calls[0]![0]).toContain('instagram');
     });
 
     it('should return empty array when messages and statuses are both absent', () => {

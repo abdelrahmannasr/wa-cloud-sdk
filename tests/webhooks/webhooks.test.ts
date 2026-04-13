@@ -144,7 +144,7 @@ describe('Webhooks', () => {
 
       const result = webhooks.parse(payload);
 
-      expect(parseWebhookPayload).toHaveBeenCalledWith(payload);
+      expect(parseWebhookPayload).toHaveBeenCalledWith(payload, expect.any(Object));
       expect(result).toEqual([]);
     });
   });
@@ -166,10 +166,10 @@ describe('Webhooks', () => {
       const result = webhooks.createHandler(callbacks);
 
       expect(createWebhookHandler).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           appSecret: 'test-app-secret',
           verifyToken: 'test-verify-token',
-        },
+        }),
         callbacks,
       );
       expect(result).toBe(mockHandler);
@@ -230,10 +230,10 @@ describe('Webhooks', () => {
       const result = webhooks.createExpressMiddleware(callbacks);
 
       expect(createExpressMiddlewareUtil).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           appSecret: 'test-app-secret',
           verifyToken: 'test-verify-token',
-        },
+        }),
         callbacks,
       );
       expect(result).toBe(mockMiddleware);
@@ -277,10 +277,10 @@ describe('Webhooks', () => {
       const result = webhooks.createNextRouteHandler(callbacks);
 
       expect(createNextRouteHandlerUtil).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           appSecret: 'test-app-secret',
           verifyToken: 'test-verify-token',
-        },
+        }),
         callbacks,
       );
       expect(result).toBe(mockHandlers);

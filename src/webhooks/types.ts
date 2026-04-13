@@ -1,3 +1,5 @@
+import type { Logger } from '../client/types.js';
+
 // ════════════════════════════════════════════
 // RAW TYPES (match Meta's webhook JSON exactly)
 // ════════════════════════════════════════════
@@ -286,6 +288,12 @@ export interface WebhookConfig {
   readonly appSecret: string;
   /** Verify token for GET challenge verification */
   readonly verifyToken: string;
+  /**
+   * Optional logger. Used for operator diagnostics (e.g. an unknown
+   * `payload.object` that the SDK silently skips). Never receives webhook
+   * body content — FR-030 logging hygiene applies.
+   */
+  readonly logger?: Logger;
 }
 
 export interface WebhookHandlerCallbacks {

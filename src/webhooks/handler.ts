@@ -88,7 +88,7 @@ export function createWebhookHandler(
         return { statusCode: 400, body: 'Invalid JSON' };
       }
 
-      const events = parseWebhookPayload(body);
+      const events = parseWebhookPayload(body, { logger: config.logger });
 
       for (const event of events) {
         switch (event.type) {

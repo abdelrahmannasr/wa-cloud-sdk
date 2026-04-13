@@ -1,3 +1,4 @@
+import type { Logger } from '../client/types.js';
 import type {
   WebhookPayload,
   WebhookEvent,
@@ -6,10 +7,16 @@ import type {
   FlowCompletionEvent,
 } from './types.js';
 
+export interface ParseWebhookPayloadOptions {
+  /** Optional logger for operator diagnostics (no body content is logged). */
+  readonly logger?: Logger;
+}
+
 /**
  * Parse a raw webhook payload from Meta into an array of typed events.
  *
  * @param payload - The raw JSON body from the webhook POST
+ * @param options - Optional parser options (logger for operator diagnostics)
  * @returns Array of parsed WebhookEvent objects (may be empty if no recognized events)
  *
  * @example
@@ -20,8 +27,17 @@ import type {
  * }
  * ```
  */
-export function parseWebhookPayload(payload: WebhookPayload): WebhookEvent[] {
+export function parseWebhookPayload(
+  payload: WebhookPayload,
+  options?: ParseWebhookPayloadOptions,
+): WebhookEvent[] {
   if (payload.object !== 'whatsapp_business_account') {
+    // Meta only documents `whatsapp_business_account`; log so operators can
+    // spot misconfigured subscriptions instead of returning a silent 200.
+    // We log the literal value only — never the payload body (FR-030).
+    options?.logger?.debug(
+      `parseWebhookPayload: unknown payload.object "${payload.object}", skipping`,
+    );
     return [];
   }
 
