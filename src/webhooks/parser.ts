@@ -5,6 +5,8 @@ import type {
   WebhookChangeValue,
   EventMetadata,
   FlowCompletionEvent,
+  OrderEvent,
+  OrderItem,
 } from './types.js';
 
 export interface ParseWebhookPayloadOptions {
@@ -88,6 +90,67 @@ function extractMessageEvents(
     };
     const timestamp = new Date(parseInt(message.timestamp, 10) * 1000);
 
+    // ── Order events (FR-013): routed exclusively to onOrder, never to onMessage ──
+    if (message.type === 'order' && message.order) {
+      const order = message.order;
+      const raw = JSON.stringify(order);
+      let items: readonly OrderItem[] = [];
+      try {
+        const rawItems: unknown = order.product_items;
+        if (Array.isArray(rawItems)) {
+          const parsed: OrderItem[] = [];
+          for (const item of rawItems) {
+            if (
+              item !== null &&
+              typeof item === 'object' &&
+              typeof (item as Record<string, unknown>)['product_retailer_id'] === 'string' &&
+              typeof (item as Record<string, unknown>)['quantity'] === 'number' &&
+              typeof (item as Record<string, unknown>)['item_price'] === 'number' &&
+              typeof (item as Record<string, unknown>)['currency'] === 'string'
+            ) {
+              const typedItem = item as {
+                product_retailer_id: string;
+                quantity: number;
+                item_price: number;
+                currency: string;
+              };
+              parsed.push({
+                product_retailer_id: typedItem.product_retailer_id,
+                quantity: typedItem.quantity,
+                item_price: typedItem.item_price,
+                currency: typedItem.currency,
+              });
+            } else {
+              // Malformed item — discard all items and surface empty array.
+              items = [];
+              break;
+            }
+            items = parsed;
+          }
+        }
+      } catch {
+        // Best-effort: surfacing the event with items:[] is always safer than throwing.
+        items = [];
+      }
+
+      const orderEvent: OrderEvent = {
+        type: 'order',
+        metadata: value.metadata,
+        messageId: message.id,
+        from: message.from,
+        timestamp: new Date(parseInt(message.timestamp, 10) * 1000).toISOString(),
+        contact: contact,
+        catalogId: order.catalog_id,
+        items,
+        ...(order.text !== undefined && { text: order.text }),
+        raw,
+      };
+      events.push(orderEvent);
+      // MUST NOT fall through to the generic message path (FR-013).
+      continue;
+    }
+
+    // ── Flow completion events ──
     if (
       message.type === 'interactive' &&
       message.interactive?.type === 'nfm_reply' &&
