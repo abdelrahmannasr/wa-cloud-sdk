@@ -27,6 +27,7 @@ import type {
   InteractiveHeader,
   ProductMessageOptions,
   ProductListMessageOptions,
+  CatalogMessageOptions,
 } from './types.js';
 import { MULTI_PRODUCT_LIMITS } from './types.js';
 import { ValidationError } from '../errors/errors.js';
@@ -492,6 +493,62 @@ export class Messages {
         body: { text: options.body },
         action: { name: 'flow', parameters },
         ...this.buildInteractiveOptionals(options.header, options.footer),
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send an interactive catalog message.
+   *
+   * Delivers a "View catalog" invitation that opens the business's full catalog
+   * when tapped. Optionally provide a thumbnail product retailer ID to display
+   * a specific product image alongside the invitation.
+   *
+   * @example
+   * ```ts
+   * await messages.sendCatalogMessage({
+   *   to: '15550001234',
+   *   body: 'Browse our full collection',
+   *   footer: 'Free shipping over $50',
+   *   thumbnailProductRetailerId: 'featured-item-001',
+   * });
+   * ```
+   */
+  async sendCatalogMessage(
+    options: CatalogMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    if (!options.body.trim()) {
+      throw new ValidationError('body must not be empty', 'body');
+    }
+    if (
+      options.thumbnailProductRetailerId !== undefined &&
+      !options.thumbnailProductRetailerId.trim()
+    ) {
+      throw new ValidationError(
+        'thumbnailProductRetailerId must not be empty when provided',
+        'thumbnailProductRetailerId',
+      );
+    }
+
+    const action: {
+      name: 'catalog_message';
+      parameters?: { thumbnail_product_retailer_id: string };
+    } = { name: 'catalog_message' };
+    if (options.thumbnailProductRetailerId) {
+      action.parameters = {
+        thumbnail_product_retailer_id: options.thumbnailProductRetailerId,
+      };
+    }
+
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'catalog_message',
+        body: { text: options.body },
+        action,
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
       },
     };
     return this.send(payload, requestOptions);
