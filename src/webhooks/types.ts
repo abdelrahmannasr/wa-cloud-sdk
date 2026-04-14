@@ -11,6 +11,12 @@ export interface WebhookPayload {
 
 export interface WebhookEntry {
   readonly id: string;
+  /**
+   * Batch timestamp (epoch seconds). Present on WABA-scoped change fields
+   * (e.g. template lifecycle updates). Used as the event `timestamp` source
+   * for those change types; absent on `messages`-field changes.
+   */
+  readonly time?: number;
   readonly changes: readonly WebhookChange[];
 }
 
@@ -215,6 +221,25 @@ export interface WebhookError {
   readonly href?: string;
 }
 
+/** Raw `change.value` shape for `field === 'message_template_status_update'`. */
+export interface WebhookTemplateStatusPayload {
+  readonly event: string;
+  readonly message_template_id: string | number;
+  readonly message_template_name: string;
+  readonly message_template_language: string;
+  readonly reason?: string | null;
+  readonly other_info?: Record<string, unknown>;
+}
+
+/** Raw `change.value` shape for `field === 'message_template_quality_update'`. */
+export interface WebhookTemplateQualityPayload {
+  readonly new_quality_score: string;
+  readonly previous_quality_score?: string;
+  readonly message_template_id: string | number;
+  readonly message_template_name: string;
+  readonly message_template_language: string;
+}
+
 // ════════════════════════════════════════════
 // PARSED TYPES (developer-friendly events)
 // ════════════════════════════════════════════
@@ -222,6 +247,109 @@ export interface WebhookError {
 export interface EventMetadata {
   readonly phoneNumberId: string;
   readonly displayPhoneNumber: string;
+}
+
+/**
+ * Metadata for template-lifecycle webhook events.
+ *
+ * Deliberately distinct from {@link EventMetadata}: template events are
+ * WABA-scoped and carry no `phone_number_id` / `display_phone_number` on the
+ * wire. Sourced from `entry.id`.
+ */
+export interface TemplateEventMetadata {
+  readonly businessAccountId: string;
+}
+
+// ════════════════════════════════════════════
+// TEMPLATE EVENT PARSED TYPES
+// ════════════════════════════════════════════
+
+/**
+ * Template lifecycle status.
+ *
+ * Documented platform values are listed; any additional string is accepted
+ * and preserved verbatim so callers can branch on platform additions without
+ * an SDK upgrade (FR-008). The `(string & {})` idiom preserves autocomplete
+ * for the named literals while accepting any string at runtime.
+ */
+export type TemplateEventStatus =
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PENDING'
+  | 'PAUSED'
+  | 'DISABLED'
+  | 'PENDING_DELETION'
+  | 'IN_APPEAL'
+  | 'LIMIT_EXCEEDED'
+  | 'FLAGGED'
+  | (string & {});
+
+/**
+ * Template user-perceived quality score.
+ *
+ * Union-plus-string for platform extensibility. `UNKNOWN` covers both the
+ * "indeterminate" state and first-time ratings before any score is assigned.
+ */
+export type TemplateQualityScore = 'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN' | (string & {});
+
+/**
+ * Emitted when the platform changes a message template's lifecycle state
+ * (approved, rejected, paused, disabled, re-approved, etc.).
+ *
+ * Delivered exclusively to the `onTemplateStatus` callback — never to
+ * `onMessage`, `onStatus`, `onError`, `onFlowCompletion`, or `onOrder`.
+ *
+ * The SDK does NOT deduplicate at-least-once deliveries. Use
+ * `(templateId, status, timestamp)` as an idempotency tuple if needed.
+ *
+ * @example
+ * ```ts
+ * wa.webhooks.onTemplateStatus((event) => {
+ *   if (event.status === 'REJECTED') {
+ *     console.log(`Template ${event.templateName} rejected: ${event.reason}`);
+ *   }
+ * });
+ * ```
+ */
+export interface TemplateStatusEvent {
+  readonly type: 'template_status';
+  readonly metadata: TemplateEventMetadata;
+  readonly templateId: string;
+  readonly templateName: string;
+  readonly language: string;
+  readonly status: TemplateEventStatus;
+  /** Present on `REJECTED`; the literal `'NONE'` is normalized to `undefined`. */
+  readonly reason?: string;
+  /** Opaque platform diagnostic bag (appeal deadlines, title-tag hints). */
+  readonly otherInfo?: Record<string, unknown>;
+  readonly timestamp: Date;
+}
+
+/**
+ * Emitted when the platform updates a template's user-perceived quality score
+ * (GREEN / YELLOW / RED / UNKNOWN).
+ *
+ * Delivered exclusively to the `onTemplateQuality` callback.
+ *
+ * `previousScore` is `undefined` for first-time ratings — the SDK does NOT
+ * coerce the absence to `'UNKNOWN'`.
+ *
+ * @example
+ * ```ts
+ * wa.webhooks.onTemplateQuality((event) => {
+ *   if (event.newScore === 'RED') alert(event.templateName);
+ * });
+ * ```
+ */
+export interface TemplateQualityEvent {
+  readonly type: 'template_quality';
+  readonly metadata: TemplateEventMetadata;
+  readonly templateId: string;
+  readonly templateName: string;
+  readonly language: string;
+  readonly newScore: TemplateQualityScore;
+  readonly previousScore?: TemplateQualityScore;
+  readonly timestamp: Date;
 }
 
 export interface EventContact {
@@ -345,7 +473,9 @@ export type WebhookEvent =
   | StatusEvent
   | ErrorEvent
   | FlowCompletionEvent
-  | OrderEvent;
+  | OrderEvent
+  | TemplateStatusEvent
+  | TemplateQualityEvent;
 
 // ════════════════════════════════════════════
 // HANDLER CONFIGURATION
@@ -370,6 +500,8 @@ export interface WebhookHandlerCallbacks {
   readonly onError?: (event: ErrorEvent) => void | Promise<void>;
   readonly onFlowCompletion?: (event: FlowCompletionEvent) => void | Promise<void>;
   readonly onOrder?: (event: OrderEvent) => void | Promise<void>;
+  readonly onTemplateStatus?: (event: TemplateStatusEvent) => void | Promise<void>;
+  readonly onTemplateQuality?: (event: TemplateQualityEvent) => void | Promise<void>;
 }
 
 // ════════════════════════════════════════════
