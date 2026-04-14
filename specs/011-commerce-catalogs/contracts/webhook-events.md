@@ -12,12 +12,12 @@ export interface OrderEvent {
   readonly messageId: string;                   // Stable platform identifier — consumers use this for idempotency
   readonly from: string;                        // E.164 sender phone number
   readonly timestamp: string;                   // ISO 8601, from platform
-  readonly contact?: WebhookContact;            // Existing shape: { profile: { name }, wa_id }
+  readonly contact: EventContact;               // Normalized: { name, waId }; name falls back to 'Unknown' if no contact entry matches
   readonly catalogId: string;                   // Catalog the order was placed against
   readonly items: readonly OrderItem[];         // Best-effort parsed; empty array if payload malformed
   readonly text?: string;                       // Optional accompanying message from the customer
   readonly raw: string;                         // Original JSON-stringified order payload (for verification, storage, custom parsing)
-  readonly metadata: WebhookMetadata;           // Existing shape: { display_phone_number, phone_number_id }
+  readonly metadata: EventMetadata;             // Normalized: { phoneNumberId, displayPhoneNumber }
 }
 ```
 
@@ -43,8 +43,8 @@ The parser scans `entry[].changes[].value.messages[]` for entries with `type: 'o
 5. Extracts `messages[i].order.text` → `text` (if present).
 6. JSON-stringifies `messages[i].order` → `raw` (preserves the entire original payload, including any platform fields the SDK does not yet model).
 7. Best-effort parses `messages[i].order.product_items` into `OrderItem[]`. If the array is missing, malformed, or any item is missing required fields, `items` is set to `[]` — the event still surfaces (FR-014).
-8. Resolves `contact` from `entry[].changes[].value.contacts[]` using `wa_id` matching `from`.
-9. Resolves `metadata` from `entry[].changes[].value.metadata`.
+8. Resolves `contact` from `entry[].changes[].value.contacts[]` using `wa_id` matching `from`, then normalizes to `EventContact` (`{ name, waId }`); if no match, `name` falls back to `'Unknown'` and `waId` to `message.from`.
+9. Resolves `metadata` from `entry[].changes[].value.metadata`, normalized to `EventMetadata` (`{ phoneNumberId, displayPhoneNumber }`).
 
 ## Routing isolation
 

@@ -247,12 +247,12 @@ export interface OrderEvent {
   readonly messageId: string;                   // Stable platform identifier (use for dedup)
   readonly from: string;                        // E.164 sender
   readonly timestamp: string;                   // ISO 8601 from platform
-  readonly contact?: WebhookContact;            // Existing shape from webhooks/types.ts
+  readonly contact: EventContact;               // Normalized ({ name, waId }); name falls back to 'Unknown' if no contact entry matches
   readonly catalogId: string;
   readonly items: readonly OrderItem[];         // Parsed best-effort; empty array if payload malformed
   readonly text?: string;                       // Customer's accompanying message
   readonly raw: string;                         // Original JSON-stringified payload (for consumer-side verification / storage)
-  readonly metadata: WebhookMetadata;           // Existing shape (display_phone_number, phone_number_id)
+  readonly metadata: EventMetadata;             // Normalized ({ phoneNumberId, displayPhoneNumber })
 }
 ```
 
