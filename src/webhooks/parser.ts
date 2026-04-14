@@ -316,9 +316,7 @@ function extractTemplateStatusEvents(
 
   const reason = typeof raw.reason === 'string' && raw.reason !== 'NONE' ? raw.reason : undefined;
   const otherInfo =
-    raw.other_info !== null &&
-    typeof raw.other_info === 'object' &&
-    !Array.isArray(raw.other_info)
+    raw.other_info !== null && typeof raw.other_info === 'object' && !Array.isArray(raw.other_info)
       ? raw.other_info
       : undefined;
 

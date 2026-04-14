@@ -846,9 +846,7 @@ describe('parseWebhookPayload', () => {
     });
 
     it('should set otherInfo to undefined when platform sends other_info: null', () => {
-      const events = parseWebhookPayload(
-        createStatusPayload({ ...baseValue, other_info: null }),
-      );
+      const events = parseWebhookPayload(createStatusPayload({ ...baseValue, other_info: null }));
       const e = events[0] as TemplateStatusEvent;
       expect(e.type).toBe('template_status');
       // Guard must not leak null through typeof obj === 'object' — otherInfo stays absent.

@@ -297,11 +297,9 @@ describe('Webhooks', () => {
 
       webhooks.createNextRouteHandler(callbacks, { onInternalError });
 
-      expect(createNextRouteHandlerUtil).toHaveBeenCalledWith(
-        expect.any(Object),
-        callbacks,
-        { onInternalError },
-      );
+      expect(createNextRouteHandlerUtil).toHaveBeenCalledWith(expect.any(Object), callbacks, {
+        onInternalError,
+      });
     });
 
     it('throws ValidationError with field "appSecret" when config missing', () => {
