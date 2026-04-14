@@ -7,6 +7,8 @@ import type {
   ErrorEvent,
   FlowCompletionEvent,
   OrderEvent,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
 } from '../../src/webhooks/types.js';
 
 const APP_SECRET = 'test_secret';
@@ -480,6 +482,142 @@ describe('createWebhookHandler', () => {
       await handler.handlePost(body, signBody(body));
 
       expect(resolved).toBe(true);
+    });
+  });
+
+  describe('template_status event dispatch', () => {
+    function createTemplateStatusBody(eventValue = 'APPROVED', reason?: string): string {
+      return JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_001',
+            time: 1700000000,
+            changes: [
+              {
+                field: 'message_template_status_update',
+                value: {
+                  event: eventValue,
+                  message_template_id: 'tmpl-999',
+                  message_template_name: 'order_confirm',
+                  message_template_language: 'en_US',
+                  ...(reason !== undefined && { reason }),
+                },
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    function createTemplateQualityBody(newScore = 'YELLOW', previousScore?: string): string {
+      return JSON.stringify({
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_001',
+            time: 1700000000,
+            changes: [
+              {
+                field: 'message_template_quality_update',
+                value: {
+                  new_quality_score: newScore,
+                  message_template_id: 'tmpl-999',
+                  message_template_name: 'order_confirm',
+                  message_template_language: 'en_US',
+                  ...(previousScore !== undefined && { previous_quality_score: previousScore }),
+                },
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    it('should invoke onTemplateStatus callback exactly once', async () => {
+      const onTemplateStatus = vi.fn();
+      const handler = createWebhookHandler(config, { onTemplateStatus });
+      const body = createTemplateStatusBody('APPROVED');
+      await handler.handlePost(body, signBody(body));
+      expect(onTemplateStatus).toHaveBeenCalledTimes(1);
+      const event = onTemplateStatus.mock.calls[0]![0] as TemplateStatusEvent;
+      expect(event.type).toBe('template_status');
+      expect(event.status).toBe('APPROVED');
+    });
+
+    it('should NOT invoke onMessage when a template_status event is present (FR-007)', async () => {
+      const onMessage = vi.fn();
+      const onTemplateStatus = vi.fn();
+      const handler = createWebhookHandler(config, { onMessage, onTemplateStatus });
+      const body = createTemplateStatusBody('REJECTED', 'ABUSIVE_CONTENT');
+      await handler.handlePost(body, signBody(body));
+      expect(onMessage).not.toHaveBeenCalled();
+      expect(onTemplateStatus).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not throw when onTemplateStatus is not registered', async () => {
+      const handler = createWebhookHandler(config, {});
+      const body = createTemplateStatusBody();
+      await expect(handler.handlePost(body, signBody(body))).resolves.toMatchObject({
+        statusCode: 200,
+      });
+    });
+
+    it('should invoke onTemplateStatus twice when the same payload is delivered twice (FR-012: no dedup)', async () => {
+      const onTemplateStatus = vi.fn();
+      const handler = createWebhookHandler(config, { onTemplateStatus });
+      const body = createTemplateStatusBody('APPROVED');
+      await handler.handlePost(body, signBody(body));
+      await handler.handlePost(body, signBody(body));
+      expect(onTemplateStatus).toHaveBeenCalledTimes(2);
+    });
+
+    it('should invoke onTemplateQuality callback exactly once', async () => {
+      const onTemplateQuality = vi.fn();
+      const handler = createWebhookHandler(config, { onTemplateQuality });
+      const body = createTemplateQualityBody('RED', 'YELLOW');
+      await handler.handlePost(body, signBody(body));
+      expect(onTemplateQuality).toHaveBeenCalledTimes(1);
+      const event = onTemplateQuality.mock.calls[0]![0] as TemplateQualityEvent;
+      expect(event.type).toBe('template_quality');
+      expect(event.newScore).toBe('RED');
+      expect(event.previousScore).toBe('YELLOW');
+    });
+
+    it('should NOT invoke any other callback when a template_quality event is present (FR-007)', async () => {
+      const onMessage = vi.fn();
+      const onStatus = vi.fn();
+      const onError = vi.fn();
+      const onFlowCompletion = vi.fn();
+      const onOrder = vi.fn();
+      const onTemplateStatus = vi.fn();
+      const onTemplateQuality = vi.fn();
+      const handler = createWebhookHandler(config, {
+        onMessage,
+        onStatus,
+        onError,
+        onFlowCompletion,
+        onOrder,
+        onTemplateStatus,
+        onTemplateQuality,
+      });
+      const body = createTemplateQualityBody('YELLOW', 'GREEN');
+      await handler.handlePost(body, signBody(body));
+      expect(onMessage).not.toHaveBeenCalled();
+      expect(onStatus).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+      expect(onFlowCompletion).not.toHaveBeenCalled();
+      expect(onOrder).not.toHaveBeenCalled();
+      expect(onTemplateStatus).not.toHaveBeenCalled();
+      expect(onTemplateQuality).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not throw when onTemplateQuality is not registered', async () => {
+      const handler = createWebhookHandler(config, {});
+      const body = createTemplateQualityBody();
+      await expect(handler.handlePost(body, signBody(body))).resolves.toMatchObject({
+        statusCode: 200,
+      });
     });
   });
 });
