@@ -10,6 +10,7 @@ export { Webhooks } from './webhooks.js';
 // Middleware
 export { createExpressMiddleware } from './middleware/express.js';
 export { createNextRouteHandler } from './middleware/next.js';
+export type { NextRouteHandlerOptions } from './middleware/next.js';
 
 // Types — Raw (template wire shapes)
 export type { WebhookTemplateStatusPayload, WebhookTemplateQualityPayload } from './types.js';

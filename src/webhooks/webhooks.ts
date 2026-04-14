@@ -5,7 +5,10 @@ import { parseWebhookPayload } from './parser.js';
 import { createWebhookHandler } from './handler.js';
 import type { WebhookHandler } from './handler.js';
 import { createExpressMiddleware as createExpressMiddlewareUtil } from './middleware/express.js';
-import { createNextRouteHandler as createNextRouteHandlerUtil } from './middleware/next.js';
+import {
+  createNextRouteHandler as createNextRouteHandlerUtil,
+  type NextRouteHandlerOptions,
+} from './middleware/next.js';
 import type {
   WebhookPayload,
   WebhookEvent,
@@ -316,22 +319,25 @@ export class Webhooks {
    * Create Next.js App Router handler for webhook handling.
    *
    * @param callbacks - Event callbacks (onMessage, onStatus, etc.)
+   * @param options - Optional route-handler options (e.g. `onInternalError` observer)
    * @returns Object with GET and POST handlers for Next.js App Router
    * @throws ValidationError if appSecret or webhookVerifyToken was not provided
    *
    * @example
    * ```typescript
    * // app/api/webhook/route.ts
-   * const handler = wa.webhooks.createNextRouteHandler({
-   *   onMessage: (message) => {
-   *     console.log('Received message:', message);
-   *   },
-   * });
+   * const handler = wa.webhooks.createNextRouteHandler(
+   *   { onMessage: (event) => db.upsertMessage(event) },
+   *   { onInternalError: (err) => logger.error('webhook failed', err) },
+   * );
    *
    * export const { GET, POST } = handler;
    * ```
    */
-  createNextRouteHandler(callbacks: WebhookHandlerCallbacks): {
+  createNextRouteHandler(
+    callbacks: WebhookHandlerCallbacks,
+    options?: NextRouteHandlerOptions,
+  ): {
     GET: (request: Request) => Promise<Response>;
     POST: (request: Request) => Promise<Response>;
   } {
@@ -340,6 +346,7 @@ export class Webhooks {
     return createNextRouteHandlerUtil(
       { appSecret, verifyToken, logger: this.config.logger },
       merged,
+      options,
     );
   }
 }

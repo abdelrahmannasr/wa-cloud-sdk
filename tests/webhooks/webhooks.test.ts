@@ -282,8 +282,26 @@ describe('Webhooks', () => {
           verifyToken: 'test-verify-token',
         }),
         callbacks,
+        undefined,
       );
       expect(result).toBe(mockHandlers);
+    });
+
+    it('forwards NextRouteHandlerOptions (e.g. onInternalError) to the underlying util', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const callbacks = { onMessage: vi.fn() };
+      const onInternalError = vi.fn();
+
+      const mockHandlers = { GET: vi.fn(), POST: vi.fn() };
+      vi.mocked(createNextRouteHandlerUtil).mockReturnValue(mockHandlers);
+
+      webhooks.createNextRouteHandler(callbacks, { onInternalError });
+
+      expect(createNextRouteHandlerUtil).toHaveBeenCalledWith(
+        expect.any(Object),
+        callbacks,
+        { onInternalError },
+      );
     });
 
     it('throws ValidationError with field "appSecret" when config missing', () => {

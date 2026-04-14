@@ -160,6 +160,7 @@ export {
   createWebhookHandler,
 } from './webhooks/index.js';
 export { createExpressMiddleware, createNextRouteHandler } from './webhooks/index.js';
+export type { NextRouteHandlerOptions } from './webhooks/index.js';
 export type {
   WebhookHandler,
   WebhookHandlerResult,
