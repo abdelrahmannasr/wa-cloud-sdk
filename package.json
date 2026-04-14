@@ -5,7 +5,7 @@
       "esbuild"
     ]
   },
-  "version": "0.1.0",
+  "version": "0.4.0",
   "description": "Zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp Cloud API",
   "author": "AbdelRahman Nasr",
   "license": "MIT",
@@ -124,6 +124,16 @@
       "require": {
         "types": "./dist/multi-account/index.d.cts",
         "default": "./dist/multi-account/index.cjs"
+      }
+    },
+    "./catalog": {
+      "import": {
+        "types": "./dist/catalog/index.d.ts",
+        "default": "./dist/catalog/index.js"
+      },
+      "require": {
+        "types": "./dist/catalog/index.d.cts",
+        "default": "./dist/catalog/index.cjs"
       }
     }
   },

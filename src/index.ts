@@ -18,8 +18,10 @@ export {
   RateLimitError,
   AuthenticationError,
   ValidationError,
+  NotFoundError,
   WebhookVerificationError,
   MediaError,
+  ConflictError,
 } from './errors/index.js';
 
 // Utilities
@@ -76,7 +78,12 @@ export type {
   MessageType,
   FlowActionPayload,
   FlowMessageOptions,
+  ProductMessageOptions,
+  ProductSection,
+  ProductListMessageOptions,
+  CatalogMessageOptions,
 } from './messages/index.js';
+export { MULTI_PRODUCT_LIMITS } from './messages/index.js';
 
 // Media
 export { Media } from './media/index.js';
@@ -186,6 +193,8 @@ export type {
   StatusEvent,
   ErrorEvent,
   FlowCompletionEvent,
+  OrderItem,
+  OrderEvent,
   WebhookEvent,
   WebhookConfig,
   WebhookHandlerCallbacks,
@@ -236,3 +245,17 @@ export type {
   BroadcastFailure,
   BroadcastResult,
 } from './multi-account/index.js';
+
+// Catalog
+export { Catalog } from './catalog/index.js';
+export type {
+  Catalog as CatalogResource,
+  Product,
+  ProductAvailability,
+  CreateProductRequest,
+  UpdateProductRequest,
+  ListProductsParams,
+  ListProductsResponse,
+  ListCatalogsResponse,
+} from './catalog/index.js';
+export { CATALOG_VALIDATION } from './catalog/index.js';

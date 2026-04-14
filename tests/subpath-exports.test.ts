@@ -76,6 +76,32 @@ describe('flows subpath exports', () => {
   });
 });
 
+describe('catalog subpath exports', () => {
+  it('should export Catalog class as a constructor', async () => {
+    const mod = await import('../src/catalog/index.js');
+    expect(mod.Catalog).toBeDefined();
+    expect(typeof mod.Catalog).toBe('function');
+    // Confirm it is a constructor (can be instantiated)
+    expect(mod.Catalog.prototype).toBeDefined();
+  });
+
+  it('should export all documented catalog types and constants', async () => {
+    const mod = (await import('../src/catalog/index.js')) as Record<string, unknown>;
+    const expectedKeys = ['Catalog', 'CATALOG_VALIDATION'];
+    for (const key of expectedKeys) {
+      expect(mod[key], `Expected export "${key}" to be defined`).toBeDefined();
+    }
+  });
+
+  it('should export CATALOG_VALIDATION with CURRENCY_PATTERN', async () => {
+    const mod = await import('../src/catalog/index.js');
+    expect(mod.CATALOG_VALIDATION).toBeDefined();
+    expect(mod.CATALOG_VALIDATION.CURRENCY_PATTERN).toBeInstanceOf(RegExp);
+    expect(mod.CATALOG_VALIDATION.CURRENCY_PATTERN.test('USD')).toBe(true);
+    expect(mod.CATALOG_VALIDATION.CURRENCY_PATTERN.test('usd')).toBe(false);
+  });
+});
+
 describe('existing subpath exports (regression)', () => {
   it('should export all error classes from errors subpath', async () => {
     const mod = await import('../src/errors/index.js');
@@ -132,6 +158,10 @@ describe('main entry point re-exports', () => {
     expect(mod.withRetry).toBeDefined();
     expect(mod.validatePhoneNumber).toBeDefined();
     expect(mod.extractConversationPricing).toBeDefined();
+    // v0.4.0 catalog additions
+    expect(mod.Catalog).toBeDefined();
+    expect(mod.CATALOG_VALIDATION).toBeDefined();
+    expect(mod.ConflictError).toBeDefined();
   });
 });
 
@@ -167,6 +197,7 @@ describe('dual import (main + subpath)', () => {
     ['../src/errors/index.js', ['WhatsAppError', 'ApiError']],
     ['../src/messages/index.js', ['Messages']],
     ['../src/webhooks/index.js', ['Webhooks', 'parseWebhookPayload']],
+    ['../src/catalog/index.js', ['Catalog', 'CATALOG_VALIDATION']],
   ] as const)('should produce identical references for %s', async (subpath, expectedExports) => {
     const main = await import('../src/index.js');
     const sub = (await import(subpath)) as Record<string, unknown>;

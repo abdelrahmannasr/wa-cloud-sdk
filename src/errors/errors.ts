@@ -137,3 +137,31 @@ export class MediaError extends WhatsAppError {
     this.mediaType = mediaType;
   }
 }
+
+/**
+ * Thrown when a strict-create operation fails because the resource already exists.
+ * Use `upsertProduct` instead of `createProduct` if you want idempotent creation.
+ *
+ * @example
+ * ```ts
+ * import { ConflictError } from '@abdelrahmannasr-wa/cloud-api/errors';
+ *
+ * try {
+ *   await wa.catalog.createProduct(catalogId, { retailer_id: 'SKU-001', ... });
+ * } catch (err) {
+ *   if (err instanceof ConflictError) {
+ *     // product with this retailer_id already exists — use upsertProduct
+ *     console.error(`Conflict on resource: ${err.resource}`);
+ *   }
+ * }
+ * ```
+ */
+export class ConflictError extends WhatsAppError {
+  public readonly resource?: string;
+
+  constructor(message: string, resource?: string) {
+    super(message, 'CONFLICT');
+    this.name = 'ConflictError';
+    this.resource = resource;
+  }
+}

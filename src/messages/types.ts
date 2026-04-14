@@ -351,6 +351,128 @@ export interface FlowMessageOptions extends BaseMessageOptions {
   readonly footer?: string;
 }
 
+// ── Commerce: Limits ──
+
+/**
+ * Client-side enforcement limits for multi-product messages.
+ * These are validated before any network call is made.
+ */
+export const MULTI_PRODUCT_LIMITS = {
+  /** Maximum number of product sections per message */
+  MAX_SECTIONS: 10,
+  /** Maximum total product items across all sections */
+  MAX_TOTAL_ITEMS: 30,
+  /** Maximum characters in a section title */
+  MAX_SECTION_TITLE_LENGTH: 24,
+} as const;
+
+// ── Commerce: Single Product ──
+
+/**
+ * Options for sendProduct — sends an interactive single-product message.
+ *
+ * The recipient sees a rich product card for one specific item from the catalog.
+ * The platform looks up product details (name, price, image) from the catalog.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendProduct({
+ *   to: '15550001234',
+ *   catalogId: '123456789',
+ *   productRetailerId: 'SKU-001',
+ *   body: 'Check out this item!',
+ *   footer: 'Limited stock',
+ * });
+ * ```
+ */
+export interface ProductMessageOptions extends BaseMessageOptions {
+  /** Platform-assigned catalog ID (scoped to the WABA) */
+  readonly catalogId: string;
+  /** Retailer-defined product identifier within the catalog */
+  readonly productRetailerId: string;
+  /** Optional body text shown above the product card */
+  readonly body?: string;
+  /** Optional footer text */
+  readonly footer?: string;
+}
+
+// ── Commerce: Multi-Product ──
+
+/**
+ * A named group of product retailer IDs within a multi-product message.
+ * Sections are for display organization only — they are not persisted in the catalog.
+ */
+export interface ProductSection {
+  /** Section title (1–24 characters, required by Meta) */
+  readonly title: string;
+  /** Retailer-defined product IDs within this section */
+  readonly productRetailerIds: readonly string[];
+}
+
+/**
+ * Options for sendProductList — sends an interactive multi-product message.
+ *
+ * Displays a curated list of up to 30 products organized in up to 10 named sections.
+ * Client-side validation enforces all limits before making a network call.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendProductList({
+ *   to: '15550001234',
+ *   catalogId: '123456789',
+ *   header: 'Today\'s specials',
+ *   body: 'Check out our recommended items',
+ *   sections: [
+ *     { title: 'Beverages', productRetailerIds: ['cola-001', 'juice-002'] },
+ *     { title: 'Snacks', productRetailerIds: ['chips-001'] },
+ *   ],
+ * });
+ * ```
+ */
+export interface ProductListMessageOptions extends BaseMessageOptions {
+  /** Platform-assigned catalog ID (scoped to the WABA) */
+  readonly catalogId: string;
+  /** Required text header (Meta only supports text headers for product_list) */
+  readonly header: string;
+  /** Required body text */
+  readonly body: string;
+  /** Optional footer text */
+  readonly footer?: string;
+  /** Product sections — at least 1, at most MULTI_PRODUCT_LIMITS.MAX_SECTIONS (10) */
+  readonly sections: readonly ProductSection[];
+}
+
+// ── Commerce: Catalog Message ──
+
+/**
+ * Options for sendCatalogMessage — sends an interactive catalog browse invitation.
+ *
+ * The recipient sees a "View catalog" entry point that opens the business's full catalog.
+ * Optionally pin a thumbnail product to display alongside the invitation.
+ *
+ * @example
+ * ```ts
+ * await wa.messages.sendCatalogMessage({
+ *   to: '15550001234',
+ *   body: 'Browse our full collection',
+ *   footer: 'Free shipping on orders over $50',
+ *   thumbnailProductRetailerId: 'featured-item-001',
+ * });
+ * ```
+ */
+export interface CatalogMessageOptions extends BaseMessageOptions {
+  /** Required body text explaining the catalog offer */
+  readonly body: string;
+  /** Optional footer text */
+  readonly footer?: string;
+  /**
+   * Optional retailer ID of a product to use as the thumbnail preview.
+   * The product must exist in the WABA's catalog.
+   * If present, must not be empty.
+   */
+  readonly thumbnailProductRetailerId?: string;
+}
+
 // ── Typing Indicator ──
 
 export type TypingIndicatorOptions = Omit<BaseMessageOptions, 'replyTo'>;

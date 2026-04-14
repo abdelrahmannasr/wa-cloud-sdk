@@ -25,7 +25,12 @@ import type {
   MarkAsReadOptions,
   MediaSource,
   InteractiveHeader,
+  ProductMessageOptions,
+  ProductListMessageOptions,
+  CatalogMessageOptions,
 } from './types.js';
+import { MULTI_PRODUCT_LIMITS } from './types.js';
+import { ValidationError } from '../errors/errors.js';
 
 /** Meta's dynamic URL parameter placeholder for CTA URL buttons. */
 const CTA_URL_DYNAMIC_SUFFIX = '{{1}}';
@@ -494,6 +499,62 @@ export class Messages {
   }
 
   /**
+   * Send an interactive catalog message.
+   *
+   * Delivers a "View catalog" invitation that opens the business's full catalog
+   * when tapped. Optionally provide a thumbnail product retailer ID to display
+   * a specific product image alongside the invitation.
+   *
+   * @example
+   * ```ts
+   * await messages.sendCatalogMessage({
+   *   to: '15550001234',
+   *   body: 'Browse our full collection',
+   *   footer: 'Free shipping over $50',
+   *   thumbnailProductRetailerId: 'featured-item-001',
+   * });
+   * ```
+   */
+  async sendCatalogMessage(
+    options: CatalogMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    if (!options.body.trim()) {
+      throw new ValidationError('body must not be empty', 'body');
+    }
+    if (
+      options.thumbnailProductRetailerId !== undefined &&
+      !options.thumbnailProductRetailerId.trim()
+    ) {
+      throw new ValidationError(
+        'thumbnailProductRetailerId must not be empty when provided',
+        'thumbnailProductRetailerId',
+      );
+    }
+
+    const action: {
+      name: 'catalog_message';
+      parameters?: { thumbnail_product_retailer_id: string };
+    } = { name: 'catalog_message' };
+    if (options.thumbnailProductRetailerId) {
+      action.parameters = {
+        thumbnail_product_retailer_id: options.thumbnailProductRetailerId,
+      };
+    }
+
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'catalog_message',
+        body: { text: options.body },
+        action,
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
    * Send a typing indicator to show "typing..." in the recipient's chat.
    *
    * @example
@@ -532,6 +593,155 @@ export class Messages {
       message_id: options.messageId,
     };
     return this.send<MarkAsReadResponse>(payload, requestOptions);
+  }
+
+  /**
+   * Send an interactive single-product message.
+   *
+   * Displays a rich product card for a single item from the catalog.
+   * The platform resolves the product name, price, and image from the catalog
+   * using the provided retailer ID.
+   *
+   * @example
+   * ```ts
+   * await messages.sendProduct({
+   *   to: '15550001234',
+   *   catalogId: '123456789',
+   *   productRetailerId: 'SKU-001',
+   *   body: 'Check out this item!',
+   *   footer: 'Limited stock',
+   * });
+   * ```
+   */
+  async sendProduct(
+    options: ProductMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    if (!options.catalogId.trim()) {
+      throw new ValidationError('catalogId must not be empty', 'catalogId');
+    }
+    if (!options.productRetailerId.trim()) {
+      throw new ValidationError('productRetailerId must not be empty', 'productRetailerId');
+    }
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'product',
+        action: {
+          catalog_id: options.catalogId,
+          product_retailer_id: options.productRetailerId,
+        },
+        ...(options.body !== undefined && { body: { text: options.body } }),
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
+    };
+    return this.send(payload, requestOptions);
+  }
+
+  /**
+   * Send an interactive multi-product message.
+   *
+   * Displays a curated list of products organized in named sections.
+   * Client-side validation enforces all platform limits before any network call:
+   * up to 10 sections, up to 30 total items, section titles ≤ 24 characters.
+   *
+   * @example
+   * ```ts
+   * await messages.sendProductList({
+   *   to: '15550001234',
+   *   catalogId: '123456789',
+   *   header: "Today's specials",
+   *   body: 'Check out our recommended items',
+   *   sections: [
+   *     { title: 'Beverages', productRetailerIds: ['cola-001', 'juice-002'] },
+   *     { title: 'Snacks', productRetailerIds: ['chips-001'] },
+   *   ],
+   * });
+   * ```
+   */
+  async sendProductList(
+    options: ProductListMessageOptions,
+    requestOptions?: RequestOptions,
+  ): Promise<ApiResponse<MessageResponse>> {
+    // Client-side validation — all checks run before any network call.
+    if (!options.catalogId.trim()) {
+      throw new ValidationError('catalogId must not be empty', 'catalogId');
+    }
+    if (!options.header.trim()) {
+      throw new ValidationError('header must not be empty', 'header');
+    }
+    if (!options.body.trim()) {
+      throw new ValidationError('body must not be empty', 'body');
+    }
+    if (options.sections.length < 1) {
+      throw new ValidationError('at least 1 section is required', 'sections');
+    }
+    if (options.sections.length > MULTI_PRODUCT_LIMITS.MAX_SECTIONS) {
+      throw new ValidationError(
+        `sections must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTIONS} (got ${options.sections.length})`,
+        'sections',
+      );
+    }
+    let totalItems = 0;
+    let sectionIndex = 0;
+    for (const section of options.sections) {
+      const si = sectionIndex++;
+      if (!section.title.trim()) {
+        throw new ValidationError(
+          `sections[${si}].title must not be empty`,
+          `sections[${si}].title`,
+        );
+      }
+      if (section.title.trim().length > MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH) {
+        throw new ValidationError(
+          `sections[${si}].title must not exceed ${MULTI_PRODUCT_LIMITS.MAX_SECTION_TITLE_LENGTH} characters (got ${section.title.trim().length})`,
+          `sections[${si}].title`,
+        );
+      }
+      if (section.productRetailerIds.length < 1) {
+        throw new ValidationError(
+          `sections[${si}].productRetailerIds must not be empty`,
+          `sections[${si}].productRetailerIds`,
+        );
+      }
+      let itemIndex = 0;
+      for (const id of section.productRetailerIds) {
+        const ji = itemIndex++;
+        if (!id.trim()) {
+          throw new ValidationError(
+            `sections[${si}].productRetailerIds[${ji}] must not be empty`,
+            `sections[${si}].productRetailerIds[${ji}]`,
+          );
+        }
+      }
+      totalItems += section.productRetailerIds.length;
+    }
+    if (totalItems > MULTI_PRODUCT_LIMITS.MAX_TOTAL_ITEMS) {
+      throw new ValidationError(
+        `total product items must not exceed ${MULTI_PRODUCT_LIMITS.MAX_TOTAL_ITEMS} across all sections (got ${totalItems})`,
+        'sections',
+      );
+    }
+
+    const wireSections = options.sections.map((section) => ({
+      title: section.title,
+      product_items: section.productRetailerIds.map((id) => ({ product_retailer_id: id })),
+    }));
+
+    const payload = {
+      ...this.buildBasePayload(options.to, 'interactive', options.replyTo),
+      interactive: {
+        type: 'product_list',
+        header: { type: 'text', text: options.header },
+        body: { text: options.body },
+        action: {
+          catalog_id: options.catalogId,
+          sections: wireSections,
+        },
+        ...(options.footer !== undefined && { footer: { text: options.footer } }),
+      },
+    };
+    return this.send(payload, requestOptions);
   }
 
   // ── Private helpers ──

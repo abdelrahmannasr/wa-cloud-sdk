@@ -5,6 +5,8 @@ import type {
   WebhookChangeValue,
   EventMetadata,
   FlowCompletionEvent,
+  OrderEvent,
+  OrderItem,
 } from './types.js';
 
 export interface ParseWebhookPayloadOptions {
@@ -38,9 +40,7 @@ export function parseWebhookPayload(
     // attacker cannot inject control bytes into operator log streams. We log
     // the literal value only — never the payload body (FR-030).
     const safeObject = JSON.stringify(payload.object).slice(0, 66);
-    options?.logger?.debug(
-      `parseWebhookPayload: unknown payload.object ${safeObject}, skipping`,
-    );
+    options?.logger?.debug(`parseWebhookPayload: unknown payload.object ${safeObject}, skipping`);
     return [];
   }
 
@@ -88,6 +88,68 @@ function extractMessageEvents(
     };
     const timestamp = new Date(parseInt(message.timestamp, 10) * 1000);
 
+    // ── Order events (FR-013): routed exclusively to onOrder, never to onMessage ──
+    if (message.type === 'order' && message.order) {
+      const order = message.order;
+      const raw = JSON.stringify(order);
+      let items: readonly OrderItem[] = [];
+      try {
+        const rawItems: unknown = order.product_items;
+        if (Array.isArray(rawItems)) {
+          const parsed: OrderItem[] = [];
+          let allValid = true;
+          for (const item of rawItems) {
+            if (
+              item !== null &&
+              typeof item === 'object' &&
+              typeof (item as Record<string, unknown>)['product_retailer_id'] === 'string' &&
+              typeof (item as Record<string, unknown>)['quantity'] === 'number' &&
+              typeof (item as Record<string, unknown>)['item_price'] === 'number' &&
+              typeof (item as Record<string, unknown>)['currency'] === 'string'
+            ) {
+              const typedItem = item as {
+                product_retailer_id: string;
+                quantity: number;
+                item_price: number;
+                currency: string;
+              };
+              parsed.push({
+                product_retailer_id: typedItem.product_retailer_id,
+                quantity: typedItem.quantity,
+                item_price: typedItem.item_price,
+                currency: typedItem.currency,
+              });
+            } else {
+              // Malformed item — discard all items and surface empty array.
+              allValid = false;
+              break;
+            }
+          }
+          if (allValid) items = parsed;
+        }
+      } catch {
+        // Best-effort: surfacing the event with items:[] is always safer than throwing.
+        items = [];
+      }
+
+      const orderEvent: OrderEvent = {
+        type: 'order',
+        metadata,
+        messageId: message.id,
+        from: message.from,
+        timestamp: timestamp.toISOString(),
+        contact: contactInfo,
+        catalogId: order.catalog_id,
+        items,
+        ...(order.text !== undefined && { text: order.text }),
+        raw,
+      };
+      events.push(orderEvent);
+      // MUST NOT fall through to the generic message path (FR-013).
+      continue;
+    }
+
+    // ── Flow completion events ──
     if (
       message.type === 'interactive' &&
       message.interactive?.type === 'nfm_reply' &&

@@ -83,8 +83,12 @@ src/
 │   ├── strategies.ts     # RoundRobinStrategy, WeightedStrategy, StickyStrategy
 │   ├── multi-account.ts  # WhatsAppMultiAccount class with lazy instantiation, getNext(), broadcast()
 │   └── index.ts
+├── catalog/              # Commerce catalog management
+│   ├── types.ts          # Catalog, Product, ProductAvailability, CreateProductRequest, UpdateProductRequest, pagination types, CATALOG_VALIDATION
+│   ├── catalog.ts        # Catalog class with listCatalogs, getCatalog, listProducts, getProduct, createProduct, upsertProduct, updateProduct, deleteProduct
+│   └── index.ts
 ├── errors/               # Typed error classes
-│   ├── errors.ts         # WhatsAppError, ApiError, RateLimitError, AuthenticationError, etc.
+│   ├── errors.ts         # WhatsAppError, ApiError, RateLimitError, AuthenticationError, ConflictError, etc.
 │   └── index.ts
 └── utils/                # Shared utilities
     ├── rate-limiter.ts   # Token bucket rate limiter
@@ -93,10 +97,10 @@ src/
     └── index.ts
 ```
 
-**Subpath exports:** `./errors`, `./messages`, `./webhooks`, `./media`, `./templates`, `./flows`, `./phone-numbers`, `./multi-account` all have dedicated subpath exports in package.json.
+**Subpath exports:** `./errors`, `./messages`, `./webhooks`, `./media`, `./templates`, `./flows`, `./phone-numbers`, `./multi-account`, `./catalog` all have dedicated subpath exports in package.json.
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages (sendText, sendImage, sendTemplate, sendFlow, etc.), webhooks (with Express + Next.js middleware + Webhooks wrapper class + FlowCompletionEvent/onFlowCompletion), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), flows (list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control)
+- **Implemented:** client, errors, utils, messages (sendText, sendImage, sendTemplate, sendFlow, sendProduct, sendProductList, sendCatalogMessage + commerce interactive types), webhooks (with Express + Next.js middleware + Webhooks wrapper class + FlowCompletionEvent/onFlowCompletion + OrderEvent/onOrder), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), flows (list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control), catalog (listCatalogs, getCatalog, listProducts, getProduct, createProduct strict with ConflictError, upsertProduct, updateProduct, deleteProduct + client-side validation)
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
@@ -167,6 +171,14 @@ src/
 - Flow publish: `POST /{flow_id}/publish`
 - Flow deprecate: `POST /{flow_id}/deprecate`
 - Flow delete: `DELETE /{flow_id}`
+- Catalog list: `GET /{waba_id}/product_catalogs`
+- Catalog get: `GET /{catalog_id}?fields=...`
+- Product list: `GET /{catalog_id}/products`
+- Product get: `GET /{product_id}?fields=...`
+- Product create (strict): `POST /{catalog_id}/products`
+- Product upsert: `POST /{catalog_id}/products?retailer_id={id}`
+- Product update: `POST /{product_id}` (partial body)
+- Product delete: `DELETE /{product_id}`
 - Webhook verification: `GET /webhook` with hub.mode, hub.verify_token, hub.challenge
 - Webhook events: `POST /webhook` with X-Hub-Signature-256 header
 - All message sends require body: `{ messaging_product: "whatsapp", to, type, [type_data] }`
@@ -187,6 +199,7 @@ src/
 - Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
 
 ## Recent Changes
+- 011-commerce-catalogs: Added Catalog class (listCatalogs, getCatalog, listProducts, getProduct, createProduct strict+ConflictError, upsertProduct, updateProduct, deleteProduct); commerce message send methods (sendProduct, sendProductList, sendCatalogMessage); OrderEvent/onOrder webhook; ConflictError class; ./catalog subpath export; wa.catalog lazy getter; 5 runnable examples
 - 007-distribution-strategies: Added RoundRobinStrategy, WeightedStrategy, StickyStrategy implementing DistributionStrategy interface; getNext(recipient?) and broadcast(recipients, factory, options?) on WhatsAppMultiAccount; BroadcastMessageFactory, BroadcastOptions, BroadcastResult types; pool-based concurrency control; full backward compatibility
 - 006-sdk-documentation: Added comprehensive README with install, config, all modules, error handling, advanced usage; 7 runnable examples; TSDoc on all public APIs
 - 005-multi-account-management: Added WhatsAppMultiAccount class with lazy client instantiation, dynamic account add/remove, dual lookup by name or phoneNumberId; integrated phoneNumbers module into unified WhatsApp client with lazy init

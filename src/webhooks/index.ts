@@ -47,6 +47,8 @@ export type {
   StatusEvent,
   ErrorEvent,
   FlowCompletionEvent,
+  OrderItem,
+  OrderEvent,
   WebhookEvent,
 } from './types.js';
 

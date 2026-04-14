@@ -306,4 +306,80 @@ describe('Webhooks', () => {
       }
     });
   });
+
+  describe('onOrder', () => {
+    it('merges pre-registered onOrder callback into createHandler', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const onOrder = vi.fn();
+      webhooks.onOrder(onOrder);
+
+      const mockHandler = { handleGet: vi.fn(), handlePost: vi.fn() };
+      vi.mocked(createWebhookHandler).mockReturnValue(mockHandler);
+
+      webhooks.createHandler({});
+
+      expect(createWebhookHandler).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ onOrder }),
+      );
+    });
+
+    it('explicit onOrder in createHandler takes precedence over pre-registered', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const registered = vi.fn();
+      const explicit = vi.fn();
+      webhooks.onOrder(registered);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({ onOrder: explicit });
+
+      const [, mergedCallbacks] = vi.mocked(createWebhookHandler).mock.calls[0]!;
+      expect((mergedCallbacks as { onOrder: unknown }).onOrder).toBe(explicit);
+    });
+
+    it('returns this for chaining', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const result = webhooks.onOrder(vi.fn());
+      expect(result).toBe(webhooks);
+    });
+  });
+
+  describe('onFlowCompletion', () => {
+    it('merges pre-registered onFlowCompletion callback into createHandler', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const onFlowCompletion = vi.fn();
+      webhooks.onFlowCompletion(onFlowCompletion);
+
+      const mockHandler = { handleGet: vi.fn(), handlePost: vi.fn() };
+      vi.mocked(createWebhookHandler).mockReturnValue(mockHandler);
+
+      webhooks.createHandler({});
+
+      expect(createWebhookHandler).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ onFlowCompletion }),
+      );
+    });
+
+    it('explicit onFlowCompletion in createHandler takes precedence over pre-registered', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const registered = vi.fn();
+      const explicit = vi.fn();
+      webhooks.onFlowCompletion(registered);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({ onFlowCompletion: explicit });
+
+      const [, mergedCallbacks] = vi.mocked(createWebhookHandler).mock.calls[0]!;
+      expect((mergedCallbacks as { onFlowCompletion: unknown }).onFlowCompletion).toBe(explicit);
+    });
+
+    it('returns this for chaining', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const result = webhooks.onFlowCompletion(vi.fn());
+      expect(result).toBe(webhooks);
+    });
+  });
 });

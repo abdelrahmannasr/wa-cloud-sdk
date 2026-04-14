@@ -8,6 +8,7 @@ import {
   NotFoundError,
   WebhookVerificationError,
   MediaError,
+  ConflictError,
 } from '../../src/errors/errors.js';
 
 describe('WhatsAppError', () => {
@@ -184,6 +185,33 @@ describe('MediaError', () => {
   });
 });
 
+describe('ConflictError', () => {
+  it('should set resource and code', () => {
+    const error = new ConflictError('retailer_id already exists', 'product:SKU-001');
+    expect(error.message).toBe('retailer_id already exists');
+    expect(error.resource).toBe('product:SKU-001');
+    expect(error.code).toBe('CONFLICT');
+    expect(error.name).toBe('ConflictError');
+  });
+
+  it('should work without resource', () => {
+    const error = new ConflictError('already exists');
+    expect(error.resource).toBeUndefined();
+  });
+
+  it('should be an instance of WhatsAppError but not ApiError', () => {
+    const error = new ConflictError('test');
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toBeInstanceOf(WhatsAppError);
+    expect(error).not.toBeInstanceOf(ApiError);
+  });
+
+  it('should not be caught by NotFoundError', () => {
+    const error = new ConflictError('conflict');
+    expect(error).not.toBeInstanceOf(NotFoundError);
+  });
+});
+
 describe('Error hierarchy catch behavior', () => {
   it('should catch all SDK errors with WhatsAppError', () => {
     const errors = [
@@ -193,6 +221,7 @@ describe('Error hierarchy catch behavior', () => {
       new ValidationError('validation'),
       new WebhookVerificationError('webhook'),
       new MediaError('media'),
+      new ConflictError('conflict'),
     ];
 
     for (const error of errors) {
@@ -211,6 +240,7 @@ describe('Error hierarchy catch behavior', () => {
       new ValidationError('validation'),
       new WebhookVerificationError('webhook'),
       new MediaError('media'),
+      new ConflictError('conflict'),
     ];
 
     for (const error of apiErrors) {
