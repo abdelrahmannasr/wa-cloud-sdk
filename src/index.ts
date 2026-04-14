@@ -160,6 +160,7 @@ export {
   createWebhookHandler,
 } from './webhooks/index.js';
 export { createExpressMiddleware, createNextRouteHandler } from './webhooks/index.js';
+export type { NextRouteHandlerOptions } from './webhooks/index.js';
 export type {
   WebhookHandler,
   WebhookHandlerResult,
@@ -188,6 +189,7 @@ export type {
   WebhookStatus,
   WebhookError,
   EventMetadata,
+  TemplateEventMetadata,
   EventContact,
   MessageEvent,
   StatusEvent,
@@ -195,12 +197,20 @@ export type {
   FlowCompletionEvent,
   OrderItem,
   OrderEvent,
+  TemplateEventStatus,
+  TemplateQualityScore,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
   WebhookEvent,
   WebhookConfig,
   WebhookHandlerCallbacks,
   WebhookRequest,
   WebhookResponse,
   WebhookNextFunction,
+} from './webhooks/index.js';
+export type {
+  WebhookTemplateStatusPayload,
+  WebhookTemplateQualityPayload,
 } from './webhooks/index.js';
 
 // Phone Numbers

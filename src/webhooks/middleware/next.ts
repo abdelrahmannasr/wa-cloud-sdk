@@ -73,7 +73,10 @@ export function createNextRouteHandler(
 
     async POST(request: Request): Promise<Response> {
       try {
-        const rawBody = await request.text();
+        // Pass the raw bytes (not request.text()) so handler.handlePost can
+        // apply its fatal-UTF-8 decoder and reject malformed bodies instead
+        // of silently accepting U+FFFD substitutions.
+        const rawBody = Buffer.from(await request.arrayBuffer());
         const signature = request.headers.get('x-hub-signature-256') ?? undefined;
 
         const result = await handler.handlePost(rawBody, signature);

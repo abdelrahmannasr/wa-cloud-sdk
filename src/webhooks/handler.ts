@@ -124,6 +124,12 @@ export function createWebhookHandler(
           case 'order':
             await callbacks.onOrder?.(event);
             break;
+          case 'template_status':
+            await callbacks.onTemplateStatus?.(event);
+            break;
+          case 'template_quality':
+            await callbacks.onTemplateQuality?.(event);
+            break;
         }
       }
 
