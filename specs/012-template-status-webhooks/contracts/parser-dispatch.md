@@ -127,7 +127,7 @@ function extractTemplateStatusEvents(
     templateId,
     templateName,
     language,
-    status: status as TemplateStatus,
+    status: status as TemplateEventStatus,
     ...(reason !== undefined && { reason }),
     ...(otherInfo !== undefined && { otherInfo }),
     timestamp: new Date(timestampMs),
@@ -239,6 +239,6 @@ export interface WebhookEntry {
 
 - **No new throws.** The helpers return without adding to `events` on any malformed-payload path.
 - **No partial events.** Either an event is fully populated and pushed, or the malformed input is logged and skipped — the array never contains events with empty `templateId` / `templateName`.
-- **Preserves unknown status and score strings.** The `status as TemplateStatus` / `newScore as TemplateQualityScore` casts intentionally widen — the value is whatever the platform sent.
+- **Preserves unknown status and score strings.** The `status as TemplateEventStatus` / `newScore as TemplateQualityScore` casts intentionally widen — the value is whatever the platform sent.
 - **Preserves `previousScore` absence.** First-time ratings do not get `previousScore: 'UNKNOWN'` coerced in.
 - **Message events unchanged.** The `case 'messages'` branch still calls the exact same three helpers with the exact same metadata shape.

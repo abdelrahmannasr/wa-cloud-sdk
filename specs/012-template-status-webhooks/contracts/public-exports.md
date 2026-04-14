@@ -13,7 +13,7 @@ Append type re-exports. Names follow the existing alphabetical-by-category style
 export type {
   // ... existing exports ...
   TemplateEventMetadata,
-  TemplateStatus,
+  TemplateEventStatus,
   TemplateQualityScore,
   TemplateStatusEvent,
   TemplateQualityEvent,
@@ -34,7 +34,7 @@ The main barrel re-exports the webhook module. Add the same seven names to the e
 export type {
   // ... existing webhook types ...
   TemplateEventMetadata,
-  TemplateStatus,
+  TemplateEventStatus,
   TemplateQualityScore,
   TemplateStatusEvent,
   TemplateQualityEvent,
@@ -76,7 +76,7 @@ Same for the other six new names.
 
 Edits under two sections:
 
-1. **Module Structure → webhooks**: update the file description for `types.ts` to list the new types (`TemplateEventMetadata`, `TemplateStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`) and for `parser.ts` to note field-based dispatch.
+1. **Module Structure → webhooks**: update the file description for `types.ts` to list the new types (`TemplateEventMetadata`, `TemplateEventStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`) and for `parser.ts` to note field-based dispatch.
 2. **Implementation Status → webhooks**: append `+ TemplateStatusEvent/TemplateQualityEvent + onTemplateStatus/onTemplateQuality`.
 3. **Meta WhatsApp Cloud API Reference**: add two lines under the webhook section:
    - `- Webhook template status events: change.field === 'message_template_status_update'`

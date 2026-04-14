@@ -6,9 +6,9 @@
 
 ## Type System Requirements — Completeness
 
-- [x] CHK001 - Are all seven new exported type names enumerated explicitly (`TemplateEventMetadata`, `TemplateStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`)? [Completeness, Contracts public-exports.md]
+- [x] CHK001 - Are all seven new exported type names enumerated explicitly (`TemplateEventMetadata`, `TemplateEventStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`)? [Completeness, Contracts public-exports.md]
 - [x] CHK002 - Is the shape of `TemplateEventMetadata` specified as a dedicated type and NOT as an extension of the existing `EventMetadata`? [Completeness, Spec Clarifications §1; Contracts webhook-events.md]
-- [x] CHK003 - Are the documented lifecycle-status literals enumerated in `TemplateStatus` (APPROVED, REJECTED, PENDING, PAUSED, DISABLED, plus any additional known values)? [Completeness, Contracts webhook-events.md]
+- [x] CHK003 - Are the documented lifecycle-status literals enumerated in `TemplateEventStatus` (APPROVED, REJECTED, PENDING, PAUSED, DISABLED, plus any additional known values)? [Completeness, Contracts webhook-events.md]
 - [x] CHK004 - Are the documented quality-score literals enumerated in `TemplateQualityScore` (GREEN, YELLOW, RED, UNKNOWN)? [Completeness, Contracts webhook-events.md]
 - [x] CHK005 - Does every parsed-event type specification list every field with its exact type, readonly modifier, and optionality? [Completeness, Contracts webhook-events.md]
 

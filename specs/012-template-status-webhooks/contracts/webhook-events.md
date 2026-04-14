@@ -21,7 +21,7 @@ export interface TemplateEventMetadata {
 }
 ```
 
-## `TemplateStatus` (new)
+## `TemplateEventStatus` (new)
 
 ```ts
 /**
@@ -29,7 +29,7 @@ export interface TemplateEventMetadata {
  * additional string is accepted and preserved verbatim so callers can branch
  * on platform additions without an SDK upgrade.
  */
-export type TemplateStatus =
+export type TemplateEventStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'PENDING'
@@ -85,7 +85,7 @@ export interface TemplateStatusEvent {
   readonly templateId: string;
   readonly templateName: string;
   readonly language: string;
-  readonly status: TemplateStatus;
+  readonly status: TemplateEventStatus;
   /** Present on `REJECTED`; the literal `'NONE'` is normalized to `undefined`. */
   readonly reason?: string;
   /** Opaque platform diagnostic bag (appeal deadlines, title-tag hints). */
@@ -185,7 +185,7 @@ export interface WebhookHandlerCallbacks {
 
 ## Exported from `src/webhooks/index.ts`
 
-Add re-exports for: `TemplateEventMetadata`, `TemplateStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`.
+Add re-exports for: `TemplateEventMetadata`, `TemplateEventStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`.
 
 ## Exported from `src/index.ts`
 

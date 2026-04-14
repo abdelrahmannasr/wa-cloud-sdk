@@ -55,10 +55,10 @@ interface TemplateEventMetadata {
 
 Sourcing: `businessAccountId ← entry.id`.
 
-### `TemplateStatus` and `TemplateQualityScore` (union-plus-string)
+### `TemplateEventStatus` and `TemplateQualityScore` (union-plus-string)
 
 ```ts
-type TemplateStatus =
+type TemplateEventStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'PENDING'
@@ -89,7 +89,7 @@ interface TemplateStatusEvent {
   readonly templateId: string;
   readonly templateName: string;
   readonly language: string;
-  readonly status: TemplateStatus;
+  readonly status: TemplateEventStatus;
   /** Present on `REJECTED` and occasionally `PAUSED`/`DISABLED`. `'NONE'` is normalized to `undefined`. */
   readonly reason?: string;
   /** Opaque platform diagnostic bag (appeal deadlines, title-tag hints). Passed through verbatim. */

@@ -57,7 +57,7 @@ Single TypeScript library. Source lives in `src/`, tests mirror in `tests/`. No 
 
 ### Implementation for User Story 1
 
-- [x] T007 [P] [US1] Add `TemplateStatus` union-plus-string type (`'APPROVED' | 'REJECTED' | 'PENDING' | 'PAUSED' | 'DISABLED' | 'PENDING_DELETION' | 'IN_APPEAL' | 'LIMIT_EXCEEDED' | 'FLAGGED' | (string & {})`) in `src/webhooks/types.ts` with TSDoc
+- [x] T007 [P] [US1] Add `TemplateEventStatus` union-plus-string type (`'APPROVED' | 'REJECTED' | 'PENDING' | 'PAUSED' | 'DISABLED' | 'PENDING_DELETION' | 'IN_APPEAL' | 'LIMIT_EXCEEDED' | 'FLAGGED' | (string & {})`) in `src/webhooks/types.ts` with TSDoc
 - [x] T008 [P] [US1] Add `WebhookTemplateStatusPayload` raw wire type in `src/webhooks/types.ts` (fields: `event`, `message_template_id`, `message_template_name`, `message_template_language`, optional `reason`, optional `other_info`) matching contracts/webhook-events.md
 - [x] T009 [US1] Add `TemplateStatusEvent` parsed interface in `src/webhooks/types.ts` with fields `type: 'template_status'`, `metadata: TemplateEventMetadata`, `templateId`, `templateName`, `language`, `status`, optional `reason`, optional `otherInfo`, `timestamp: Date` — and include it in the `WebhookEvent` discriminated union (depends on T004, T007, T008)
 - [x] T010 [US1] Add optional `onTemplateStatus?: (event: TemplateStatusEvent) => void | Promise<void>` to `WebhookHandlerCallbacks` in `src/webhooks/types.ts` (depends on T009)
@@ -65,7 +65,7 @@ Single TypeScript library. Source lives in `src/`, tests mirror in `tests/`. No 
 - [x] T012 [US1] Add `case 'message_template_status_update': extractTemplateStatusEvents(change.value, entry, events, options?.logger); break;` to the parser switch in `src/webhooks/parser.ts` (depends on T011)
 - [x] T013 [US1] Add `case 'template_status': await callbacks.onTemplateStatus?.(event); break;` to the dispatch switch in `createWebhookHandler` in `src/webhooks/handler.ts` (depends on T010)
 - [x] T014 [US1] Extend `_pendingCallbacks` in `src/webhooks/webhooks.ts` with `onTemplateStatus?` and add fluent method `onTemplateStatus(callback): this` mirroring `onOrder` / `onFlowCompletion` patterns with TSDoc + `@example` (depends on T010)
-- [x] T015 [P] [US1] Re-export `TemplateStatus`, `TemplateStatusEvent`, `WebhookTemplateStatusPayload` from `src/webhooks/index.ts` (`TemplateEventMetadata` is already re-exported by T006a)
+- [x] T015 [P] [US1] Re-export `TemplateEventStatus`, `TemplateStatusEvent`, `WebhookTemplateStatusPayload` from `src/webhooks/index.ts` (`TemplateEventMetadata` is already re-exported by T006a)
 - [x] T016 [P] [US1] Re-export the same three names from the main barrel `src/index.ts`
 
 ### Tests for User Story 1
@@ -121,7 +121,7 @@ Single TypeScript library. Source lives in `src/`, tests mirror in `tests/`. No 
 - [x] T036 [P] [US3] Add cross-contamination handler test to `tests/webhooks/handler.test.ts`: register ALL callbacks (onMessage, onStatus, onError, onFlowCompletion, onOrder, onTemplateStatus, onTemplateQuality) with spies; feed the mixed-batch payload from T035; assert each spy is called exactly the right number of times with events of the correct `type` and NOTHING else
 - [x] T037 [P] [US3] Add "template events never reach message/status/error/flow/order callbacks" negative test to `tests/webhooks/handler.test.ts`: register only onMessage/onStatus/onError/onFlowCompletion/onOrder; feed a template_status + template_quality payload; assert NONE of the registered callbacks fire (FR-007)
 - [x] T038 [P] [US3] Add ordering-preservation parser test to `tests/webhooks/parser.test.ts`: two template_status events and two template_quality events interleaved across two `entry` objects in a single payload produce the four events in the exact payload order
-- [x] T039 [P] [US3] Add subpath export tests to `tests/exports/subpath-exports.test.ts` asserting all seven new names (`TemplateEventMetadata`, `TemplateStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`) resolve identically from `@abdelrahmannasr-wa/cloud-api` and from `@abdelrahmannasr-wa/cloud-api/webhooks`
+- [x] T039 [P] [US3] Add subpath export tests to `tests/exports/subpath-exports.test.ts` asserting all seven new names (`TemplateEventMetadata`, `TemplateEventStatus`, `TemplateQualityScore`, `TemplateStatusEvent`, `TemplateQualityEvent`, `WebhookTemplateStatusPayload`, `WebhookTemplateQualityPayload`) resolve identically from `@abdelrahmannasr-wa/cloud-api` and from `@abdelrahmannasr-wa/cloud-api/webhooks`
 - [x] T040 [US3] Run `pnpm test && pnpm test:coverage` — assert full suite is green and coverage remains ≥ 80% on lines/functions/branches/statements per project threshold (SC-005)
 
 **Checkpoint**: All three user stories are verified. Cross-story routing isolation and export surface are proven.

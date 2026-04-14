@@ -82,11 +82,11 @@ specs/012-template-status-webhooks/
 ```text
 src/
 ├── webhooks/
-│   ├── types.ts             # EDIT — add raw wire shapes (WebhookTemplateStatusPayload, WebhookTemplateQualityPayload), add TemplateEventMetadata, TemplateStatus union-plus-string, TemplateQualityScore union-plus-string, TemplateStatusEvent, TemplateQualityEvent, extend WebhookEvent discriminated union, extend WebhookHandlerCallbacks with onTemplateStatus & onTemplateQuality
+│   ├── types.ts             # EDIT — add raw wire shapes (WebhookTemplateStatusPayload, WebhookTemplateQualityPayload), add TemplateEventMetadata, TemplateEventStatus union-plus-string, TemplateQualityScore union-plus-string, TemplateStatusEvent, TemplateQualityEvent, extend WebhookEvent discriminated union, extend WebhookHandlerCallbacks with onTemplateStatus & onTemplateQuality
 │   ├── parser.ts            # EDIT — replace the `if (change.field !== 'messages') continue;` gate with per-field routing; add extractTemplateStatusEvents() and extractTemplateQualityEvents() helpers; for any other non-empty field, log-and-skip via options.logger (FR-010)
 │   ├── handler.ts           # EDIT — add 'template_status' and 'template_quality' cases to the dispatch switch
 │   ├── webhooks.ts          # EDIT — extend _pendingCallbacks with onTemplateStatus/onTemplateQuality; add fluent onTemplateStatus()/onTemplateQuality() methods matching the onOrder/onFlowCompletion pattern; extend imports from ./types
-│   └── index.ts             # EDIT — re-export TemplateStatusEvent, TemplateQualityEvent, TemplateEventMetadata, TemplateStatus, TemplateQualityScore, WebhookTemplateStatusPayload, WebhookTemplateQualityPayload
+│   └── index.ts             # EDIT — re-export TemplateStatusEvent, TemplateQualityEvent, TemplateEventMetadata, TemplateEventStatus, TemplateQualityScore, WebhookTemplateStatusPayload, WebhookTemplateQualityPayload
 ├── index.ts                 # EDIT — add re-exports for the six new names from src/webhooks/types.ts (following the existing webhooks re-export block)
 ├── whatsapp.ts              # NO CHANGE — `wa.webhooks` already exposes the Webhooks wrapper; new methods are picked up automatically
 ├── package.json             # EDIT — bump version to 0.5.0 (first v0.5.x feature per SDK roadmap); no new subpath entry — `./webhooks` already exists
