@@ -134,11 +134,11 @@ function extractMessageEvents(
 
       const orderEvent: OrderEvent = {
         type: 'order',
-        metadata: value.metadata,
+        metadata,
         messageId: message.id,
         from: message.from,
         timestamp: timestamp.toISOString(),
-        contact: contact,
+        contact: contactInfo,
         catalogId: order.catalog_id,
         items,
         ...(order.text !== undefined && { text: order.text }),

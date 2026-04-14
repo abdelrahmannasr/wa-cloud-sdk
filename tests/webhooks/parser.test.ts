@@ -606,6 +606,43 @@ describe('parseWebhookPayload', () => {
       );
     });
 
+    it('should normalize metadata to EventMetadata (camelCase)', () => {
+      const events = parseWebhookPayload(createOrderPayload());
+      const event = events[0] as OrderEvent;
+      expect(event.metadata.phoneNumberId).toBe('123456');
+      expect(event.metadata.displayPhoneNumber).toBe('15551234567');
+    });
+
+    it('should normalize contact to EventContact (flat, camelCase)', () => {
+      const events = parseWebhookPayload(createOrderPayload());
+      const event = events[0] as OrderEvent;
+      expect(event.contact.name).toBe('Bob');
+      expect(event.contact.waId).toBe('15559876543');
+    });
+
+    it('should fall back contact.name to "Unknown" when no contact entry matches', () => {
+      const payload = createPayload({
+        messages: [
+          {
+            from: '15559876543',
+            id: 'wamid.order001',
+            timestamp: '1712620800',
+            type: 'order',
+            order: {
+              catalog_id: 'cat-001',
+              product_items: [
+                { product_retailer_id: 'SKU-A', quantity: 2, item_price: 999, currency: 'USD' },
+              ],
+            },
+          },
+        ],
+      });
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as OrderEvent;
+      expect(event.contact.name).toBe('Unknown');
+      expect(event.contact.waId).toBe('15559876543');
+    });
+
     it('should parse a well-formed order with multiple items', () => {
       const payload = createOrderPayload({
         product_items: [

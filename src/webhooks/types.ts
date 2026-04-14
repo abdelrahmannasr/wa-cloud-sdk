@@ -317,15 +317,15 @@ export interface OrderItem {
  */
 export interface OrderEvent {
   readonly type: 'order';
-  readonly metadata: WebhookMetadata;
+  readonly metadata: EventMetadata;
   /** Stable platform identifier — use for idempotency */
   readonly messageId: string;
   /** E.164 sender phone number */
   readonly from: string;
   /** ISO 8601 timestamp */
   readonly timestamp: string;
-  /** Sender profile from the webhook contact entry */
-  readonly contact?: WebhookContact;
+  /** Sender profile (normalized; falls back to `'Unknown'` if no contact entry matches) */
+  readonly contact: EventContact;
   /** Platform-assigned catalog ID the order was placed against */
   readonly catalogId: string;
   /**
