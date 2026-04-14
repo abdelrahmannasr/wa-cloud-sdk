@@ -195,7 +195,7 @@ export class Webhooks {
    * @example
    * ```ts
    * wa.webhooks.onFlowCompletion(async (event) => {
-   *   console.log('Flow completed:', event.flowToken, event.response);
+   *   console.log('Flow completed:', event.messageId, event.response);
    * });
    * ```
    */
