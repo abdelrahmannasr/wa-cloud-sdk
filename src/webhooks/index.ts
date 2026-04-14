@@ -11,6 +11,9 @@ export { Webhooks } from './webhooks.js';
 export { createExpressMiddleware } from './middleware/express.js';
 export { createNextRouteHandler } from './middleware/next.js';
 
+// Types — Raw (template wire shapes)
+export type { WebhookTemplateStatusPayload, WebhookTemplateQualityPayload } from './types.js';
+
 // Types — Raw
 export type {
   WebhookPayload,
@@ -42,6 +45,7 @@ export type {
 // Types — Parsed
 export type {
   EventMetadata,
+  TemplateEventMetadata,
   EventContact,
   MessageEvent,
   StatusEvent,
@@ -49,6 +53,10 @@ export type {
   FlowCompletionEvent,
   OrderItem,
   OrderEvent,
+  TemplateEventStatus,
+  TemplateQualityScore,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
   WebhookEvent,
 } from './types.js';
 
