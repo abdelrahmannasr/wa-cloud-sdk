@@ -14,6 +14,7 @@ import type {
   WebhookResponse,
   WebhookNextFunction,
   OrderEvent,
+  FlowCompletionEvent,
 } from './types.js';
 
 /**
@@ -52,7 +53,8 @@ export class Webhooks {
    * Merged (as lower-priority defaults) with any callbacks passed to createHandler and middleware methods.
    */
   private _pendingCallbacks: {
-    onOrder?: (event: OrderEvent) => void | Promise<void>;
+    onOrder?: WebhookHandlerCallbacks['onOrder'];
+    onFlowCompletion?: WebhookHandlerCallbacks['onFlowCompletion'];
   } = {};
 
   /**
@@ -180,6 +182,25 @@ export class Webhooks {
    */
   onOrder(callback: (event: OrderEvent) => void | Promise<void>): this {
     this._pendingCallbacks.onOrder = callback;
+    return this;
+  }
+
+  /**
+   * Register a callback for flow completion events.
+   *
+   * Callbacks registered here are merged as defaults when creating handlers via
+   * `createHandler`, `createExpressMiddleware`, or `createNextRouteHandler`.
+   * Explicitly passed callbacks always take precedence over registered ones.
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onFlowCompletion(async (event) => {
+   *   console.log('Flow completed:', event.flowToken, event.responsePayload);
+   * });
+   * ```
+   */
+  onFlowCompletion(callback: (event: FlowCompletionEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onFlowCompletion = callback;
     return this;
   }
 
