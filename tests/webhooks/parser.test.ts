@@ -646,6 +646,27 @@ describe('parseWebhookPayload', () => {
       expect(event.raw).toContain('SKU-A');
     });
 
+    it('should set items:[] when product_items is an empty array', () => {
+      const payload = createOrderPayload({ product_items: [] });
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as OrderEvent;
+      expect(event.type).toBe('order');
+      expect(event.items).toEqual([]);
+    });
+
+    it('should set items:[] and discard partial results when second item is malformed', () => {
+      const payload = createOrderPayload({
+        product_items: [
+          { product_retailer_id: 'SKU-A', quantity: 1, item_price: 500, currency: 'USD' },
+          { product_retailer_id: 'SKU-B' }, // malformed — missing required fields
+        ],
+      });
+      const events = parseWebhookPayload(payload);
+      const event = events[0] as OrderEvent;
+      // Must discard the valid first item along with the malformed second item.
+      expect(event.items).toEqual([]);
+    });
+
     it('should parse mixed batch (order + text message) as independent events', () => {
       const payload: WebhookPayload = {
         object: 'whatsapp_business_account',

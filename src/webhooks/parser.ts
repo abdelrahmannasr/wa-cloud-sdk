@@ -97,6 +97,7 @@ function extractMessageEvents(
         const rawItems: unknown = order.product_items;
         if (Array.isArray(rawItems)) {
           const parsed: OrderItem[] = [];
+          let allValid = true;
           for (const item of rawItems) {
             if (
               item !== null &&
@@ -120,11 +121,11 @@ function extractMessageEvents(
               });
             } else {
               // Malformed item — discard all items and surface empty array.
-              items = [];
+              allValid = false;
               break;
             }
-            items = parsed;
           }
+          if (allValid) items = parsed;
         }
       } catch {
         // Best-effort: surfacing the event with items:[] is always safer than throwing.
@@ -136,7 +137,7 @@ function extractMessageEvents(
         metadata: value.metadata,
         messageId: message.id,
         from: message.from,
-        timestamp: new Date(parseInt(message.timestamp, 10) * 1000).toISOString(),
+        timestamp: timestamp.toISOString(),
         contact: contact,
         catalogId: order.catalog_id,
         items,
