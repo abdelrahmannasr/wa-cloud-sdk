@@ -304,9 +304,11 @@ export type TemplateQualityScore = 'GREEN' | 'YELLOW' | 'RED' | 'UNKNOWN' | (str
  *
  * @example
  * ```ts
- * wa.webhooks.onTemplateStatus((event) => {
- *   if (event.status === 'REJECTED') {
- *     console.log(`Template ${event.templateName} rejected: ${event.reason}`);
+ * wa.webhooks.onTemplateStatus(async (event) => {
+ *   if (event.status === 'APPROVED') {
+ *     await db.markTemplateLive(event.templateId);
+ *   } else if (event.status === 'REJECTED') {
+ *     await alerts.page({ templateId: event.templateId, reason: event.reason });
  *   }
  * });
  * ```
@@ -336,8 +338,10 @@ export interface TemplateStatusEvent {
  *
  * @example
  * ```ts
- * wa.webhooks.onTemplateQuality((event) => {
- *   if (event.newScore === 'RED') alert(event.templateName);
+ * wa.webhooks.onTemplateQuality(async (event) => {
+ *   if (event.newScore === 'RED') {
+ *     await throttle.pauseCampaign(event.templateId);
+ *   }
  * });
  * ```
  */
