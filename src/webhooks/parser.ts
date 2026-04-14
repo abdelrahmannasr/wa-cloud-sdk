@@ -1,12 +1,17 @@
 import type { Logger } from '../client/types.js';
 import type {
   WebhookPayload,
+  WebhookEntry,
   WebhookEvent,
   WebhookChangeValue,
+  WebhookTemplateStatusPayload,
+  WebhookTemplateQualityPayload,
   EventMetadata,
   FlowCompletionEvent,
   OrderEvent,
   OrderItem,
+  TemplateEventStatus,
+  TemplateQualityScore,
 } from './types.js';
 
 export interface ParseWebhookPayloadOptions {
@@ -48,16 +53,29 @@ export function parseWebhookPayload(
 
   for (const entry of payload.entry) {
     for (const change of entry.changes) {
-      if (change.field !== 'messages') {
-        continue;
+      switch (change.field) {
+        case 'messages': {
+          const metadata = buildMetadata(change.value);
+          extractMessageEvents(change.value, metadata, events);
+          extractStatusEvents(change.value, metadata, events);
+          extractErrorEvents(change.value, metadata, events);
+          break;
+        }
+        case 'message_template_status_update':
+          extractTemplateStatusEvents(change.value, entry, events, options?.logger);
+          break;
+        case 'message_template_quality_update':
+          extractTemplateQualityEvents(change.value, entry, events, options?.logger);
+          break;
+        default: {
+          // Unknown field (e.g. future template_category_update). Log the
+          // field name only — never the change.value — and skip.
+          const safeField = JSON.stringify(change.field).slice(0, 66);
+          options?.logger?.debug(
+            `parseWebhookPayload: unrecognized change.field ${safeField}, skipping`,
+          );
+        }
       }
-
-      const value = change.value;
-      const metadata = buildMetadata(value);
-
-      extractMessageEvents(value, metadata, events);
-      extractStatusEvents(value, metadata, events);
-      extractErrorEvents(value, metadata, events);
     }
   }
 
@@ -229,4 +247,121 @@ function extractErrorEvents(
       error,
     });
   }
+}
+
+/** Shared result of validating the common fields on any template-change payload. */
+interface TemplateBase {
+  readonly templateId: string;
+  readonly templateName: string;
+  readonly language: string;
+  /** Validated non-null object; callers narrow via `as unknown as SpecificPayload`. */
+  readonly raw: unknown;
+  readonly timestamp: Date;
+}
+
+/**
+ * Validates the non-object guard, identity fields, and `entry.time` that are
+ * identical across every template change type (FR-009). Returns `null` and logs
+ * a diagnostic on any failure so the caller can return early.
+ */
+function parseTemplateBase(
+  value: unknown,
+  entry: WebhookEntry,
+  fieldName: string,
+  logger: Logger | undefined,
+): TemplateBase | null {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    logger?.warn(`parseWebhookPayload: ${fieldName} has non-object change.value, skipping`);
+    return null;
+  }
+
+  const raw = value as unknown as Record<string, unknown>;
+  const rawId = raw['message_template_id'];
+  const templateId =
+    typeof rawId === 'string' ? rawId : typeof rawId === 'number' ? String(rawId) : '';
+  const templateName =
+    typeof raw['message_template_name'] === 'string' ? raw['message_template_name'] : '';
+  const language =
+    typeof raw['message_template_language'] === 'string' ? raw['message_template_language'] : '';
+
+  if (!templateId || !templateName || !language) {
+    logger?.warn(`parseWebhookPayload: ${fieldName} missing required identity, skipping`);
+    return null;
+  }
+
+  const timestampMs = typeof entry.time === 'number' ? entry.time * 1000 : NaN;
+  if (!Number.isFinite(timestampMs)) {
+    logger?.warn(`parseWebhookPayload: ${fieldName} missing entry.time, skipping`);
+    return null;
+  }
+
+  return { templateId, templateName, language, raw: value, timestamp: new Date(timestampMs) };
+}
+
+function extractTemplateStatusEvents(
+  value: unknown,
+  entry: WebhookEntry,
+  events: WebhookEvent[],
+  logger: Logger | undefined,
+): void {
+  const base = parseTemplateBase(value, entry, 'message_template_status_update', logger);
+  if (!base) return;
+
+  const raw = base.raw as WebhookTemplateStatusPayload;
+  const status = typeof raw.event === 'string' ? raw.event : '';
+  if (!status) {
+    logger?.warn('parseWebhookPayload: message_template_status_update missing event, skipping');
+    return;
+  }
+
+  const reason = typeof raw.reason === 'string' && raw.reason !== 'NONE' ? raw.reason : undefined;
+  const otherInfo =
+    typeof raw.other_info === 'object' && !Array.isArray(raw.other_info)
+      ? raw.other_info
+      : undefined;
+
+  events.push({
+    type: 'template_status',
+    metadata: { businessAccountId: entry.id },
+    templateId: base.templateId,
+    templateName: base.templateName,
+    language: base.language,
+    status: status as TemplateEventStatus,
+    ...(reason !== undefined && { reason }),
+    ...(otherInfo !== undefined && { otherInfo }),
+    timestamp: base.timestamp,
+  });
+}
+
+function extractTemplateQualityEvents(
+  value: unknown,
+  entry: WebhookEntry,
+  events: WebhookEvent[],
+  logger: Logger | undefined,
+): void {
+  const base = parseTemplateBase(value, entry, 'message_template_quality_update', logger);
+  if (!base) return;
+
+  const raw = base.raw as WebhookTemplateQualityPayload;
+  const newScore = typeof raw.new_quality_score === 'string' ? raw.new_quality_score : '';
+  if (!newScore) {
+    logger?.warn(
+      'parseWebhookPayload: message_template_quality_update missing new_quality_score, skipping',
+    );
+    return;
+  }
+
+  const previousScore =
+    typeof raw.previous_quality_score === 'string' ? raw.previous_quality_score : undefined;
+
+  events.push({
+    type: 'template_quality',
+    metadata: { businessAccountId: entry.id },
+    templateId: base.templateId,
+    templateName: base.templateName,
+    language: base.language,
+    newScore: newScore as TemplateQualityScore,
+    ...(previousScore !== undefined && { previousScore: previousScore as TemplateQualityScore }),
+    timestamp: base.timestamp,
+  });
 }
