@@ -15,6 +15,8 @@ import type {
   WebhookNextFunction,
   OrderEvent,
   FlowCompletionEvent,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
 } from './types.js';
 
 /**
@@ -52,9 +54,9 @@ export class Webhooks {
    * Pending callbacks registered via individual `onX()` methods.
    * Merged (as lower-priority defaults) with any callbacks passed to createHandler and middleware methods.
    */
+  // Mutable (no readonly) so individual on*() setters can assign into it.
   private _pendingCallbacks: {
-    onOrder?: WebhookHandlerCallbacks['onOrder'];
-    onFlowCompletion?: WebhookHandlerCallbacks['onFlowCompletion'];
+    -readonly [K in keyof WebhookHandlerCallbacks]?: WebhookHandlerCallbacks[K];
   } = {};
 
   /**
@@ -201,6 +203,56 @@ export class Webhooks {
    */
   onFlowCompletion(callback: (event: FlowCompletionEvent) => void | Promise<void>): this {
     this._pendingCallbacks.onFlowCompletion = callback;
+    return this;
+  }
+
+  /**
+   * Register a callback for template lifecycle events (approval, rejection,
+   * pause, disable, re-approval).
+   *
+   * Callbacks registered here are merged as defaults when creating handlers via
+   * `createHandler`, `createExpressMiddleware`, or `createNextRouteHandler`.
+   * Explicitly passed callbacks always take precedence over registered ones.
+   *
+   * The SDK does NOT deduplicate events — use `(templateId, status, timestamp)`
+   * as an idempotency tuple if needed.
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onTemplateStatus(async (event) => {
+   *   if (event.status === 'APPROVED') {
+   *     await db.markTemplateLive(event.templateId);
+   *   } else if (event.status === 'REJECTED') {
+   *     await alerts.page({ name: event.templateName, reason: event.reason });
+   *   }
+   * });
+   * ```
+   */
+  onTemplateStatus(callback: (event: TemplateStatusEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onTemplateStatus = callback;
+    return this;
+  }
+
+  /**
+   * Register a callback for template quality-score updates (GREEN / YELLOW /
+   * RED / UNKNOWN).
+   *
+   * Callbacks registered here are merged as defaults when creating handlers.
+   * Explicitly passed callbacks take precedence.
+   *
+   * `event.previousScore` is `undefined` on first rating.
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onTemplateQuality(async (event) => {
+   *   if (event.newScore === 'RED' || event.newScore === 'YELLOW') {
+   *     await throttle.campaign(event.templateName);
+   *   }
+   * });
+   * ```
+   */
+  onTemplateQuality(callback: (event: TemplateQualityEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onTemplateQuality = callback;
     return this;
   }
 
