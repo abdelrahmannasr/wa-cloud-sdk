@@ -1,0 +1,23 @@
+export { PhoneNumbers } from './phone-numbers.js';
+export type {
+  PhoneNumber,
+  BusinessProfile,
+  BusinessProfileUpdate,
+  PhoneNumberListParams,
+  PhoneNumberListResponse,
+  BusinessProfileResponse,
+  VerificationCodeRequest,
+  VerifyCodeRequest,
+  RegisterRequest,
+  SuccessResponse,
+  Throughput,
+  QualityRating,
+  CodeVerificationStatus,
+  NameStatus,
+  PlatformType,
+  ThroughputLevel,
+  AccountMode,
+  MessagingLimitTier,
+  CodeMethod,
+  BusinessVertical,
+} from './types.js';

@@ -1,0 +1,232 @@
+import type { Logger } from '../client/types.js';
+import type {
+  WebhookPayload,
+  WebhookEvent,
+  WebhookChangeValue,
+  EventMetadata,
+  FlowCompletionEvent,
+  OrderEvent,
+  OrderItem,
+} from './types.js';
+
+export interface ParseWebhookPayloadOptions {
+  /** Optional logger for operator diagnostics (no body content is logged). */
+  readonly logger?: Logger;
+}
+
+/**
+ * Parse a raw webhook payload from Meta into an array of typed events.
+ *
+ * @param payload - The raw JSON body from the webhook POST
+ * @param options - Optional parser options (logger for operator diagnostics)
+ * @returns Array of parsed WebhookEvent objects (may be empty if no recognized events)
+ *
+ * @example
+ * ```ts
+ * const events = parseWebhookPayload(JSON.parse(rawBody));
+ * for (const event of events) {
+ *   if (event.type === 'message') console.log(event.message);
+ * }
+ * ```
+ */
+export function parseWebhookPayload(
+  payload: WebhookPayload,
+  options?: ParseWebhookPayloadOptions,
+): WebhookEvent[] {
+  if (payload.object !== 'whatsapp_business_account') {
+    // Meta only documents `whatsapp_business_account`; log so operators can
+    // spot misconfigured subscriptions instead of returning a silent 200.
+    // JSON.stringify + slice caps length and escapes ANSI/newlines so an
+    // attacker cannot inject control bytes into operator log streams. We log
+    // the literal value only — never the payload body (FR-030).
+    const safeObject = JSON.stringify(payload.object).slice(0, 66);
+    options?.logger?.debug(`parseWebhookPayload: unknown payload.object ${safeObject}, skipping`);
+    return [];
+  }
+
+  const events: WebhookEvent[] = [];
+
+  for (const entry of payload.entry) {
+    for (const change of entry.changes) {
+      if (change.field !== 'messages') {
+        continue;
+      }
+
+      const value = change.value;
+      const metadata = buildMetadata(value);
+
+      extractMessageEvents(value, metadata, events);
+      extractStatusEvents(value, metadata, events);
+      extractErrorEvents(value, metadata, events);
+    }
+  }
+
+  return events;
+}
+
+function buildMetadata(value: WebhookChangeValue): EventMetadata {
+  return {
+    phoneNumberId: value.metadata.phone_number_id,
+    displayPhoneNumber: value.metadata.display_phone_number,
+  };
+}
+
+function extractMessageEvents(
+  value: WebhookChangeValue,
+  metadata: EventMetadata,
+  events: WebhookEvent[],
+): void {
+  if (!value.messages) {
+    return;
+  }
+
+  for (const message of value.messages) {
+    const contact = value.contacts?.find((c) => c.wa_id === message.from);
+    const contactInfo = {
+      name: contact?.profile.name ?? 'Unknown',
+      waId: contact?.wa_id ?? message.from,
+    };
+    const timestamp = new Date(parseInt(message.timestamp, 10) * 1000);
+
+    // ── Order events (FR-013): routed exclusively to onOrder, never to onMessage ──
+    if (message.type === 'order' && message.order) {
+      const order = message.order;
+      const raw = JSON.stringify(order);
+      let items: readonly OrderItem[] = [];
+      try {
+        const rawItems: unknown = order.product_items;
+        if (Array.isArray(rawItems)) {
+          const parsed: OrderItem[] = [];
+          let allValid = true;
+          for (const item of rawItems) {
+            if (
+              item !== null &&
+              typeof item === 'object' &&
+              typeof (item as Record<string, unknown>)['product_retailer_id'] === 'string' &&
+              typeof (item as Record<string, unknown>)['quantity'] === 'number' &&
+              typeof (item as Record<string, unknown>)['item_price'] === 'number' &&
+              typeof (item as Record<string, unknown>)['currency'] === 'string'
+            ) {
+              const typedItem = item as {
+                product_retailer_id: string;
+                quantity: number;
+                item_price: number;
+                currency: string;
+              };
+              parsed.push({
+                product_retailer_id: typedItem.product_retailer_id,
+                quantity: typedItem.quantity,
+                item_price: typedItem.item_price,
+                currency: typedItem.currency,
+              });
+            } else {
+              // Malformed item — discard all items and surface empty array.
+              allValid = false;
+              break;
+            }
+          }
+          if (allValid) items = parsed;
+        }
+      } catch {
+        // Best-effort: surfacing the event with items:[] is always safer than throwing.
+        items = [];
+      }
+
+      const orderEvent: OrderEvent = {
+        type: 'order',
+        metadata,
+        messageId: message.id,
+        from: message.from,
+        timestamp: timestamp.toISOString(),
+        contact: contactInfo,
+        catalogId: order.catalog_id,
+        items,
+        ...(order.text !== undefined && { text: order.text }),
+        raw,
+      };
+      events.push(orderEvent);
+      // MUST NOT fall through to the generic message path (FR-013).
+      continue;
+    }
+
+    // ── Flow completion events ──
+    if (
+      message.type === 'interactive' &&
+      message.interactive?.type === 'nfm_reply' &&
+      message.interactive.nfm_reply
+    ) {
+      const nfm = message.interactive.nfm_reply;
+      // Coerce defensively: the interface types response_json as string, but
+      // runtime input from Meta or a fuzz test can still be null/undefined/
+      // non-string and we must not throw outside the try/catch below.
+      const rawResponseJson: string =
+        typeof nfm.response_json === 'string' ? nfm.response_json : '';
+      let parsedResponse: Record<string, unknown> = {};
+      try {
+        const parsed: unknown = JSON.parse(rawResponseJson);
+        if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+          parsedResponse = parsed as Record<string, unknown>;
+        }
+      } catch {
+        // Leave parsedResponse as empty object; raw string still in responseJson.
+      }
+
+      const flowEvent: FlowCompletionEvent = {
+        type: 'flow_completion',
+        metadata,
+        contact: contactInfo,
+        messageId: message.id,
+        responseJson: rawResponseJson,
+        response: parsedResponse,
+        timestamp,
+      };
+      events.push(flowEvent);
+      continue;
+    }
+
+    events.push({
+      type: 'message',
+      metadata,
+      contact: contactInfo,
+      message,
+      timestamp,
+    });
+  }
+}
+
+function extractStatusEvents(
+  value: WebhookChangeValue,
+  metadata: EventMetadata,
+  events: WebhookEvent[],
+): void {
+  if (!value.statuses) {
+    return;
+  }
+
+  for (const status of value.statuses) {
+    events.push({
+      type: 'status',
+      metadata,
+      status,
+      timestamp: new Date(parseInt(status.timestamp, 10) * 1000),
+    });
+  }
+}
+
+function extractErrorEvents(
+  value: WebhookChangeValue,
+  metadata: EventMetadata,
+  events: WebhookEvent[],
+): void {
+  if (!value.errors) {
+    return;
+  }
+
+  for (const error of value.errors) {
+    events.push({
+      type: 'error',
+      metadata,
+      error,
+    });
+  }
+}
