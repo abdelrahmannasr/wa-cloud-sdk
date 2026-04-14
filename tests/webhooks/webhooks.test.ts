@@ -282,8 +282,24 @@ describe('Webhooks', () => {
           verifyToken: 'test-verify-token',
         }),
         callbacks,
+        undefined,
       );
       expect(result).toBe(mockHandlers);
+    });
+
+    it('forwards NextRouteHandlerOptions (e.g. onInternalError) to the underlying util', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const callbacks = { onMessage: vi.fn() };
+      const onInternalError = vi.fn();
+
+      const mockHandlers = { GET: vi.fn(), POST: vi.fn() };
+      vi.mocked(createNextRouteHandlerUtil).mockReturnValue(mockHandlers);
+
+      webhooks.createNextRouteHandler(callbacks, { onInternalError });
+
+      expect(createNextRouteHandlerUtil).toHaveBeenCalledWith(expect.any(Object), callbacks, {
+        onInternalError,
+      });
     });
 
     it('throws ValidationError with field "appSecret" when config missing', () => {
@@ -379,6 +395,80 @@ describe('Webhooks', () => {
     it('returns this for chaining', () => {
       const webhooks = new Webhooks(fullConfig);
       const result = webhooks.onFlowCompletion(vi.fn());
+      expect(result).toBe(webhooks);
+    });
+  });
+
+  describe('onTemplateStatus', () => {
+    it('merges pre-registered onTemplateStatus callback into createHandler', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const onTemplateStatus = vi.fn();
+      webhooks.onTemplateStatus(onTemplateStatus);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({});
+
+      expect(createWebhookHandler).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ onTemplateStatus }),
+      );
+    });
+
+    it('explicit onTemplateStatus in createHandler takes precedence over pre-registered', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const registered = vi.fn();
+      const explicit = vi.fn();
+      webhooks.onTemplateStatus(registered);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({ onTemplateStatus: explicit });
+
+      const [, mergedCallbacks] = vi.mocked(createWebhookHandler).mock.calls[0]!;
+      expect((mergedCallbacks as { onTemplateStatus: unknown }).onTemplateStatus).toBe(explicit);
+    });
+
+    it('returns this for chaining', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const result = webhooks.onTemplateStatus(vi.fn());
+      expect(result).toBe(webhooks);
+    });
+  });
+
+  describe('onTemplateQuality', () => {
+    it('merges pre-registered onTemplateQuality callback into createHandler', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const onTemplateQuality = vi.fn();
+      webhooks.onTemplateQuality(onTemplateQuality);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({});
+
+      expect(createWebhookHandler).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ onTemplateQuality }),
+      );
+    });
+
+    it('explicit onTemplateQuality in createHandler takes precedence over pre-registered', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const registered = vi.fn();
+      const explicit = vi.fn();
+      webhooks.onTemplateQuality(registered);
+
+      vi.mocked(createWebhookHandler).mockReturnValue({ handleGet: vi.fn(), handlePost: vi.fn() });
+
+      webhooks.createHandler({ onTemplateQuality: explicit });
+
+      const [, mergedCallbacks] = vi.mocked(createWebhookHandler).mock.calls[0]!;
+      expect((mergedCallbacks as { onTemplateQuality: unknown }).onTemplateQuality).toBe(explicit);
+    });
+
+    it('returns this for chaining and supports chained registration', () => {
+      const webhooks = new Webhooks(fullConfig);
+      const result = webhooks.onTemplateStatus(vi.fn()).onTemplateQuality(vi.fn());
       expect(result).toBe(webhooks);
     });
   });

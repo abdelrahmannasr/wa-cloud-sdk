@@ -52,10 +52,11 @@ src/
 │   └── index.ts
 ├── webhooks/             # Incoming webhook handling
 │   ├── types.ts          # WebhookEvent, MessageEvent, StatusEvent interfaces
-│   ├── parser.ts         # Parse raw webhook payloads into typed events
+│   ├── types.ts          # WebhookEvent union, EventMetadata, TemplateEventMetadata, TemplateStatusEvent, TemplateQualityEvent, TemplateEventStatus, TemplateQualityScore, WebhookTemplateStatusPayload, WebhookTemplateQualityPayload, WebhookHandlerCallbacks (onTemplateStatus, onTemplateQuality)
+│   ├── parser.ts         # Field-based dispatch (messages / message_template_status_update / message_template_quality_update / default log-and-skip); extractTemplateStatusEvents; extractTemplateQualityEvents
 │   ├── verify.ts         # Signature verification (X-Hub-Signature-256 + timingSafeEqual)
-│   ├── handler.ts        # createWebhookHandler with typed callbacks
-│   ├── webhooks.ts       # Webhooks class — wraps standalone functions with pre-bound config
+│   ├── handler.ts        # createWebhookHandler with typed callbacks (incl. template_status, template_quality dispatch)
+│   ├── webhooks.ts       # Webhooks class — wraps standalone functions with pre-bound config; onTemplateStatus(); onTemplateQuality()
 │   ├── utils.ts          # Helper for extracting values from query params/headers
 │   ├── middleware/
 │   │   ├── next.ts       # Next.js App Router middleware factory
@@ -100,7 +101,7 @@ src/
 **Subpath exports:** `./errors`, `./messages`, `./webhooks`, `./media`, `./templates`, `./flows`, `./phone-numbers`, `./multi-account`, `./catalog` all have dedicated subpath exports in package.json.
 
 ### Implementation Status
-- **Implemented:** client, errors, utils, messages (sendText, sendImage, sendTemplate, sendFlow, sendProduct, sendProductList, sendCatalogMessage + commerce interactive types), webhooks (with Express + Next.js middleware + Webhooks wrapper class + FlowCompletionEvent/onFlowCompletion + OrderEvent/onOrder), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), flows (list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control), catalog (listCatalogs, getCatalog, listProducts, getProduct, createProduct strict with ConflictError, upsertProduct, updateProduct, deleteProduct + client-side validation)
+- **Implemented:** client, errors, utils, messages (sendText, sendImage, sendTemplate, sendFlow, sendProduct, sendProductList, sendCatalogMessage + commerce interactive types), webhooks (with Express + Next.js middleware + Webhooks wrapper class + FlowCompletionEvent/onFlowCompletion + OrderEvent/onOrder + TemplateStatusEvent/onTemplateStatus + TemplateQualityEvent/onTemplateQuality + field-based change dispatch), media (upload, download, getUrl, delete with client-side validation), templates (list, get, create, update, delete + TemplateBuilder with client-side validation), flows (list, get, create, updateMetadata, updateAssets, publish, deprecate, delete, getPreview), whatsapp (unified client with lazy/eager module initialization), phone-numbers (list, get, getBusinessProfile, updateBusinessProfile, requestVerificationCode, verifyCode, register, deregister), multi-account (WhatsAppMultiAccount with lazy client instantiation, dynamic account add/remove, lookup by name or phoneNumberId, distribution strategies: RoundRobinStrategy/WeightedStrategy/StickyStrategy, getNext(recipient?) for strategy-based selection, broadcast(recipients, factory, options?) with pool-based concurrency control), catalog (listCatalogs, getCatalog, listProducts, getProduct, createProduct strict with ConflictError, upsertProduct, updateProduct, deleteProduct + client-side validation)
 
 ### Code Conventions
 - Use `interface` for public API shapes, `type` for unions and intersections
@@ -181,6 +182,8 @@ src/
 - Product delete: `DELETE /{product_id}`
 - Webhook verification: `GET /webhook` with hub.mode, hub.verify_token, hub.challenge
 - Webhook events: `POST /webhook` with X-Hub-Signature-256 header
+- Webhook template status events: change.field === `message_template_status_update`
+- Webhook template quality events: change.field === `message_template_quality_update`
 - All message sends require body: `{ messaging_product: "whatsapp", to, type, [type_data] }`
 - Rate limit: 80 messages/second (Business tier), 1000/sec (Enterprise)
 - Docs: https://developers.facebook.com/docs/whatsapp/cloud-api
@@ -199,6 +202,7 @@ src/
 - Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
 
 ## Recent Changes
+- 012-template-status-webhooks: Added TemplateStatusEvent and TemplateQualityEvent with WABA-scoped TemplateEventMetadata; field-based parser dispatch (message_template_status_update, message_template_quality_update, default log-and-skip for unknown fields); onTemplateStatus/onTemplateQuality callbacks on WebhookHandlerCallbacks and Webhooks wrapper class; TemplateEventStatus/TemplateQualityScore union-plus-string types; seven new type re-exports; version 0.5.0; runnable example
 - 011-commerce-catalogs: Added Catalog class (listCatalogs, getCatalog, listProducts, getProduct, createProduct strict+ConflictError, upsertProduct, updateProduct, deleteProduct); commerce message send methods (sendProduct, sendProductList, sendCatalogMessage); OrderEvent/onOrder webhook; ConflictError class; ./catalog subpath export; wa.catalog lazy getter; 5 runnable examples
 - 007-distribution-strategies: Added RoundRobinStrategy, WeightedStrategy, StickyStrategy implementing DistributionStrategy interface; getNext(recipient?) and broadcast(recipients, factory, options?) on WhatsAppMultiAccount; BroadcastMessageFactory, BroadcastOptions, BroadcastResult types; pool-based concurrency control; full backward compatibility
 - 006-sdk-documentation: Added comprehensive README with install, config, all modules, error handling, advanced usage; 7 runnable examples; TSDoc on all public APIs

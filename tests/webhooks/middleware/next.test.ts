@@ -287,5 +287,25 @@ describe('createNextRouteHandler', () => {
       const response = await POST(request);
       expect(response.status).toBe(500);
     });
+
+    it('should reject a signed body containing non-UTF-8 bytes with 400', async () => {
+      // Build a Buffer whose bytes are NOT valid UTF-8 (lone 0xFF continuation).
+      const invalidUtf8 = Buffer.from([0xff, 0xfe, 0xfd]);
+      // Sign the exact bytes with the app secret so signature verification
+      // itself passes — the failure must come from the UTF-8 fatal decode.
+      const signature = `sha256=${createHmac('sha256', APP_SECRET).update(invalidUtf8).digest('hex')}`;
+
+      const { POST } = createNextRouteHandler(CONFIG, {});
+      const request = new Request('https://example.com/api/webhook', {
+        method: 'POST',
+        headers: { 'x-hub-signature-256': signature },
+        body: invalidUtf8,
+      });
+
+      const response = await POST(request);
+      expect(response.status).toBe(400);
+      const text = await response.text();
+      expect(text).toContain('UTF-8');
+    });
   });
 });

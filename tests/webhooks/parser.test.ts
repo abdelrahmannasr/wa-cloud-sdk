@@ -7,6 +7,8 @@ import type {
   ErrorEvent,
   FlowCompletionEvent,
   OrderEvent,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
 } from '../../src/webhooks/types.js';
 
 function createPayload(value: Record<string, unknown>): WebhookPayload {
@@ -758,6 +760,475 @@ describe('parseWebhookPayload', () => {
       expect(msgEvent).toBeDefined();
       // Order event must NOT also appear as a message event
       expect(events.filter((e) => e.type === 'message')).toHaveLength(1);
+    });
+  });
+
+  function createTemplatePayload(
+    field: string,
+    changeValue: Record<string, unknown>,
+    entryTime = 1700000000,
+  ): WebhookPayload {
+    return {
+      object: 'whatsapp_business_account',
+      entry: [
+        {
+          id: 'WABA_001',
+          time: entryTime,
+          changes: [{ field, value: changeValue as never }],
+        },
+      ],
+    };
+  }
+
+  describe('message_template_status_update', () => {
+    const createStatusPayload = (v: Record<string, unknown>, t?: number) =>
+      createTemplatePayload('message_template_status_update', v, t);
+
+    const baseValue = {
+      event: 'APPROVED',
+      message_template_id: 'tmpl-123',
+      message_template_name: 'order_confirmation',
+      message_template_language: 'en_US',
+    };
+
+    it('should parse an APPROVED status event', () => {
+      const events = parseWebhookPayload(createStatusPayload(baseValue));
+      expect(events).toHaveLength(1);
+      const e = events[0] as TemplateStatusEvent;
+      expect(e.type).toBe('template_status');
+      expect(e.metadata.businessAccountId).toBe('WABA_001');
+      expect(e.templateId).toBe('tmpl-123');
+      expect(e.templateName).toBe('order_confirmation');
+      expect(e.language).toBe('en_US');
+      expect(e.status).toBe('APPROVED');
+      expect(e.reason).toBeUndefined();
+      expect(e.timestamp).toEqual(new Date(1700000000 * 1000));
+    });
+
+    it('should parse a REJECTED status event with reason', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({ ...baseValue, event: 'REJECTED', reason: 'ABUSIVE_CONTENT' }),
+      );
+      expect(events).toHaveLength(1);
+      const e = events[0] as TemplateStatusEvent;
+      expect(e.status).toBe('REJECTED');
+      expect(e.reason).toBe('ABUSIVE_CONTENT');
+    });
+
+    it('should normalize reason "NONE" to undefined', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({ ...baseValue, event: 'REJECTED', reason: 'NONE' }),
+      );
+      const e = events[0] as TemplateStatusEvent;
+      expect(e.reason).toBeUndefined();
+    });
+
+    it('should parse PENDING status', () => {
+      const events = parseWebhookPayload(createStatusPayload({ ...baseValue, event: 'PENDING' }));
+      expect((events[0] as TemplateStatusEvent).status).toBe('PENDING');
+    });
+
+    it('should parse PAUSED status', () => {
+      const events = parseWebhookPayload(createStatusPayload({ ...baseValue, event: 'PAUSED' }));
+      expect((events[0] as TemplateStatusEvent).status).toBe('PAUSED');
+    });
+
+    it('should parse DISABLED status', () => {
+      const events = parseWebhookPayload(createStatusPayload({ ...baseValue, event: 'DISABLED' }));
+      expect((events[0] as TemplateStatusEvent).status).toBe('DISABLED');
+    });
+
+    it('should preserve an unknown status string verbatim (FR-008)', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({ ...baseValue, event: 'FUTURE_PLATFORM_STATUS' }),
+      );
+      expect((events[0] as TemplateStatusEvent).status).toBe('FUTURE_PLATFORM_STATUS');
+    });
+
+    it('should set otherInfo to undefined when platform sends other_info: null', () => {
+      const events = parseWebhookPayload(createStatusPayload({ ...baseValue, other_info: null }));
+      const e = events[0] as TemplateStatusEvent;
+      expect(e.type).toBe('template_status');
+      // Guard must not leak null through typeof obj === 'object' — otherInfo stays absent.
+      expect(e.otherInfo).toBeUndefined();
+      expect('otherInfo' in e).toBe(false);
+    });
+
+    it('should preserve otherInfo object when present', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({
+          ...baseValue,
+          event: 'REJECTED',
+          reason: 'ABUSIVE_CONTENT',
+          other_info: { appeal_deadline: '2026-05-01' },
+        }),
+      );
+      expect((events[0] as TemplateStatusEvent).otherInfo).toEqual({
+        appeal_deadline: '2026-05-01',
+      });
+    });
+
+    it('should coerce numeric message_template_id to string', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({ ...baseValue, message_template_id: 987654321 }),
+      );
+      expect((events[0] as TemplateStatusEvent).templateId).toBe('987654321');
+    });
+
+    it('should log-and-skip when message_template_id is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noId: Record<string, unknown> = { ...baseValue };
+      delete noId['message_template_id'];
+      const events = parseWebhookPayload(createStatusPayload(noId), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('missing required identity'),
+      );
+    });
+
+    it('should log-and-skip when message_template_name is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noName: Record<string, unknown> = { ...baseValue };
+      delete noName['message_template_name'];
+      const events = parseWebhookPayload(createStatusPayload(noName), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('missing required identity'),
+      );
+    });
+
+    it('should log-and-skip when message_template_language is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noLang: Record<string, unknown> = { ...baseValue };
+      delete noLang['message_template_language'];
+      const events = parseWebhookPayload(createStatusPayload(noLang), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('missing required identity'),
+      );
+    });
+
+    it('should log-and-skip when event field is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noEvent: Record<string, unknown> = { ...baseValue };
+      delete noEvent['event'];
+      const events = parseWebhookPayload(createStatusPayload(noEvent), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('missing event'));
+    });
+
+    it('should log-and-skip when entry.time is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      // Build a payload without `time` on the entry to simulate missing entry.time.
+      const payload: WebhookPayload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_001',
+            changes: [{ field: 'message_template_status_update', value: baseValue as never }],
+          },
+        ],
+      };
+      const events = parseWebhookPayload(payload, { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('missing entry.time'));
+    });
+
+    it('should log-and-skip when change.value is null (FR-009)', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const events = parseWebhookPayload(
+        createStatusPayload(null as unknown as Record<string, unknown>),
+        { logger },
+      );
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-object change.value'));
+    });
+
+    it('should log-and-skip when change.value is an array (FR-009)', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const events = parseWebhookPayload(
+        createStatusPayload([] as unknown as Record<string, unknown>),
+        { logger },
+      );
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-object change.value'));
+    });
+  });
+
+  describe('message_template_quality_update', () => {
+    const createQualityPayload = (v: Record<string, unknown>, t?: number) =>
+      createTemplatePayload('message_template_quality_update', v, t);
+
+    const baseValue = {
+      new_quality_score: 'GREEN',
+      previous_quality_score: 'GREEN',
+      message_template_id: 'tmpl-456',
+      message_template_name: 'promo_template',
+      message_template_language: 'es_MX',
+    };
+
+    it('should parse a GREEN→YELLOW quality event', () => {
+      const events = parseWebhookPayload(
+        createQualityPayload({
+          ...baseValue,
+          new_quality_score: 'YELLOW',
+          previous_quality_score: 'GREEN',
+        }),
+      );
+      expect(events).toHaveLength(1);
+      const e = events[0] as TemplateQualityEvent;
+      expect(e.type).toBe('template_quality');
+      expect(e.metadata.businessAccountId).toBe('WABA_001');
+      expect(e.templateId).toBe('tmpl-456');
+      expect(e.templateName).toBe('promo_template');
+      expect(e.language).toBe('es_MX');
+      expect(e.newScore).toBe('YELLOW');
+      expect(e.previousScore).toBe('GREEN');
+      expect(e.timestamp).toEqual(new Date(1700000000 * 1000));
+    });
+
+    it('should parse a YELLOW→RED quality event', () => {
+      const events = parseWebhookPayload(
+        createQualityPayload({
+          ...baseValue,
+          new_quality_score: 'RED',
+          previous_quality_score: 'YELLOW',
+        }),
+      );
+      const e = events[0] as TemplateQualityEvent;
+      expect(e.newScore).toBe('RED');
+      expect(e.previousScore).toBe('YELLOW');
+    });
+
+    it('should parse a RED→GREEN quality event', () => {
+      const events = parseWebhookPayload(
+        createQualityPayload({
+          ...baseValue,
+          new_quality_score: 'GREEN',
+          previous_quality_score: 'RED',
+        }),
+      );
+      const e = events[0] as TemplateQualityEvent;
+      expect(e.newScore).toBe('GREEN');
+      expect(e.previousScore).toBe('RED');
+    });
+
+    it('should set previousScore to undefined when absent (first rating)', () => {
+      const noprev: Record<string, unknown> = { ...baseValue };
+      delete noprev['previous_quality_score'];
+      const events = parseWebhookPayload(createQualityPayload(noprev));
+      const e = events[0] as TemplateQualityEvent;
+      expect(e.previousScore).toBeUndefined();
+    });
+
+    it('should preserve an unknown quality score string verbatim', () => {
+      const events = parseWebhookPayload(
+        createQualityPayload({ ...baseValue, new_quality_score: 'FUTURE_SCORE' }),
+      );
+      expect((events[0] as TemplateQualityEvent).newScore).toBe('FUTURE_SCORE');
+    });
+
+    it('should coerce numeric message_template_id to string', () => {
+      const events = parseWebhookPayload(
+        createQualityPayload({ ...baseValue, message_template_id: 111222333 }),
+      );
+      expect((events[0] as TemplateQualityEvent).templateId).toBe('111222333');
+    });
+
+    it('should log-and-skip on missing required identity', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noId: Record<string, unknown> = { ...baseValue };
+      delete noId['message_template_id'];
+      const events = parseWebhookPayload(createQualityPayload(noId), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('missing required identity'),
+      );
+    });
+
+    it('should log-and-skip when new_quality_score is missing', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const noScore: Record<string, unknown> = { ...baseValue };
+      delete noScore['new_quality_score'];
+      const events = parseWebhookPayload(createQualityPayload(noScore), { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('missing new_quality_score'),
+      );
+    });
+
+    it('should log-and-skip when change.value is null (FR-009)', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const events = parseWebhookPayload(
+        createQualityPayload(null as unknown as Record<string, unknown>),
+        { logger },
+      );
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-object change.value'));
+    });
+
+    it('should log-and-skip when change.value is an array (FR-009)', () => {
+      const logger = { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const events = parseWebhookPayload(
+        createQualityPayload([] as unknown as Record<string, unknown>),
+        { logger },
+      );
+      expect(events).toHaveLength(0);
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('non-object change.value'));
+    });
+  });
+
+  describe('mixed-batch routing (US3)', () => {
+    it('should route a batch containing messages + template_status + template_quality + unknown field', () => {
+      const logger = { debug: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const payload: WebhookPayload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_001',
+            time: 1700000000,
+            changes: [
+              {
+                field: 'messages',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '15551234567', phone_number_id: '123456' },
+                  contacts: [{ profile: { name: 'Alice' }, wa_id: '15559876543' }],
+                  messages: [
+                    {
+                      from: '15559876543',
+                      id: 'wamid.msg001',
+                      timestamp: '1700000000',
+                      type: 'text',
+                      text: { body: 'Hi' },
+                    },
+                  ],
+                } as never,
+              },
+              {
+                field: 'message_template_status_update',
+                value: {
+                  event: 'APPROVED',
+                  message_template_id: 'tmpl-001',
+                  message_template_name: 'order_confirm',
+                  message_template_language: 'en_US',
+                } as never,
+              },
+              {
+                field: 'message_template_quality_update',
+                value: {
+                  new_quality_score: 'YELLOW',
+                  previous_quality_score: 'GREEN',
+                  message_template_id: 'tmpl-001',
+                  message_template_name: 'order_confirm',
+                  message_template_language: 'en_US',
+                } as never,
+              },
+              {
+                field: 'template_category_update',
+                value: {} as never,
+              },
+            ],
+          },
+        ],
+      };
+      const events = parseWebhookPayload(payload, { logger });
+      expect(events).toHaveLength(3);
+      expect(events[0]!.type).toBe('message');
+      expect(events[1]!.type).toBe('template_status');
+      expect(events[2]!.type).toBe('template_quality');
+      expect(logger.debug).toHaveBeenCalledTimes(1);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('unrecognized change.field'),
+      );
+    });
+
+    it('should deliver multiple template_status events in payload order (ordering guarantee)', () => {
+      const payload: WebhookPayload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_001',
+            time: 1700000000,
+            changes: [
+              {
+                field: 'message_template_status_update',
+                value: {
+                  event: 'APPROVED',
+                  message_template_id: 'tmpl-A',
+                  message_template_name: 'template_a',
+                  message_template_language: 'en_US',
+                } as never,
+              },
+            ],
+          },
+          {
+            id: 'WABA_001',
+            time: 1700000001,
+            changes: [
+              {
+                field: 'message_template_quality_update',
+                value: {
+                  new_quality_score: 'RED',
+                  previous_quality_score: 'YELLOW',
+                  message_template_id: 'tmpl-B',
+                  message_template_name: 'template_b',
+                  message_template_language: 'es_MX',
+                } as never,
+              },
+              {
+                field: 'message_template_status_update',
+                value: {
+                  event: 'REJECTED',
+                  message_template_id: 'tmpl-C',
+                  message_template_name: 'template_c',
+                  message_template_language: 'fr_FR',
+                  reason: 'INVALID_FORMAT',
+                } as never,
+              },
+            ],
+          },
+        ],
+      };
+      const events = parseWebhookPayload(payload);
+      expect(events).toHaveLength(3);
+      expect(events[0]!.type).toBe('template_status');
+      expect((events[0] as TemplateStatusEvent).templateId).toBe('tmpl-A');
+      expect(events[1]!.type).toBe('template_quality');
+      expect((events[1] as TemplateQualityEvent).templateId).toBe('tmpl-B');
+      expect(events[2]!.type).toBe('template_status');
+      expect((events[2] as TemplateStatusEvent).templateId).toBe('tmpl-C');
+      expect((events[2] as TemplateStatusEvent).reason).toBe('INVALID_FORMAT');
+    });
+  });
+
+  describe('unknown change.field (default branch)', () => {
+    it('should log at debug and produce zero events for an unknown field', () => {
+      const logger = { debug: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn() };
+      const payload: WebhookPayload = {
+        object: 'whatsapp_business_account',
+        entry: [
+          {
+            id: 'WABA_ID',
+            time: 1700000000,
+            changes: [
+              {
+                field: 'template_category_update',
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: { display_phone_number: '1555', phone_number_id: '123' },
+                } as Record<string, unknown> as never,
+              },
+            ],
+          },
+        ],
+      };
+      const events = parseWebhookPayload(payload, { logger });
+      expect(events).toHaveLength(0);
+      expect(logger.debug).toHaveBeenCalledTimes(1);
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('unrecognized change.field'),
+      );
     });
   });
 });

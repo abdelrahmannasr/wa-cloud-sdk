@@ -497,6 +497,33 @@ wa.webhooks.onOrder(async (event) => {
 
 `event.raw` preserves the original JSON-stringified payload for storage or auditing. If `product_items` is malformed, `event.items` is `[]` and `event.raw` is still preserved.
 
+### Template lifecycle events
+
+React to template approvals, rejections, and quality changes without polling the templates API. Events arrive on the same webhook URL, routed automatically by the SDK:
+
+```typescript
+wa.webhooks
+  .onTemplateStatus(async (event) => {
+    if (event.status === 'APPROVED') {
+      await db.markTemplateLive(event.templateId);
+    } else if (event.status === 'REJECTED') {
+      await alerts.notify({
+        template: event.templateName,
+        language: event.language,
+        reason: event.reason ?? 'no reason provided',
+      });
+    }
+  })
+  .onTemplateQuality(async (event) => {
+    // previousScore is undefined for first-time ratings
+    if (event.newScore === 'RED') {
+      await throttle.pauseCampaign(event.templateId);
+    }
+  });
+```
+
+Template events use a WABA-scoped `metadata.businessAccountId` (sourced from `entry.id`) instead of `phoneNumberId`. The `status` and `newScore` fields preserve unknown platform-added values verbatim so your code doesn't break when Meta adds new states. Requires subscribing to `message_template_status_update` and `message_template_quality_update` in the Meta App Dashboard.
+
 ### Catalog Management
 
 Create, update, and delete products from code. Requires `businessAccountId`:

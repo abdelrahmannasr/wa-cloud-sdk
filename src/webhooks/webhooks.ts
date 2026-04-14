@@ -5,7 +5,10 @@ import { parseWebhookPayload } from './parser.js';
 import { createWebhookHandler } from './handler.js';
 import type { WebhookHandler } from './handler.js';
 import { createExpressMiddleware as createExpressMiddlewareUtil } from './middleware/express.js';
-import { createNextRouteHandler as createNextRouteHandlerUtil } from './middleware/next.js';
+import {
+  createNextRouteHandler as createNextRouteHandlerUtil,
+  type NextRouteHandlerOptions,
+} from './middleware/next.js';
 import type {
   WebhookPayload,
   WebhookEvent,
@@ -15,6 +18,8 @@ import type {
   WebhookNextFunction,
   OrderEvent,
   FlowCompletionEvent,
+  TemplateStatusEvent,
+  TemplateQualityEvent,
 } from './types.js';
 
 /**
@@ -52,9 +57,9 @@ export class Webhooks {
    * Pending callbacks registered via individual `onX()` methods.
    * Merged (as lower-priority defaults) with any callbacks passed to createHandler and middleware methods.
    */
+  // Mutable (no readonly) so individual on*() setters can assign into it.
   private _pendingCallbacks: {
-    onOrder?: WebhookHandlerCallbacks['onOrder'];
-    onFlowCompletion?: WebhookHandlerCallbacks['onFlowCompletion'];
+    -readonly [K in keyof WebhookHandlerCallbacks]?: WebhookHandlerCallbacks[K];
   } = {};
 
   /**
@@ -205,6 +210,56 @@ export class Webhooks {
   }
 
   /**
+   * Register a callback for template lifecycle events (approval, rejection,
+   * pause, disable, re-approval).
+   *
+   * Callbacks registered here are merged as defaults when creating handlers via
+   * `createHandler`, `createExpressMiddleware`, or `createNextRouteHandler`.
+   * Explicitly passed callbacks always take precedence over registered ones.
+   *
+   * The SDK does NOT deduplicate events — use `(templateId, status, timestamp)`
+   * as an idempotency tuple if needed.
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onTemplateStatus(async (event) => {
+   *   if (event.status === 'APPROVED') {
+   *     await db.markTemplateLive(event.templateId);
+   *   } else if (event.status === 'REJECTED') {
+   *     await alerts.page({ name: event.templateName, reason: event.reason });
+   *   }
+   * });
+   * ```
+   */
+  onTemplateStatus(callback: (event: TemplateStatusEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onTemplateStatus = callback;
+    return this;
+  }
+
+  /**
+   * Register a callback for template quality-score updates (GREEN / YELLOW /
+   * RED / UNKNOWN).
+   *
+   * Callbacks registered here are merged as defaults when creating handlers.
+   * Explicitly passed callbacks take precedence.
+   *
+   * `event.previousScore` is `undefined` on first rating.
+   *
+   * @example
+   * ```ts
+   * wa.webhooks.onTemplateQuality(async (event) => {
+   *   if (event.newScore === 'RED' || event.newScore === 'YELLOW') {
+   *     await throttle.campaign(event.templateName);
+   *   }
+   * });
+   * ```
+   */
+  onTemplateQuality(callback: (event: TemplateQualityEvent) => void | Promise<void>): this {
+    this._pendingCallbacks.onTemplateQuality = callback;
+    return this;
+  }
+
+  /**
    * Create a webhook handler with typed callbacks.
    *
    * @param callbacks - Event callbacks (onMessage, onStatus, etc.)
@@ -264,22 +319,25 @@ export class Webhooks {
    * Create Next.js App Router handler for webhook handling.
    *
    * @param callbacks - Event callbacks (onMessage, onStatus, etc.)
+   * @param options - Optional route-handler options (e.g. `onInternalError` observer)
    * @returns Object with GET and POST handlers for Next.js App Router
    * @throws ValidationError if appSecret or webhookVerifyToken was not provided
    *
    * @example
    * ```typescript
    * // app/api/webhook/route.ts
-   * const handler = wa.webhooks.createNextRouteHandler({
-   *   onMessage: (message) => {
-   *     console.log('Received message:', message);
-   *   },
-   * });
+   * const handler = wa.webhooks.createNextRouteHandler(
+   *   { onMessage: (event) => db.upsertMessage(event) },
+   *   { onInternalError: (err) => logger.error('webhook failed', err) },
+   * );
    *
    * export const { GET, POST } = handler;
    * ```
    */
-  createNextRouteHandler(callbacks: WebhookHandlerCallbacks): {
+  createNextRouteHandler(
+    callbacks: WebhookHandlerCallbacks,
+    options?: NextRouteHandlerOptions,
+  ): {
     GET: (request: Request) => Promise<Response>;
     POST: (request: Request) => Promise<Response>;
   } {
@@ -288,6 +346,7 @@ export class Webhooks {
     return createNextRouteHandlerUtil(
       { appSecret, verifyToken, logger: this.config.logger },
       merged,
+      options,
     );
   }
 }
