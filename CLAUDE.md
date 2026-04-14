@@ -200,8 +200,6 @@ src/
 ## Active Technologies
 - TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only)
 - Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
-- TypeScript 5.3+ with strict mode enabled, compiling to ES2022 target for both ESM and CJS dual outpu + Zero runtime dependencies. Uses only Node.js 18+ built-in APIs (no new imports introduced by this feature) (012-template-status-webhooks)
-- N/A — library, stateless (012-template-status-webhooks)
 
 ## Recent Changes
 - 012-template-status-webhooks: Added TemplateStatusEvent and TemplateQualityEvent with WABA-scoped TemplateEventMetadata; field-based parser dispatch (message_template_status_update, message_template_quality_update, default log-and-skip for unknown fields); onTemplateStatus/onTemplateQuality callbacks on WebhookHandlerCallbacks and Webhooks wrapper class; TemplateEventStatus/TemplateQualityScore union-plus-string types; seven new type re-exports; version 0.5.0; runnable example
