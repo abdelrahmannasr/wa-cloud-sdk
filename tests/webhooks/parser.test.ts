@@ -845,6 +845,31 @@ describe('parseWebhookPayload', () => {
       expect((events[0] as TemplateStatusEvent).status).toBe('FUTURE_PLATFORM_STATUS');
     });
 
+    it('should set otherInfo to undefined when platform sends other_info: null', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({ ...baseValue, other_info: null }),
+      );
+      const e = events[0] as TemplateStatusEvent;
+      expect(e.type).toBe('template_status');
+      // Guard must not leak null through typeof obj === 'object' — otherInfo stays absent.
+      expect(e.otherInfo).toBeUndefined();
+      expect('otherInfo' in e).toBe(false);
+    });
+
+    it('should preserve otherInfo object when present', () => {
+      const events = parseWebhookPayload(
+        createStatusPayload({
+          ...baseValue,
+          event: 'REJECTED',
+          reason: 'ABUSIVE_CONTENT',
+          other_info: { appeal_deadline: '2026-05-01' },
+        }),
+      );
+      expect((events[0] as TemplateStatusEvent).otherInfo).toEqual({
+        appeal_deadline: '2026-05-01',
+      });
+    });
+
     it('should coerce numeric message_template_id to string', () => {
       const events = parseWebhookPayload(
         createStatusPayload({ ...baseValue, message_template_id: 987654321 }),

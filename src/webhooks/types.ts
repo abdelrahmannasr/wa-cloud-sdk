@@ -228,7 +228,7 @@ export interface WebhookTemplateStatusPayload {
   readonly message_template_name: string;
   readonly message_template_language: string;
   readonly reason?: string | null;
-  readonly other_info?: Record<string, unknown>;
+  readonly other_info?: Record<string, unknown> | null;
 }
 
 /** Raw `change.value` shape for `field === 'message_template_quality_update'`. */
