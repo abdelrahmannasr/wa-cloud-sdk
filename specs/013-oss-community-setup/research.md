@@ -100,7 +100,7 @@ The Technical Context in `plan.md` contains no `NEEDS CLARIFICATION` markers (th
 - Signed commits (FR-034) is the combined-option outcome; documented as a hard requirement.
 - Linear history (FR-033) ensures semantic-release's commit-analyzer sees a clean linear log — no merge-commit noise.
 
-**Note on matrix leg status-check names**: GitHub publishes one check per matrix leg (e.g. `test (18)`, `test (20)`, `test (22)`). The branch protection UI must list all of them or the matrix leg whose name you selected will be the only gate. The plan lists "three CI status checks" per the spec; `quickstart.md` will document the exact leg names.
+**Note on matrix leg status-check names**: GitHub publishes one check per matrix leg (e.g. `test (18)`, `test (20)`, `test (22)`). The branch protection UI must list all of them explicitly or the matrix leg whose name was selected will be the only gate. FR-012 (as updated) distinguishes "three job kinds" from "status checks": three job kinds (`quality`, `test`, `build`) expand into five status checks (`quality`, `test (18)`, `test (20)`, `test (22)`, `build`). FR-032 (as updated) requires enumerating every individual name in branch protection; `quickstart.md` documents the exact list.
 
 **Alternatives considered**:
 - **Standard** (block direct push + require CI, no review): simpler for a solo maintainer. Rejected by explicit user choice. Acceptable to downgrade later if review requirement becomes operationally blocking.

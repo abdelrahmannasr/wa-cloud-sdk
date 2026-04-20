@@ -42,7 +42,7 @@
 - [ ] CHK024 Is the scope of files listed in FR-021 (published artifacts) consistent between the FR text and its satisfaction in SC-002? [Consistency, Spec §FR-021 ↔ §SC-002]
 - [ ] CHK025 Is FR-035's "serialize via concurrency group" consistent with the `[skip ci]` loop-prevention described in the Concurrent-PR edge case? [Consistency, Spec §FR-035 ↔ §Edge Cases]
 - [ ] CHK026 Are the release permission requirements (FR-022 provenance, FR-020 version-metadata commit) internally consistent (e.g., `id-token: write` + `contents: write` are both implied)? [Consistency, Spec §FR-020, §FR-022]
-- [ ] CHK027 Is the "all three CI status checks" framing (FR-012 says 3 jobs, FR-032 says require all three) consistent with the actual number of status checks once matrix legs are counted separately (5+ checks)? [Potential Conflict, Spec §FR-012 ↔ §FR-032]
+- [x] CHK027 — **Resolved**: FR-012 updated to distinguish "job kinds" from "status checks" (three kinds expand to 2 + N status checks where N = test-matrix legs). FR-032 updated to require enumeration of every individual status-check name in branch protection, prohibiting job-kind wildcards. SC-005 aligned. [Potential Conflict, Spec §FR-012 ↔ §FR-032]
 
 ## Acceptance Criteria Quality
 
@@ -51,7 +51,7 @@
 - [ ] CHK030 Is SC-003's "within 10 minutes" bounded to a specific measurement (workflow start vs. publish confirmation) rather than leaving interpretation to implementers? [Measurability, Spec §SC-003]
 - [ ] CHK031 Is SC-006's "acknowledged within 48 hours" measurable without ambiguity about what counts as acknowledgment (any reply? substantive reply? triage decision?)? [Measurability, Spec §SC-006]
 - [ ] CHK032 Is SC-008's "within 5 seconds of viewing" specified in terms that can be verified (viewport size, scroll position, reader type)? [Measurability, Spec §SC-008]
-- [ ] CHK033 Is SC-009's "within 7 days of upstream release" consistent with Dependabot's weekly schedule (FR-026), given that weekly cadence may exceed the SLA in worst-case scheduling? [Potential Conflict, Spec §SC-009 ↔ §FR-026]
+- [x] CHK033 — **Resolved**: SC-009 relaxed from 7 days to 14 days to align with the weekly Dependabot cadence. Rationale appended to SC-009 (worst case ≈ 7 days scan latency + processing headroom). FR-026/FR-027 unchanged. [Potential Conflict, Spec §SC-009 ↔ §FR-026]
 - [ ] CHK034 Is SC-010's "no drift between the three" enforceable via automation, or does the spec leave it to manual review? [Measurability, Spec §SC-010]
 - [ ] CHK035 Are all acceptance scenarios in User Stories 1–6 written in strict Given/When/Then form and verifiable as independently testable per the story-header claim? [Acceptance Criteria, Spec §US1..§US6]
 
@@ -73,7 +73,7 @@
 - [ ] CHK046 Is the edge case "Dependabot opens a PR bumping `semantic-release` itself" addressed (ordering, re-release consequences, version-drift risk)? [Gap, Edge Case, Spec §FR-026]
 - [ ] CHK047 Is the edge case "repository renamed or transferred ownership after badge URLs are set" addressed (URL update procedure, badge breakage warning)? [Gap, Edge Case, Spec §FR-024]
 - [ ] CHK048 Is the edge case "`staging` branch deleted but `ci.yml` still triggers on it" addressed? [Gap, Edge Case, Spec §FR-012]
-- [ ] CHK049 Is the edge case "solo maintainer is also the PR author and therefore cannot satisfy the 1+ approving review requirement" resolved at the requirement level? [Potential Conflict, Edge Case, Spec §FR-031 ↔ §Assumptions]
+- [x] CHK049 — **Resolved**: new Assumption added explicitly acknowledging the solo-maintainer tension. Resolution requires one of two paths: (a) add a trusted reviewer, or (b) waive only the "Require approvals" rule while keeping every other strict protection rule in place. The waiver is explicitly documented, not silent. [Potential Conflict, Edge Case, Spec §FR-031 ↔ §Assumptions]
 - [ ] CHK050 Is the edge case "release workflow runs while the platform (GitHub Actions, npm registry) is in a read-only or degraded state for hours" addressed? [Gap, Edge Case, NFR Availability]
 - [ ] CHK051 Is the edge case "contributor submits an issue form with all template fields left empty" addressed (server-side enforcement, template required fields, review burden)? [Coverage, Spec §FR-009]
 
@@ -96,7 +96,7 @@
 
 ## Ambiguities & Conflicts
 
-- [ ] CHK063 Is the apparent conflict between "solo maintainer" (Assumptions) and "require 1+ PR review" (FR-031) explicitly addressed (e.g., via a named bypass role, or an acknowledgment that the repo expects at least one co-maintainer)? [Conflict, Spec §FR-031 ↔ §Assumptions]
+- [x] CHK063 — **Resolved** (same fix as CHK049): new Assumption explicitly names the two acceptable resolution paths and flags Option (b) as a documented, reversible tradeoff from the Strict baseline — not a silent downgrade. [Conflict, Spec §FR-031 ↔ §Assumptions]
 - [ ] CHK064 Is the ambiguity about `engines.node >=18` after Node 18 end-of-life resolved (does the minimum auto-bump, or is maintainer action required)? [Ambiguity, Spec §FR-014 ↔ §FR-029]
 - [ ] CHK065 Is the ambiguity between "supply-chain provenance attestation" (npm term, FR-019/FR-022) and "signed commits" (git term, FR-034) resolved clearly so implementers do not conflate them into one configuration? [Ambiguity, Spec §FR-019, §FR-022 ↔ §FR-034]
 - [ ] CHK066 Is the ambiguity about "default branch" consistent with FR-016's implicit-assumed `main` and the release-workflow trigger on `[main]` only? [Consistency, Ambiguity, Spec §FR-016]
