@@ -200,6 +200,7 @@ src/
 ## Active Technologies
 - TypeScript 5.3+ with strict mode + Zero runtime dependencies (Node.js built-in APIs only)
 - Dev tooling: tsup 8, vitest 3, eslint 9, prettier 3, pnpm
+- TypeScript 5.3+ (strict); outputs ESM + CJS dual build via tsup 8 + Zero runtime dependencies (hard constraint — must not change). Added **devDependencies only**: `semantic-release`, `@semantic-release/changelog`, `@semantic-release/git`. Existing dev deps continue unchanged (`vitest`, `eslint`, `prettier`, `tsup`, `typescript-eslint`). (013-oss-community-setup)
 
 ## Recent Changes
 - 012-template-status-webhooks: Added TemplateStatusEvent and TemplateQualityEvent with WABA-scoped TemplateEventMetadata; field-based parser dispatch (message_template_status_update, message_template_quality_update, default log-and-skip for unknown fields); onTemplateStatus/onTemplateQuality callbacks on WebhookHandlerCallbacks and Webhooks wrapper class; TemplateEventStatus/TemplateQualityScore union-plus-string types; seven new type re-exports; version 0.5.0; runnable example
