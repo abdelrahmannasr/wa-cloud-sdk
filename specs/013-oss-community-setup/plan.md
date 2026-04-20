@@ -21,9 +21,9 @@ Source-of-truth for the design is already captured in the approved plan file at 
 **Testing**: vitest 3 (existing), v8 coverage; unit tests unchanged. Feature has no new source code, therefore no new unit tests. Feature verification is pipeline-level (see quickstart.md).
 **Target Platform**: Node.js ≥18 (runtime constraint declared in `package.json` engines). CI runs on ubuntu-latest, Node 18/20/22. Release runs on ubuntu-latest, Node 22.
 **Project Type**: Library (single project — existing `src/` + `tests/` layout, no frontend/backend split).
-**Performance Goals**: (infra-scope)
-- CI wall-clock must stay ≤10 min per run end-to-end (observed, not enforced).
-- Release workflow publishes within 10 min of merge to main (SC-003).
+**Performance Goals**: (infra-scope, all enforced via Success Criteria)
+- CI wall-clock: SC-012 targets p95 ≤10 min and median ≤6 min across a 30-day rolling window, measured from workflow start to all three job kinds reporting final status.
+- Release workflow: SC-003 targets merge-to-publish elapsed time ≤10 min from the merge commit's timestamp to the registry `publish` confirmation logged by the workflow.
 **Constraints**:
 - Zero runtime deps (existing project constraint — MUST NOT be broken by any added tooling).
 - Published tarball MUST contain only `dist/`, README, LICENSE, CHANGELOG, `package.json` (FR-021, SC-002).

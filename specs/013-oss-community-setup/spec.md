@@ -10,6 +10,7 @@
 ### Session 2026-04-20
 
 - Q: What is the default-branch protection scope? → A: Strict — block direct push, require 1+ PR review, require all three CI status checks (quality, test, build), require linear history, require signed commits.
+  - *Editor note (post-audit)*: the verbatim answer above is preserved as session history. After the CHK027 audit resolution, FR-012 and FR-032 were refined to require **every matrix leg** as its own status check — totalling 2 + N checks where N is the number of test-matrix runtime versions (five checks for the current Node 18/20/22 matrix: `quality`, `test (18)`, `test (20)`, `test (22)`, `build`). See `checklists/audit.md` CHK027 for the evolution.
 - Q: How should concurrent release workflow runs be handled when multiple PRs merge to the default branch within seconds? → A: Serialize — use a concurrency group on the release workflow with cancel-in-progress disabled so queued runs wait for the active run to finish.
 
 ## User Scenarios & Testing *(mandatory)*
