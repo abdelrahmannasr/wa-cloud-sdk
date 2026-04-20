@@ -5,6 +5,13 @@
 **Status**: Draft
 **Input**: User description: "Prepare wa-cloud-sdk for open-source community publishing: add community health files, GitHub Actions CI/CD workflows, issue/PR templates, semantic-release automation, and npm provenance-signed publishing."
 
+## Clarifications
+
+### Session 2026-04-20
+
+- Q: What is the default-branch protection scope? → A: Strict — block direct push, require 1+ PR review, require all three CI status checks (quality, test, build), require linear history, require signed commits.
+- Q: How should concurrent release workflow runs be handled when multiple PRs merge to the default branch within seconds? → A: Serialize — use a concurrency group on the release workflow with cancel-in-progress disabled so queued runs wait for the active run to finish.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Contributor onboards and submits a PR (Priority: P1)
@@ -113,7 +120,7 @@ Upstream dependencies (runtime packages and CI action versions) stay patched aut
 - **Non-conforming commits merged to default**: if a contributor bypasses the PR template checklist or uses a non-conventional commit style, the release pipeline still runs — the release tool treats it as a non-releasing change. No spurious versions get published, but the commit is absent from the auto-generated changelog. (Commit message enforcement is out of scope for this feature.)
 - **Missing release secrets**: on the first merge to the default branch, if `NPM_TOKEN` or `CODECOV_TOKEN` are not provisioned, the release or coverage step fails loudly with a clear error. The maintainer must provision secrets as a pre-release step.
 - **Test-only commit batches**: `test:`, `docs:`, `chore:`, `refactor:` commits in isolation trigger no release — the pipeline exits with a "no release published" log line.
-- **Concurrent PR activity and a release**: the release commit from semantic-release carries `[skip ci]` to avoid triggering an infinite CI/release loop; this must be honored.
+- **Concurrent PR activity and a release**: the release commit from the release tool carries `[skip ci]` to avoid triggering an infinite CI/release loop; this must be honored. When multiple PRs land on the default branch within seconds of each other, the release workflow's concurrency group serializes the resulting runs — the second run waits for the first to complete, so no commits are skipped and no two runs race on the registry publish step.
 - **Pre-1.0 consumers**: the security policy explicitly treats versions below 1.0 as unsupported, so consumers on 0.x will not receive security patches unless they upgrade.
 - **Blank-issue bypass**: users who attempt to file blank issues are blocked by the issue template config and steered to Discussions.
 - **Dependency PR storm**: the dependency scanner is capped (application updates: 10 open PRs; CI updates: uncapped but weekly) so a single bad week doesn't drown the tracker.
@@ -152,6 +159,12 @@ Upstream dependencies (runtime packages and CI action versions) stay patched aut
 - **FR-027**: CI action/workflow dependencies MUST be monitored on the same weekly schedule with separately-labeled automated upgrade pull requests.
 - **FR-028**: Automated dependency-upgrade commit messages MUST use prefixes that the release automation treats as non-releasing (e.g., `chore(deps):`, `chore(ci):`), so they never trigger spurious version bumps.
 - **FR-029**: The package MUST declare the same minimum supported runtime version across all locations it is advertised (engine constraint, README badge, CI matrix) so consumers, contributors, and automation see consistent expectations.
+- **FR-030**: The default branch MUST be protected such that direct pushes are blocked; all changes MUST land via pull request.
+- **FR-031**: Pull requests targeting the default branch MUST require at least one approving review before merge.
+- **FR-032**: Pull requests targeting the default branch MUST require all three CI status checks (quality, test, build) to report success before merge.
+- **FR-033**: The default branch MUST enforce linear history (no merge commits), so the commit log remains cleanly analyzable by the release automation.
+- **FR-034**: Commits landing on the default branch MUST be signed (GPG or SSH), including automated release commits produced by the release pipeline.
+- **FR-035**: The release pipeline MUST serialize concurrent runs — when multiple pushes reach the default branch in rapid succession, the second run MUST wait for the first to complete rather than run in parallel or cancel the earlier run, so that no commits are skipped from the published version and no two runs race on the registry publish step.
 
 ### Key Entities
 
@@ -165,7 +178,7 @@ Upstream dependencies (runtime packages and CI action versions) stay patched aut
 - **SC-002**: The installed package tarball contains only distributable artifacts and metadata — zero files from source, tests, examples, specs, or internal tooling directories leak into the published archive.
 - **SC-003**: 100% of merges to the default branch that include release-worthy commits result in an automatic release published to the registry within 10 minutes of merge, without human intervention (given required secrets are provisioned).
 - **SC-004**: 100% of merges to the default branch that contain no release-worthy commits produce a clean "no release" outcome (no failed pipelines, no spurious versions, no empty changelog entries).
-- **SC-005**: Every pull request merged to the default branch passes three independent automated checks (quality, test, build) before merge — there is no documented path for bypassing automated checks.
+- **SC-005**: Every pull request merged to the default branch passes three independent automated checks (quality, test, build) before merge and has received at least one approving review — branch protection rejects any merge attempt that lacks either, and direct pushes to the default branch are rejected at the platform layer.
 - **SC-006**: Reported security vulnerabilities are acknowledged within 48 hours and receive a detailed response within 7 days; measured quarterly across all received disclosures.
 - **SC-007**: 100% of new issues opened via the repository use one of the curated templates or are redirected to Discussions — zero blank issues created.
 - **SC-008**: Any visitor to the repository README can determine, within 5 seconds of viewing the top of the file, the package's current version, CI health, coverage, license, and supported runtime.
