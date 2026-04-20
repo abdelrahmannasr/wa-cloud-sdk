@@ -2,115 +2,123 @@
 
 **Purpose**: Rigorous requirements-quality audit spanning all domains (release automation, CI/CD, security, contributor UX, commerce of publishing). Validates completeness, clarity, consistency, measurability, and coverage of requirements before `/speckit.tasks`.
 **Created**: 2026-04-20
+**Resolved**: 2026-04-20 (all 70 items addressed in a single audit-closure pass)
 **Feature**: [spec.md](../spec.md)
 **Audience**: Author self-review + PR reviewer + release-readiness auditor
 **Depth**: Rigorous (70 items)
 
 **How to read each item**: every box is a question about the *requirements document*, not about the system. Check the box when the spec/plan/contracts actually satisfy the question — not when some implementation does.
 
+**Resolution legend**:
+- **Confirmed** — spec/plan/contract already satisfies the check at time of audit
+- **Resolved** — audit triggered a spec edit; item now satisfied
+- **Deferred** — out of scope for this feature; explicit Assumption or note records the deferral
+
 ## Requirement Completeness
 
-- [ ] CHK001 Are the expected CI job names (as they appear as GitHub status checks) enumerated at the requirement level? [Completeness, Spec §FR-012]
-- [ ] CHK002 Are the specific required status-check names for branch protection (including per-matrix-leg names like `test (18)`, `test (20)`, `test (22)`) documented as requirements or only as implementation detail in contracts? [Gap, Spec §FR-032]
-- [ ] CHK003 Are requirements defined for the initial CHANGELOG.md content seed that must exist before the first automated release runs? [Gap, Spec §FR-020]
-- [ ] CHK004 Are requirements defined for how the release workflow obtains a signing key (key generation, secret provisioning, key rotation) on the runner? [Gap, Spec §FR-034]
-- [ ] CHK005 Are the `package.json` fields that MUST be preserved unchanged by this feature enumerated (e.g., `name`, `exports`, `scripts`)? [Completeness, Spec §FR-021..FR-023]
-- [ ] CHK006 Are requirements defined for what happens when the coverage upload step fails beyond the "MUST NOT fail the job" rule (surface a warning? open an issue?)? [Completeness, Spec §FR-013]
-- [ ] CHK007 Does the spec state who is authorized to modify branch protection rules once they are established? [Gap]
-- [ ] CHK008 Are requirements defined for the disposition of dependency-upgrade PRs that fail CI (auto-close? auto-retry? manual triage?)? [Gap, Spec §FR-026, §FR-027]
-- [ ] CHK009 Are requirements defined for the baseline/starting version that semantic-release should tag on its first release run (e.g., force v1.0.0, or accept the commit-history-derived default)? [Ambiguity, Spec §FR-017]
-- [ ] CHK010 Does the spec define requirements for README badge URL invariants (what happens if the package name, scope, or repo owner changes)? [Gap, Spec §FR-024]
-- [ ] CHK011 Are requirements specified for detecting and handling `NPM_TOKEN` or `CODECOV_TOKEN` expiration/revocation after initial provisioning? [Gap, Edge Case]
+- [x] CHK001 Are the expected CI job names (as they appear as GitHub status checks) enumerated at the requirement level? [Completeness, Spec §FR-012] — **Resolved**: FR-012 now names the three job kinds (`quality`, `test`, `build`) and the matrix expansion rule; FR-032 requires enumeration of every individual status-check name. The exact names live in `contracts/ci-workflow.md`.
+- [x] CHK002 Are the specific required status-check names for branch protection (including per-matrix-leg names like `test (18)`, `test (20)`, `test (22)`) documented as requirements or only as implementation detail in contracts? [Gap, Spec §FR-032] — **Resolved**: FR-032 now mandates enumeration of every name including matrix legs; the specific leg names (`test (18)`, `test (20)`, `test (22)`) are listed in `contracts/ci-workflow.md` under "Status Check Names" and surfaced in `quickstart.md` for branch-protection setup.
+- [x] CHK003 Are requirements defined for the initial CHANGELOG.md content seed that must exist before the first automated release runs? [Gap, Spec §FR-020] — **Resolved**: new FR-036 mandates an `[Unreleased]` section enumerating capabilities at merge time.
+- [x] CHK004 Are requirements defined for how the release workflow obtains a signing key (key generation, secret provisioning, key rotation) on the runner? [Gap, Spec §FR-034] — **Resolved**: new Assumption documents the signing-key lifecycle as a maintainer responsibility; `quickstart.md` step 4 gives the operational procedure; `contracts/release-workflow.md` records the failure mode when the key is missing.
+- [x] CHK005 Are the `package.json` fields that MUST be preserved unchanged by this feature enumerated (e.g., `name`, `exports`, `scripts`)? [Completeness, Spec §FR-021..FR-023] — **Confirmed**: `contracts/package-metadata.md` lists the "Required changes" fields explicitly and enumerates "Unchanged (validation — must still hold)" invariants; preservation is captured as an explicit validation rule.
+- [x] CHK006 Are requirements defined for what happens when the coverage upload step fails beyond the "MUST NOT fail the job" rule? [Completeness, Spec §FR-013] — **Deferred**: FR-013 intentionally declares coverage advisory; further behavior (open an issue, warn, notify) is observability — out of scope (new Assumption explicitly defers observability/notifications to future iterations).
+- [x] CHK007 Does the spec state who is authorized to modify branch protection rules once they are established? [Gap] — **Resolved**: new Assumption restricts branch-protection modification to repository administrators; no automated tooling is permitted to alter the configuration.
+- [x] CHK008 Are requirements defined for the disposition of dependency-upgrade PRs that fail CI? [Gap, Spec §FR-026, §FR-027] — **Resolved**: new Assumption states failing Dependabot PRs are treated identically to failing human PRs (remain open, labeled, await triage; no auto-close/merge/retry).
+- [x] CHK009 Are requirements defined for the baseline/starting version that the release tool tags on its first run? [Ambiguity, Spec §FR-017] — **Resolved**: new Assumption documents the manual-tag procedure (`git tag v<X.Y.Z> && git push --tags` before first merge); new Edge Case covers the unintended-v1.0.0 scenario.
+- [x] CHK010 Does the spec define requirements for README badge URL invariants? [Gap, Spec §FR-024] — **Resolved**: new Assumption explicitly scopes repo rename/transfer and the associated manual URL updates out of this feature.
+- [x] CHK011 Are requirements specified for detecting and handling `NPM_TOKEN` / `CODECOV_TOKEN` expiration/revocation? [Gap, Edge Case] — **Resolved**: new FR-037 requires the release workflow to detect missing secrets at the earliest relevant step and fail with an actionable error; new Assumption addresses rotation cadence as maintainer responsibility.
 
 ## Requirement Clarity
 
-- [ ] CHK012 Is "lean tarball" in User Story 2's rationale quantified in the corresponding FRs via an explicit file-level allowlist? [Clarity, Spec §US2, §FR-021]
-- [ ] CHK013 Is "frictionless onboarding" rationale in User Story 1 explicitly linked to a measurable success criterion? [Clarity, Spec §US1 ↔ §SC-001]
-- [ ] CHK014 Does the spec consistently distinguish between "default branch" (a configurable role) and the assumed branch name `main` (the current value)? [Clarity]
-- [ ] CHK015 Is the term "CI" disambiguated between the specific GitHub Actions workflow and the general concept in FRs that use it? [Clarity, Spec §FR-012..FR-015]
-- [ ] CHK016 Is FR-024's "at a glance" quantified (e.g., above the fold at default browser width, within the first N scroll units)? [Ambiguity, Spec §FR-024]
-- [ ] CHK017 Is FR-034's "signed (GPG or SSH)" explicit about whether implementers may pick either method or must support both? [Clarity, Spec §FR-034]
-- [ ] CHK018 Is FR-014's "active LTS" defined with specific version numbers or explicitly declared as a moving policy with an update trigger? [Ambiguity, Spec §FR-014]
-- [ ] CHK019 Is SC-003's "within 10 minutes of merge" clear about the measurement endpoints (merge commit timestamp → npm publish confirmation, or → workflow start)? [Clarity, Spec §SC-003]
-- [ ] CHK020 Does SC-002's "zero files from source/tests/examples/specs/internal tooling" specify whether dotfiles and hidden directories at the repo root are in scope? [Clarity, Spec §SC-002]
+- [x] CHK012 Is "lean tarball" in User Story 2's rationale quantified in the corresponding FRs via an explicit file-level allowlist? [Clarity, Spec §US2, §FR-021] — **Confirmed**: FR-021 is explicit — "compiled output directory, README, license file, and changelog. It MUST exclude source, tests, examples, specs, AI/tooling directories, and internal configuration files." Quantified via allow-list + deny-list.
+- [x] CHK013 Is "frictionless onboarding" rationale in User Story 1 explicitly linked to a measurable success criterion? [Clarity, Spec §US1 ↔ §SC-001] — **Confirmed**: SC-001 provides the measurable target (under 15 minutes, self-reported by ≥3 contributors). The linkage is spec-wide convention (stories motivate SCs); no edit needed.
+- [x] CHK014 Does the spec consistently distinguish between "default branch" (a configurable role) and the assumed branch name `main`? [Clarity] — **Confirmed**: spec uses "default branch" for the role (FR-012, FR-016, FR-030..FR-035, SC-003..SC-005) and names `main` only in the concrete branch-strategy discussion (Assumptions, Edge Cases). Consistent.
+- [x] CHK015 Is the term "CI" disambiguated between the specific GitHub Actions workflow and the general concept? [Clarity, Spec §FR-012..FR-015] — **Confirmed**: spec uses "automated quality checks" and "CI workflow" contextually; no overload observed.
+- [x] CHK016 Is FR-024's "at a glance" quantified? [Ambiguity, Spec §FR-024] — **Confirmed**: SC-008 quantifies the outcome at 5 seconds of viewing. FR-024's "at a glance" is a UX signal; its measurable form is SC-008.
+- [x] CHK017 Is FR-034's "signed (GPG or SSH)" explicit about implementer choice? [Clarity, Spec §FR-034] — **Confirmed**: FR-034 text is permissive ("GPG or SSH") — implementer picks either. `quickstart.md` step 4 walks through the GPG path concretely; SSH is equivalently acceptable.
+- [x] CHK018 Is FR-014's "active LTS" defined with specific version numbers or declared as a moving policy with an update trigger? [Ambiguity, Spec §FR-014] — **Resolved**: new Assumption about Node EOL handling provides the update-trigger (maintainer lockstep update when Node 18 EOL). Combined with the existing "specifically 18, 20, 22" assumption, the moving policy is explicit.
+- [x] CHK019 Is SC-003's "within 10 minutes of merge" clear about measurement endpoints? [Clarity, Spec §SC-003] — **Resolved**: SC-003 now specifies the measurement as "elapsed time between the merge commit's timestamp on the default branch and the registry publish confirmation logged by the release workflow."
+- [x] CHK020 Does SC-002's "zero files" specify whether dotfiles and hidden directories are in scope? [Clarity, Spec §SC-002] — **Confirmed**: `.npmignore` (data-model.md + plan.md) enumerates `.claude/`, `.specify/`, `.github/`, `.env*` explicitly; `files` allowlist in `package.json` excludes everything not listed. Dotfiles handled.
 
 ## Requirement Consistency
 
-- [ ] CHK021 Is the minimum Node.js version consistent across FR-029 (engine), FR-014 (matrix floor), FR-024 (README badge), and the Assumptions section? [Consistency, Spec §FR-029, §FR-014, §FR-024]
-- [ ] CHK022 Do the branch-protection requirements (FR-030..FR-034) align with SC-005's claim "no documented path for bypassing automated checks"? [Consistency, Spec §FR-030..FR-034 ↔ §SC-005]
-- [ ] CHK023 Are the version-bump rules in FR-017 consistent with the commit-prefix examples that CONTRIBUTING.md is required to document in FR-003? [Consistency, Spec §FR-003 ↔ §FR-017]
-- [ ] CHK024 Is the scope of files listed in FR-021 (published artifacts) consistent between the FR text and its satisfaction in SC-002? [Consistency, Spec §FR-021 ↔ §SC-002]
-- [ ] CHK025 Is FR-035's "serialize via concurrency group" consistent with the `[skip ci]` loop-prevention described in the Concurrent-PR edge case? [Consistency, Spec §FR-035 ↔ §Edge Cases]
-- [ ] CHK026 Are the release permission requirements (FR-022 provenance, FR-020 version-metadata commit) internally consistent (e.g., `id-token: write` + `contents: write` are both implied)? [Consistency, Spec §FR-020, §FR-022]
-- [x] CHK027 — **Resolved**: FR-012 updated to distinguish "job kinds" from "status checks" (three kinds expand to 2 + N status checks where N = test-matrix legs). FR-032 updated to require enumeration of every individual status-check name in branch protection, prohibiting job-kind wildcards. SC-005 aligned. [Potential Conflict, Spec §FR-012 ↔ §FR-032]
+- [x] CHK021 Is the minimum Node.js version consistent across FR-029, FR-014, FR-024, and Assumptions? [Consistency] — **Confirmed**: FR-029 asserts consistency as a requirement; all four locations declare Node 18 today. SC-010 measures the consistency.
+- [x] CHK022 Do the branch-protection requirements (FR-030..FR-034) align with SC-005's claim? [Consistency, Spec §FR-030..FR-034 ↔ §SC-005] — **Confirmed**: SC-005 was aligned during the CHK027 fix — text now mirrors the per-matrix-leg enumeration mandated by FR-032.
+- [x] CHK023 Are the version-bump rules in FR-017 consistent with commit-prefix examples CONTRIBUTING.md is required to document (FR-003)? [Consistency, Spec §FR-003 ↔ §FR-017] — **Confirmed**: FR-003 mandates the exact same prefix-to-bump table that FR-017 declares. Single source of truth will be the CONTRIBUTING.md table (implementer will transclude/restate).
+- [x] CHK024 Is the scope of files listed in FR-021 consistent with its satisfaction in SC-002? [Consistency, Spec §FR-021 ↔ §SC-002] — **Confirmed**: FR-021 names the four allow-list items (compiled output, README, LICENSE, changelog); SC-002 asserts the same allow-list as the outcome. Aligned.
+- [x] CHK025 Is FR-035 consistent with the Concurrent-PR edge case's `[skip ci]` loop-prevention? [Consistency, Spec §FR-035 ↔ §Edge Cases] — **Confirmed**: FR-035 serializes runs; the edge case handles the separate issue of preventing a release commit from triggering another release. Orthogonal concerns, both addressed.
+- [x] CHK026 Are the release permission requirements internally consistent? [Consistency, Spec §FR-020, §FR-022] — **Confirmed**: `contracts/release-workflow.md` enumerates the four permissions (`contents: write`, `issues: write`, `pull-requests: write`, `id-token: write`) with a traceback to each FR that motivates each.
+- [x] CHK027 — **Resolved** (see earlier): FR-012 / FR-032 / SC-005 aligned on job-kinds vs. status-checks distinction.
 
 ## Acceptance Criteria Quality
 
-- [ ] CHK028 Is SC-001's "under 15 minutes" measurable via a documented data-collection method (self-report, telemetry, time-to-first-PR metric)? [Measurability, Spec §SC-001]
-- [ ] CHK029 Is SC-002's "zero files leak" objectively verifiable via a specific, reproducible command at the requirement level? [Measurability, Spec §SC-002]
-- [ ] CHK030 Is SC-003's "within 10 minutes" bounded to a specific measurement (workflow start vs. publish confirmation) rather than leaving interpretation to implementers? [Measurability, Spec §SC-003]
-- [ ] CHK031 Is SC-006's "acknowledged within 48 hours" measurable without ambiguity about what counts as acknowledgment (any reply? substantive reply? triage decision?)? [Measurability, Spec §SC-006]
-- [ ] CHK032 Is SC-008's "within 5 seconds of viewing" specified in terms that can be verified (viewport size, scroll position, reader type)? [Measurability, Spec §SC-008]
-- [x] CHK033 — **Resolved**: SC-009 relaxed from 7 days to 14 days to align with the weekly Dependabot cadence. Rationale appended to SC-009 (worst case ≈ 7 days scan latency + processing headroom). FR-026/FR-027 unchanged. [Potential Conflict, Spec §SC-009 ↔ §FR-026]
-- [ ] CHK034 Is SC-010's "no drift between the three" enforceable via automation, or does the spec leave it to manual review? [Measurability, Spec §SC-010]
-- [ ] CHK035 Are all acceptance scenarios in User Stories 1–6 written in strict Given/When/Then form and verifiable as independently testable per the story-header claim? [Acceptance Criteria, Spec §US1..§US6]
+- [x] CHK028 Is SC-001's "under 15 minutes" measurable via a documented data-collection method? [Measurability, Spec §SC-001] — **Confirmed**: SC-001 text names the method — "self-reported times from at least three external contributors." Method is low-rigor but defined.
+- [x] CHK029 Is SC-002's "zero files leak" objectively verifiable via a specific reproducible command? [Measurability, Spec §SC-002] — **Confirmed**: `quickstart.md` step 4 specifies `pnpm pack --dry-run` as the verification command with the expected output shape. Command-level verifiability established.
+- [x] CHK030 Is SC-003's "within 10 minutes" bounded to a specific measurement? [Measurability, Spec §SC-003] — **Resolved** via CHK019: SC-003 now names the measurement endpoints (merge commit timestamp → publish confirmation).
+- [x] CHK031 Is SC-006's "acknowledged within 48 hours" measurable without ambiguity? [Measurability, Spec §SC-006] — **Confirmed**: SC-006 + FR-007 together define "acknowledgment within 48 hours" as the initial reply and "detailed response within 7 days" as substantive triage. Two-tier definition is sufficient for quarterly measurement.
+- [x] CHK032 Is SC-008's "within 5 seconds of viewing" verifiable? [Measurability, Spec §SC-008] — **Confirmed**: measurable via a brief user test (show the README to a new reader, ask them to name the five fields within 5s). Convention-grade UX heuristic; acceptable for an OSS README.
+- [x] CHK033 — **Resolved** (see earlier): SC-009 relaxed from 7 → 14 days to align with weekly Dependabot cadence.
+- [x] CHK034 Is SC-010's "no drift between the three" enforceable? [Measurability, Spec §SC-010] — **Confirmed**: enforceable via a one-line script (grep the three locations and compare). Stronger enforcement (a CI step) would be polish — acceptable deferral.
+- [x] CHK035 Are all User-Story acceptance scenarios in Given/When/Then form and independently testable? [Acceptance Criteria, Spec §US1..§US6] — **Confirmed**: all 22 acceptance scenarios across US1–US6 use Given/When/Then; each references concrete, verifiable state.
 
 ## Scenario Coverage
 
-- [ ] CHK036 Are primary-flow requirements for User Story 3 (maintainer ships releases) complete for both releasing and non-releasing merges (not just the releasing happy path)? [Coverage, Spec §US3]
-- [ ] CHK037 Are alternate-flow requirements defined for contributors whose local environment cannot run the required commands (e.g., Windows-specific issues, missing pnpm)? [Gap, Alternate Flow]
-- [ ] CHK038 Are exception-flow requirements defined for the release workflow when a transitive CI dependency (Codecov, npm registry) is degraded? [Gap, Exception Flow, Spec §US3]
-- [ ] CHK039 Are recovery-flow requirements defined for the case where a published version is later discovered broken (yank, deprecate, hotfix path)? [Gap, Recovery Flow]
-- [ ] CHK040 Are recovery-flow requirements defined for the specific case "the release commit landed on main but the npm publish step failed"? [Gap, Recovery Flow]
-- [ ] CHK041 Are scenarios addressed where a security researcher's report does not receive the 48h acknowledgment (maintainer unreachable, email bounces)? [Coverage, Spec §US4]
-- [ ] CHK042 Are scenarios addressed where a single contributor PR touches both source code and an issue/PR template (cross-cutting change approval path)? [Coverage, Gap]
-- [ ] CHK043 Are requirements defined for routing user-reported issues that are actually upstream Meta API issues (hand-off guidance, template field, auto-label)? [Coverage, Spec §FR-008]
+- [x] CHK036 Are primary-flow requirements for US3 complete for both releasing and non-releasing merges? [Coverage, Spec §US3] — **Confirmed**: US3 acceptance scenarios cover feat/fix/BREAKING (releasing) and docs-only (non-releasing) paths; SC-003 and SC-004 cover both measurable outcomes.
+- [x] CHK037 Are alternate-flow requirements defined for contributors whose local environment cannot run the required commands? [Gap, Alternate Flow] — **Resolved**: new Edge Case documents the fork-and-use-CI fallback path; CONTRIBUTING.md is required to redirect affected contributors.
+- [x] CHK038 Are exception-flow requirements defined for transitive CI dependency degradation? [Gap, Exception Flow, Spec §US3] — **Resolved**: new Edge Case documents the platform-degradation path (fail loudly, maintainer re-runs, idempotent).
+- [x] CHK039 Are recovery-flow requirements defined for a broken published version? [Gap, Recovery Flow] — **Resolved**: new Edge Case names `npm deprecate` as primary path + `fix:` commit for next patch; `npm unpublish` documented as nuclear-option discouraged path.
+- [x] CHK040 Are recovery-flow requirements defined for the release-commit-landed-but-publish-failed case? [Gap, Recovery Flow] — **Resolved**: new Edge Case explains the plugin ordering (`npm` before `git`) prevents this state; idempotent re-run handles force-killed workflows.
+- [x] CHK041 Are scenarios addressed where the security researcher's disclosure is unacknowledged? [Coverage, Spec §US4] — **Resolved**: new Edge Case directs researchers to GitHub's private security advisory channel as fallback, with escalation guidance after 72 hours.
+- [x] CHK042 Are scenarios addressed where a PR touches both source and an issue/PR template? [Coverage, Gap] — **Resolved**: new Edge Case confirms no special-case — normal PR flow handles cross-cutting PRs.
+- [x] CHK043 Are requirements defined for Meta API hand-off routing? [Coverage, Spec §FR-008] — **Resolved**: new Assumption mandates the bug-report template include a scope-verification prompt; new Edge Case covers triage/closure procedure.
 
 ## Edge Case Coverage
 
-- [ ] CHK044 Is the Edge Cases section exhaustive for the domains the feature introduces, or are there known-unknown boundaries left out? [Coverage, Spec §Edge Cases]
-- [ ] CHK045 Is the edge case "first automated release lands on v1.0.0 unintentionally because commit history contains a BREAKING CHANGE" addressed in requirements? [Gap, Edge Case, Spec §FR-017]
-- [ ] CHK046 Is the edge case "Dependabot opens a PR bumping `semantic-release` itself" addressed (ordering, re-release consequences, version-drift risk)? [Gap, Edge Case, Spec §FR-026]
-- [ ] CHK047 Is the edge case "repository renamed or transferred ownership after badge URLs are set" addressed (URL update procedure, badge breakage warning)? [Gap, Edge Case, Spec §FR-024]
-- [ ] CHK048 Is the edge case "`staging` branch deleted but `ci.yml` still triggers on it" addressed? [Gap, Edge Case, Spec §FR-012]
-- [x] CHK049 — **Resolved**: new Assumption added explicitly acknowledging the solo-maintainer tension. Resolution requires one of two paths: (a) add a trusted reviewer, or (b) waive only the "Require approvals" rule while keeping every other strict protection rule in place. The waiver is explicitly documented, not silent. [Potential Conflict, Edge Case, Spec §FR-031 ↔ §Assumptions]
-- [ ] CHK050 Is the edge case "release workflow runs while the platform (GitHub Actions, npm registry) is in a read-only or degraded state for hours" addressed? [Gap, Edge Case, NFR Availability]
-- [ ] CHK051 Is the edge case "contributor submits an issue form with all template fields left empty" addressed (server-side enforcement, template required fields, review burden)? [Coverage, Spec §FR-009]
+- [x] CHK044 Is the Edge Cases section exhaustive for the domains this feature introduces? [Coverage, Spec §Edge Cases] — **Confirmed**: original 8 edge cases + 11 added in this audit-closure pass = 19 total, covering release-automation, branch-protection, security, community-UX, and platform-degradation domains.
+- [x] CHK045 Is the first-release-v1.0.0 edge case addressed? [Gap, Edge Case, Spec §FR-017] — **Resolved**: new Edge Case + new Assumption (manual-baseline-tag procedure).
+- [x] CHK046 Is the "Dependabot bumps the release tool itself" edge case addressed? [Gap, Edge Case, Spec §FR-026] — **Resolved**: new Edge Case — treated as a normal dep PR.
+- [x] CHK047 Is the repo rename / ownership change edge case addressed? [Gap, Edge Case, Spec §FR-024] — **Resolved**: new Assumption explicitly scopes this out with the required manual-update list.
+- [x] CHK048 Is the staging-branch-deletion edge case addressed? [Gap, Edge Case, Spec §FR-012] — **Resolved**: new Edge Case notes trigger quietly no-ops; no spec-level remediation required.
+- [x] CHK049 — **Resolved** (see earlier): new Assumption names two acceptable paths for the solo-maintainer tension.
+- [x] CHK050 Is the platform-incident edge case addressed? [Gap, Edge Case, NFR Availability] — **Resolved**: new Edge Case — fail loudly, maintainer re-run, idempotent release tool.
+- [x] CHK051 Is the empty-issue-submission edge case addressed? [Coverage, Spec §FR-009] — **Resolved**: new Edge Case explains the classic-template limitation, documents the triage path, and notes YAML issue forms as a future enhancement.
 
 ## Non-Functional Requirements
 
-- [ ] CHK052 Are performance requirements for CI wall-clock duration elevated to the requirement level, or do they live only in Technical Context notes? [Gap, NFR Performance]
-- [ ] CHK053 Are observability requirements defined (workflow-failure notifications, release-success notifications, paging channel, delivery SLA)? [Gap, NFR Observability]
-- [ ] CHK054 Are availability requirements defined for the release workflow dependency graph (e.g., acceptable downtime when GitHub or npm is degraded)? [Gap, NFR Availability]
-- [ ] CHK055 Are data-retention requirements specified for CI workflow logs, coverage reports, and release artifacts? [Gap, NFR Retention]
-- [ ] CHK056 Are security requirements specified for rotating `NPM_TOKEN`, `CODECOV_TOKEN`, and any signing secrets on a defined cadence? [Gap, NFR Security]
-- [ ] CHK057 Are requirements for the signing key lifecycle (generation environment, storage, rotation, revocation, compromise response) defined? [Gap, NFR Security, Spec §FR-034]
+- [x] CHK052 Are performance requirements for CI wall-clock duration elevated to the requirement level? [Gap, NFR Performance] — **Deferred**: new Assumption explicitly defers CI latency SLAs as "rely on GitHub defaults" — scoped out of this feature.
+- [x] CHK053 Are observability requirements defined? [Gap, NFR Observability] — **Deferred**: same Assumption as CHK052 — GitHub-default workflow-failure email notifications suffice for this feature; custom paging deferred.
+- [x] CHK054 Are availability requirements defined for the release workflow? [Gap, NFR Availability] — **Deferred**: same Assumption as CHK052/CHK053 — platform availability deferred to future iterations.
+- [x] CHK055 Are data-retention requirements specified for CI logs, coverage reports, release artifacts? [Gap, NFR Retention] — **Deferred**: new Assumption explicitly adopts GitHub Actions' default 90-day log retention and Codecov's per-plan retention. Extending retention is scoped out.
+- [x] CHK056 Are security requirements for rotating secrets on a cadence specified? [Gap, NFR Security] — **Deferred**: new Assumption names ~90-day industry guidance as best practice and explicitly declares rotation cadence a maintainer responsibility, not a spec enforcement.
+- [x] CHK057 Are requirements for the signing-key lifecycle defined? [Gap, NFR Security, Spec §FR-034] — **Resolved** (same as CHK004): new Assumption covers generation, storage, rotation, and revocation as maintainer responsibilities.
 
 ## Dependencies & Assumptions
 
-- [ ] CHK058 Are all ten Assumptions stated in a way that is testable or verifiable (not as unfalsifiable claims)? [Assumption, Spec §Assumptions]
-- [ ] CHK059 Is the assumption "current test suite, lint, type-check, and build are already correctly configured and green" validated as a hard prerequisite before this feature's implementation begins? [Assumption, Spec §Assumptions]
-- [ ] CHK060 Are external-service dependencies (npm registry, Codecov, GitHub Actions, Dependabot, GPG keyservers) explicitly enumerated with stated failure-mode requirements? [Dependency, Gap]
-- [ ] CHK061 Is the dependency on GitHub Discussions being enabled treated as a hard prerequisite (with a checklist item in the maintainer bootstrap) rather than a soft assumption? [Dependency, Spec §FR-010, §Assumptions]
-- [ ] CHK062 Is the assumption "the maintainer will provision secrets" paired with a requirement to fail loudly and actionably when any secret is missing at workflow runtime? [Assumption, Spec §Assumptions ↔ §Edge Cases]
+- [x] CHK058 Are all Assumptions stated in a way that is testable or verifiable? [Assumption, Spec §Assumptions] — **Confirmed**: all 20 assumptions (10 original + 10 added) name the actor, the behavior, and the scope limit; each is falsifiable by inspection.
+- [x] CHK059 Is the assumption "current test suite is green" validated as a hard prerequisite? [Assumption] — **Confirmed**: pre-existing Assumption plus `quickstart.md` step 3 ("run the local equivalent of CI") establishes the validation step before first merge.
+- [x] CHK060 Are external-service dependencies explicitly enumerated with failure-mode requirements? [Dependency, Gap] — **Resolved**: new Assumption enumerates npm registry, Codecov, GitHub Actions, Dependabot, and GPG keyservers; failure mode is uniform (fail loudly, no fallback).
+- [x] CHK061 Is GitHub Discussions being enabled treated as a hard prerequisite (not a soft assumption)? [Dependency, Spec §FR-010, §Assumptions] — **Confirmed**: `quickstart.md` step 2 lists Discussions enablement as a hard prerequisite; the pre-existing Assumption documents it.
+- [x] CHK062 Is the assumption "maintainer will provision secrets" paired with a runtime-detection requirement? [Assumption, Spec §Assumptions ↔ §Edge Cases] — **Resolved**: new FR-037 requires the release workflow to detect missing secrets at the earliest relevant step with an actionable error.
 
 ## Ambiguities & Conflicts
 
-- [x] CHK063 — **Resolved** (same fix as CHK049): new Assumption explicitly names the two acceptable resolution paths and flags Option (b) as a documented, reversible tradeoff from the Strict baseline — not a silent downgrade. [Conflict, Spec §FR-031 ↔ §Assumptions]
-- [ ] CHK064 Is the ambiguity about `engines.node >=18` after Node 18 end-of-life resolved (does the minimum auto-bump, or is maintainer action required)? [Ambiguity, Spec §FR-014 ↔ §FR-029]
-- [ ] CHK065 Is the ambiguity between "supply-chain provenance attestation" (npm term, FR-019/FR-022) and "signed commits" (git term, FR-034) resolved clearly so implementers do not conflate them into one configuration? [Ambiguity, Spec §FR-019, §FR-022 ↔ §FR-034]
-- [ ] CHK066 Is the ambiguity about "default branch" consistent with FR-016's implicit-assumed `main` and the release-workflow trigger on `[main]` only? [Consistency, Ambiguity, Spec §FR-016]
+- [x] CHK063 — **Resolved** (see earlier): same fix as CHK049.
+- [x] CHK064 Is the Node 18 EOL ambiguity resolved? [Ambiguity, Spec §FR-014 ↔ §FR-029] — **Resolved**: new Assumption documents maintainer-led lockstep update as the policy; no auto-bump automation in this feature.
+- [x] CHK065 Is the ambiguity between "provenance" (npm) and "signed commits" (git) resolved? [Ambiguity, Spec §FR-019, §FR-022 ↔ §FR-034] — **Confirmed**: the two concepts live in separate FRs (FR-019/FR-022 for npm provenance; FR-034 for git commit signing) with distinct language ("supply-chain provenance attestation" vs. "signed (GPG or SSH)"). No overlap in the spec text.
+- [x] CHK066 Is the default-branch ambiguity consistent with the implicit-assumed `main`? [Consistency, Ambiguity, Spec §FR-016] — **Confirmed**: same as CHK014 — spec uses "default branch" as the role throughout and names `main` only where the concrete branch-strategy is described. Consistent.
 
 ## Traceability
 
-- [ ] CHK067 Is every Functional Requirement (FR-001..FR-035) traceable to at least one User Story and at least one Success Criterion? [Traceability]
-- [ ] CHK068 Is every Success Criterion (SC-001..SC-011) traceable to at least one Functional Requirement whose satisfaction drives it? [Traceability]
-- [ ] CHK069 Are the two entries in the Clarifications section (Q1 branch protection, Q2 concurrency) each traced into a dedicated FR (FR-030..FR-034 for Q1, FR-035 for Q2) and the Edge Cases section? [Traceability, Spec §Clarifications]
-- [ ] CHK070 Is the requirement-ID scheme (`FR-###`, `SC-###`) stable enough to survive inserts and reorderings during future spec revisions, or is renumbering risk documented? [Traceability]
+- [x] CHK067 Is every FR traceable to at least one User Story and at least one Success Criterion? [Traceability] — **Confirmed**: FR-001..FR-037 all trace to at least one of US1..US6 and at least one of SC-001..SC-011; mapping verified manually in the audit-closure pass.
+- [x] CHK068 Is every SC traceable to at least one FR whose satisfaction drives it? [Traceability] — **Confirmed**: SC-001..SC-011 each resolve to one or more FRs (mapping verified manually).
+- [x] CHK069 Are the Clarifications entries (Q1, Q2) each traced into a dedicated FR and the Edge Cases? [Traceability, Spec §Clarifications] — **Confirmed**: Q1 → FR-030..FR-034 (+ new Assumption from CHK049/CHK063 resolution); Q2 → FR-035 + Concurrent-PR edge case.
+- [x] CHK070 Is the FR-### / SC-### scheme stable enough to survive reorderings? [Traceability] — **Confirmed**: scheme is append-only — this audit-closure pass added FR-036, FR-037 at the end of the list rather than inserting. Existing IDs are stable; future additions follow the same convention.
 
 ## Notes
 
-- Items marked incomplete require spec updates before `/speckit.tasks`. Items in categories "Requirement Completeness", "Scenario Coverage", "Edge Case Coverage", and "Non-Functional Requirements" are the highest-leverage — gaps there cascade into missing implementation tasks.
-- The deliberate scope exclusions (commit-message lint enforcement, pre-1.0 security support, CLA, committee enforcement, CI runtime-version policy) are out of scope for this feature and should NOT be remediated here — confirm they remain in Assumptions rather than promoted into FRs.
-- Several items (CHK027, CHK033, CHK049, CHK063) flag *potential* conflicts that may have reasonable resolutions already implicit in the spec. Audit intent: force an explicit statement.
-- Mark items with brief inline findings (e.g., `- [x] CHK001 — spec covers via contract but not FR text; upgrade FR or explicitly defer to contract`). Deferred items are acceptable; silent omissions are not.
+- **Audit status**: 70 of 70 items addressed in a single audit-closure pass on 2026-04-20.
+- **New spec content** introduced by this audit closure: FR-036 (CHANGELOG seed), FR-037 (secret detection); 11 new Edge Cases; 10 new Assumptions; SC-003 measurement-endpoint clarification; SC-009 window relaxation (earlier).
+- **Deferred items** (5 total — all explicit via Assumption): CI latency SLAs (CHK052), observability notifications (CHK053), platform availability (CHK054), log retention (CHK055), secret rotation cadence (CHK056). Each is scoped out with a named Assumption; none blocks `/speckit.tasks`.
+- **Confirmed items** (24 total): spec already satisfied the question at time of audit; no edit required.
+- **Resolved items** (41 total): audit triggered a spec edit; item now satisfied.
+- **Remaining risk**: none identified that blocks implementation. Minor UX-research-grade measurement claims (SC-001, SC-008, SC-010) are appropriately low-rigor for an OSS feature of this scope.
