@@ -131,7 +131,7 @@ Single-project repository layout (per plan.md). All new files land at the repo r
 
 ### Implementation for User Story 6
 
-- [ ] T018 [US6] Create `.github/dependabot.yml` with exact content: `version: 2`, two `updates:` entries — first entry `package-ecosystem: "npm"` with `directory: "/"`, `schedule.interval: "weekly"`, `labels: ["dependencies"]`, `commit-message.prefix: "chore(deps):"`, `open-pull-requests-limit: 10`; second entry `package-ecosystem: "github-actions"` with `directory: "/"`, `schedule.interval: "weekly"`, `labels: ["ci"]`, `commit-message.prefix: "chore(ci):"` (no PR limit). (FR-026, FR-027, FR-028)
+- [X] T018 [US6] Create `.github/dependabot.yml` with exact content: `version: 2`, two `updates:` entries — first entry `package-ecosystem: "npm"` with `directory: "/"`, `schedule.interval: "weekly"`, `labels: ["dependencies"]`, `commit-message.prefix: "chore(deps):"`, `open-pull-requests-limit: 10`; second entry `package-ecosystem: "github-actions"` with `directory: "/"`, `schedule.interval: "weekly"`, `labels: ["ci"]`, `commit-message.prefix: "chore(ci):"` (no PR limit). (FR-026, FR-027, FR-028)
 
 **Checkpoint**: Dependency hygiene is automated.
 
