@@ -70,7 +70,7 @@ Single-project repository layout (per plan.md). All new files land at the repo r
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Edit `README.md` top badge block (lines 3–5 today): replace the three existing badges with the nine-badge row from `plan.md` / spec FR-024 — npm version, CI, codecov, MIT, Node≥18, TypeScript 5.x, npm downloads, PRs Welcome, semantic-release (Angular). Use the exact shield.io URLs documented in the source task. (FR-024)
+- [X] T009 [US2] Edit `README.md` top badge block (lines 3–5 today): replace the three existing badges with the nine-badge row from `plan.md` / spec FR-024 — npm version, CI, codecov, MIT, Node≥18, TypeScript 5.x, npm downloads, PRs Welcome, semantic-release (Angular). Use the exact shield.io URLs documented in the source task. (FR-024)
 - [ ] T010 [US2] Edit `README.md` to insert `## Contributing` and `## Security` sections immediately before the existing `## License` section at the bottom. Contributing section links to `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md`; Security section links to `SECURITY.md`. (FR-025)
 
 **Checkpoint**: Published-package expectations are wired. README badges depend on Phase 2 artifacts (package.json + ci.yml + CHANGELOG) existing — verify cross-link integrity after commit.

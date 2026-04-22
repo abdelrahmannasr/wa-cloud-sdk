@@ -1,8 +1,14 @@
 # @abdelrahmannasr-wa/cloud-api
 
 [![npm version](https://img.shields.io/npm/v/@abdelrahmannasr-wa/cloud-api.svg)](https://www.npmjs.com/package/@abdelrahmannasr-wa/cloud-api)
+[![CI](https://img.shields.io/github/actions/workflow/status/abdelrahmannasr/wa-cloud-sdk/ci.yml?branch=main&label=CI)](https://github.com/abdelrahmannasr/wa-cloud-sdk/actions/workflows/ci.yml)
+[![codecov](https://img.shields.io/codecov/c/github/abdelrahmannasr/wa-cloud-sdk)](https://codecov.io/gh/abdelrahmannasr/wa-cloud-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript 5.x](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![npm downloads](https://img.shields.io/npm/dm/@abdelrahmannasr-wa/cloud-api.svg)](https://www.npmjs.com/package/@abdelrahmannasr-wa/cloud-api)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
+[![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 
 ## Overview
 
