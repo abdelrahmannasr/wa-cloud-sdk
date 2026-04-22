@@ -101,7 +101,7 @@ Single-project repository layout (per plan.md). All new files land at the repo r
 
 ### Implementation for User Story 4
 
-- [ ] T014 [US4] Create `SECURITY.md` at repo root with: (a) Supported Versions table — `1.x` = ✅ Active support, `< 1.0` = ❌ No support; (b) bold warning "Please do NOT open a public GitHub issue for security vulnerabilities"; (c) email reporting section directing researchers to `a.nasr.yocto@gmail.com` with the required report fields (description, reproduction steps, potential impact, suggested fix); (d) response commitment — 48-hour acknowledgment, 7-day detailed response; (e) responsible-disclosure policy (coordinated fix before public announcement); (f) scope — covers `@abdelrahmannasr-wa/cloud-api` only and explicitly excludes the Meta WhatsApp Cloud API; (g) fallback channel note for unacknowledged reports (GitHub private security advisory). (FR-007, FR-008)
+- [X] T014 [US4] Create `SECURITY.md` at repo root with: (a) Supported Versions table — `1.x` = ✅ Active support, `< 1.0` = ❌ No support; (b) bold warning "Please do NOT open a public GitHub issue for security vulnerabilities"; (c) email reporting section directing researchers to `a.nasr.yocto@gmail.com` with the required report fields (description, reproduction steps, potential impact, suggested fix); (d) response commitment — 48-hour acknowledgment, 7-day detailed response; (e) responsible-disclosure policy (coordinated fix before public announcement); (f) scope — covers `@abdelrahmannasr-wa/cloud-api` only and explicitly excludes the Meta WhatsApp Cloud API; (g) fallback channel note for unacknowledged reports (GitHub private security advisory). (FR-007, FR-008)
 
 **Checkpoint**: Responsible-disclosure path is published.
 
