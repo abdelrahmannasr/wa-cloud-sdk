@@ -1154,6 +1154,19 @@ import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
 const { WhatsApp } = require('@abdelrahmannasr-wa/cloud-api');
 ```
 
+## Contributing
+
+Contributions are welcome. Before opening a PR, please read:
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — quick-start, Conventional Commits conventions, development commands, and code style
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) — behavioral expectations for everyone participating in this project
+
+Good first issues and feature requests are tracked on the [GitHub issues page](https://github.com/abdelrahmannasr/wa-cloud-sdk/issues).
+
+## Security
+
+For security vulnerabilities, please follow the responsible-disclosure process described in [SECURITY.md](./SECURITY.md). Do **not** open a public GitHub issue for security reports.
+
 ## License
 
 MIT © AbdelRahman Nasr
