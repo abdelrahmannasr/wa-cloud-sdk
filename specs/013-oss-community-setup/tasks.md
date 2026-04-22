@@ -150,14 +150,14 @@ Single-project repository layout (per plan.md). All new files land at the repo r
 
 ### Local verification (per `quickstart.md` step 5)
 
-- [ ] T023 [P] Run `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test && pnpm build` at the repo root; confirm all four pass with the new package.json. Verifies the devDependency additions from T001 did not break the existing toolchain.
-- [ ] T024 [P] Run `pnpm pack --dry-run` and inspect the output: confirm it lists only `dist/**`, `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json`. Fail if any of `src/`, `tests/`, `examples/`, `specs/`, `.github/`, `.claude/`, `.specify/`, `.env*` appear. (Validates SC-002)
-- [ ] T025 [P] Run `NPM_TOKEN=placeholder GITHUB_TOKEN=$(gh auth token) npx semantic-release --dry-run --no-ci` at repo root; confirm the dry-run parses `.releaserc.json`, reports the commits it would release, and prints the computed next version without errors. Then invoke the same command a second time and diff the computed next-version and release-notes output — both runs MUST produce identical values. (Validates FR-017 and the `.releaserc.json` plugin ordering; second run validates FR-039 idempotency at the local level before first real release.)
+- [X] T023 [P] Run `pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test && pnpm build` at the repo root; confirm all four pass with the new package.json. Verifies the devDependency additions from T001 did not break the existing toolchain.
+- [X] T024 [P] Run `pnpm pack --dry-run` and inspect the output: confirm it lists only `dist/**`, `README.md`, `LICENSE`, `CHANGELOG.md`, `package.json`. Fail if any of `src/`, `tests/`, `examples/`, `specs/`, `.github/`, `.claude/`, `.specify/`, `.env*` appear. (Validates SC-002)
+- [X] T025 [P] Run `NPM_TOKEN=placeholder GITHUB_TOKEN=$(gh auth token) npx semantic-release --dry-run --no-ci` at repo root; confirm the dry-run parses `.releaserc.json`, reports the commits it would release, and prints the computed next version without errors. Then invoke the same command a second time and diff the computed next-version and release-notes output — both runs MUST produce identical values. (Validates FR-017 and the `.releaserc.json` plugin ordering; second run validates FR-039 idempotency at the local level before first real release.)
 
 ### Consistency & final checks
 
-- [ ] T026 Verify three-way minimum-Node-version consistency (SC-010) by grepping `engines.node` in `package.json`, the Node ≥18 badge alt-text in `README.md`, and the matrix entry in `.github/workflows/ci.yml` — confirm all three advertise the same minimum version (`18.0.0`).
-- [ ] T027 [P] Final README pass: render `README.md` locally or on a PR preview, verify all nine badges resolve, the Contributing/Security section links open the correct files, and no internal-tooling references (`.claude/`, `specs/`) leak into the rendered document.
+- [X] T026 Verify three-way minimum-Node-version consistency (SC-010) by grepping `engines.node` in `package.json`, the Node ≥18 badge alt-text in `README.md`, and the matrix entry in `.github/workflows/ci.yml` — confirm all three advertise the same minimum version (`18.0.0`).
+- [X] T027 [P] Final README pass: render `README.md` locally or on a PR preview, verify all nine badges resolve, the Contributing/Security section links open the correct files, and no internal-tooling references (`.claude/`, `specs/`) leak into the rendered document.
 - [ ] T028 Once merged to `main`, monitor the first real release workflow run: confirm semantic-release picks a starting version, publishes to npm with a provenance badge on the registry page, generates release notes, appends to `CHANGELOG.md`, creates a `vX.Y.Z` tag, creates a signed GitHub Release, and commits the `chore(release): X.Y.Z [skip ci]` back to main. (Validates US3, FR-020, FR-039, SC-003, SC-011)
 
 ---
