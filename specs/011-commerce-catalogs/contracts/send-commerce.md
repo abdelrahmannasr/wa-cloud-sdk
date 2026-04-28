@@ -1,7 +1,7 @@
 # Contract: Commerce send methods on `Messages`
 
 **Module**: `src/messages/messages.ts` (extended)
-**Subpath import**: `@abdelrahmannasr-wa/cloud-api/messages` (existing, unchanged path)
+**Subpath import**: `@abdelrahmannasr/wa-cloud-api/messages` (existing, unchanged path)
 **Unified-client access**: `wa.messages`
 
 Three new methods are added to the existing `Messages` class. None of them require additional constructor arguments; they reuse the already-injected `HttpClient` and `phoneNumberId`.

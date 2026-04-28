@@ -4,7 +4,7 @@
  * Demonstrates: How to set up an Express server to receive WhatsApp webhook events
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api express
+ *   - npm install @abdelrahmannasr/wa-cloud-api express
  *   - npm install --save-dev @types/express
  *
  * Required environment variables:
@@ -18,7 +18,7 @@
  */
 
 import express from 'express';
-import { createExpressMiddleware } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { createExpressMiddleware } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

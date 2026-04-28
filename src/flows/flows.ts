@@ -26,7 +26,7 @@ import type {
  *
  * @example
  * ```typescript
- * import { HttpClient, Flows } from '@abdelrahmannasr-wa/cloud-api';
+ * import { HttpClient, Flows } from '@abdelrahmannasr/wa-cloud-api';
  *
  * const client = new HttpClient({
  *   accessToken: 'YOUR_ACCESS_TOKEN',

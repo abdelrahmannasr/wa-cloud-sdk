@@ -5,15 +5,15 @@
 ## Installation
 
 ```bash
-npm install @abdelrahmannasr-wa/cloud-api
+npm install @abdelrahmannasr/wa-cloud-api
 # or
-pnpm add @abdelrahmannasr-wa/cloud-api
+pnpm add @abdelrahmannasr/wa-cloud-api
 ```
 
 ## Send a Text Message (5 lines)
 
 ```typescript
-import { HttpClient, Messages } from '@abdelrahmannasr-wa/cloud-api';
+import { HttpClient, Messages } from '@abdelrahmannasr/wa-cloud-api';
 
 const client = new HttpClient({ accessToken: 'YOUR_TOKEN', phoneNumberId: 'YOUR_PHONE_ID' });
 const messages = new Messages(client, 'YOUR_PHONE_ID');
@@ -102,7 +102,7 @@ await messages.sendTemplate({
 
 ```typescript
 import express from 'express';
-import { createExpressMiddleware } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { createExpressMiddleware } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 const app = express();
 app.use(express.json({ verify: (req, _res, buf) => { (req as any).rawBody = buf; } }));
@@ -129,7 +129,7 @@ app.listen(3000);
 
 ```typescript
 // app/api/webhook/route.ts
-import { createNextRouteHandler } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { createNextRouteHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 export const { GET, POST } = createNextRouteHandler(
   { appSecret: process.env.APP_SECRET!, verifyToken: process.env.VERIFY_TOKEN! },
@@ -173,7 +173,7 @@ import {
   RateLimitError,
   AuthenticationError,
   ValidationError,
-} from '@abdelrahmannasr-wa/cloud-api';
+} from '@abdelrahmannasr/wa-cloud-api';
 
 try {
   await messages.sendText({ to: '1234567890', body: 'Hello!' });

@@ -5,7 +5,7 @@
  * handle flow completion webhooks, and multi-account broadcast with flows.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -22,7 +22,7 @@ import {
   WhatsApp,
   WhatsAppMultiAccount,
   RoundRobinStrategy,
-} from '@abdelrahmannasr-wa/cloud-api';
+} from '@abdelrahmannasr/wa-cloud-api';
 
 async function main() {
   const wa = new WhatsApp({

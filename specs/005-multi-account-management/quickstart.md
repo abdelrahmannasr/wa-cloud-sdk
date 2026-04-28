@@ -7,7 +7,7 @@
 ### List phone numbers for a WABA
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: 'YOUR_ACCESS_TOKEN',
@@ -91,7 +91,7 @@ await wa.phoneNumbers.deregister('PHONE_NUMBER_ID');
 ### Create a multi-account manager
 
 ```typescript
-import { WhatsAppMultiAccount } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsAppMultiAccount } from '@abdelrahmannasr/wa-cloud-api';
 
 const manager = new WhatsAppMultiAccount({
   // Shared base config (applies to all accounts)
@@ -172,7 +172,7 @@ manager.destroy();
 For users who prefer direct class instantiation:
 
 ```typescript
-import { HttpClient, PhoneNumbers } from '@abdelrahmannasr-wa/cloud-api';
+import { HttpClient, PhoneNumbers } from '@abdelrahmannasr/wa-cloud-api';
 
 const client = new HttpClient({
   accessToken: 'YOUR_ACCESS_TOKEN',

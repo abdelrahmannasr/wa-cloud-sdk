@@ -64,8 +64,8 @@ No change. `src/webhooks/index.ts` is already built as an entry point.
 After this feature the following import statements must all resolve to the same runtime type identity (verified by `tests/exports/subpath-exports.test.ts`):
 
 ```ts
-import type { TemplateStatusEvent } from '@abdelrahmannasr-wa/cloud-api';
-import type { TemplateStatusEvent } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import type { TemplateStatusEvent } from '@abdelrahmannasr/wa-cloud-api';
+import type { TemplateStatusEvent } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 ```
 
 Same for the other six new names.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "💬 Questions & Discussion"
+    url: https://github.com/abdelrahmannasr/wa-cloud-sdk/discussions
+    about: "Ask questions and discuss ideas with the community"
+  - name: "📖 Meta WhatsApp Cloud API Docs"
+    url: https://developers.facebook.com/docs/whatsapp/cloud-api
+    about: "Official Meta WhatsApp Cloud API documentation"

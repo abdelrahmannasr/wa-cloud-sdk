@@ -1,16 +1,16 @@
 # Quickstart: Commerce & Catalogs
 
 **Feature**: 011-commerce-catalogs
-**Audience**: SDK consumers — developers integrating the `@abdelrahmannasr-wa/cloud-api` package into their own application or platform.
+**Audience**: SDK consumers — developers integrating the `@abdelrahmannasr/wa-cloud-api` package into their own application or platform.
 
 This guide shows how to use every capability the Commerce module ships with, in the order a consumer is likely to need them. Each section is runnable as-is once you have a WhatsApp Business Account, a phone number ID, an access token, and a connected commerce catalog.
 
 ## Prerequisites
 
 ```bash
-pnpm add @abdelrahmannasr-wa/cloud-api
+pnpm add @abdelrahmannasr/wa-cloud-api
 # or
-npm install @abdelrahmannasr-wa/cloud-api
+npm install @abdelrahmannasr/wa-cloud-api
 ```
 
 - Node.js 18+
@@ -24,7 +24,7 @@ npm install @abdelrahmannasr-wa/cloud-api
 ## 1. List your catalogs
 
 ```ts
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: process.env.WA_ACCESS_TOKEN!,
@@ -113,7 +113,7 @@ await wa.messages.sendProduct({
 ## 6. Receive an order
 
 ```ts
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({ /* config */ });
 
@@ -186,7 +186,7 @@ For high-volume integrations, cache the `retailer_id → platform id` mapping in
 ### Strict create (fails on duplicate retailer ID)
 
 ```ts
-import { ConflictError } from '@abdelrahmannasr-wa/cloud-api';
+import { ConflictError } from '@abdelrahmannasr/wa-cloud-api';
 
 try {
   const created = await wa.catalog.createProduct(catalogId, {
@@ -247,7 +247,7 @@ await wa.catalog.deleteProduct(productId);
 Same API surface as the existing broadcast — the new send methods drop in as factory targets.
 
 ```ts
-import { WhatsAppMultiAccount } from '@abdelrahmannasr-wa/cloud-api/multi-account';
+import { WhatsAppMultiAccount } from '@abdelrahmannasr/wa-cloud-api/multi-account';
 
 const multi = new WhatsAppMultiAccount({ /* accounts config */ });
 
@@ -272,8 +272,8 @@ await multi.broadcast(recipients, (account, recipient) => {
 If you only need commerce, import directly from the subpath to skip the rest of the SDK:
 
 ```ts
-import { Catalog, type OrderEvent } from '@abdelrahmannasr-wa/cloud-api/catalog';
-import { HttpClient } from '@abdelrahmannasr-wa/cloud-api/client';
+import { Catalog, type OrderEvent } from '@abdelrahmannasr/wa-cloud-api/catalog';
+import { HttpClient } from '@abdelrahmannasr/wa-cloud-api/client';
 
 const client = new HttpClient({ accessToken: '...', phoneNumberId: '...' });
 const catalog = new Catalog(client, 'YOUR_WABA_ID');

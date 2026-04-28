@@ -4,7 +4,7 @@
  * Demonstrates: How to upload a media file and send it as a message
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *   - Prepare an image file at ./test-image.jpg (or update the path below)
  *
  * Required environment variables:
@@ -15,7 +15,7 @@
  * Run: npx tsx examples/media-upload.ts
  */
 
-import { WhatsApp, MediaError } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp, MediaError } from '@abdelrahmannasr/wa-cloud-api';
 import { readFileSync, existsSync } from 'fs';
 
 async function main() {
