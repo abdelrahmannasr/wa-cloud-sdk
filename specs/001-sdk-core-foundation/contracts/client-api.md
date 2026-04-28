@@ -1,6 +1,6 @@
 # API Contract: HttpClient
 
-**Module**: `@abdelrahmannasr-wa/cloud-api` (main) or `@abdelrahmannasr-wa/cloud-api/client`
+**Module**: `@abdelrahmannasr/wa-cloud-api` (main) or `@abdelrahmannasr/wa-cloud-api/client`
 
 ## Class: HttpClient
 

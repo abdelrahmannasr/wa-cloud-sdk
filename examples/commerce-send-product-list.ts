@@ -6,7 +6,7 @@
  * are exceeded.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -18,7 +18,7 @@
  * Run: npx tsx examples/commerce-send-product-list.ts
  */
 
-import { WhatsApp, ValidationError } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp, ValidationError } from '@abdelrahmannasr/wa-cloud-api';
 
 async function main() {
   const wa = new WhatsApp({

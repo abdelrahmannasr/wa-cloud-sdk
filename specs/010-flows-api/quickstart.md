@@ -1,16 +1,16 @@
 # Quickstart: WhatsApp Flows API
 
 **Feature**: 010-flows-api
-**Audience**: SDK consumers — developers integrating the `@abdelrahmannasr-wa/cloud-api` package into their own application or platform.
+**Audience**: SDK consumers — developers integrating the `@abdelrahmannasr/wa-cloud-api` package into their own application or platform.
 
 This guide shows how to use every capability the Flows API ships with, in the order a consumer is likely to need them. Each section is runnable as-is once you have a WhatsApp Business Account, a phone number ID, and an access token.
 
 ## Prerequisites
 
 ```bash
-pnpm add @abdelrahmannasr-wa/cloud-api
+pnpm add @abdelrahmannasr/wa-cloud-api
 # or
-npm install @abdelrahmannasr-wa/cloud-api
+npm install @abdelrahmannasr/wa-cloud-api
 ```
 
 - Node.js 18+
@@ -24,7 +24,7 @@ npm install @abdelrahmannasr-wa/cloud-api
 The simplest use case: you've authored a flow in Meta's Business Manager and want to deliver it to a user.
 
 ```ts
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: process.env.WA_ACCESS_TOKEN!,
@@ -100,7 +100,7 @@ If your flow doesn't preserve the token, match by `(contact.waId, timestamp wind
 Flow completions arrive as a dedicated `FlowCompletionEvent`, NOT as a regular `onMessage` event. Register a separate callback.
 
 ```ts
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: process.env.WA_ACCESS_TOKEN!,
@@ -260,7 +260,7 @@ await wa.flows.delete('1234567890');
 Use the existing generic `broadcast()` API with a factory function. **Important**: a flow identifier is scoped to a single WhatsApp Business Account. If you are broadcasting across accounts, each account has its own flow ID even for the "same" conceptual flow — maintain a mapping from conceptual name to per-account flow ID.
 
 ```ts
-import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr/wa-cloud-api';
 
 const manager = new WhatsAppMultiAccount({
   accounts: [
@@ -295,8 +295,8 @@ console.log(`Sent: ${result.succeeded.length}, Failed: ${result.failed.length}`)
 If you only need flow functionality and want to enable tree-shaking in your bundler, import from the subpath:
 
 ```ts
-import { Flows } from '@abdelrahmannasr-wa/cloud-api/flows';
-import { HttpClient } from '@abdelrahmannasr-wa/cloud-api';
+import { Flows } from '@abdelrahmannasr/wa-cloud-api/flows';
+import { HttpClient } from '@abdelrahmannasr/wa-cloud-api';
 
 const client = new HttpClient({ accessToken: '...', phoneNumberId: '...' });
 const flows = new Flows(client, 'business_account_id');
@@ -304,7 +304,7 @@ const flows = new Flows(client, 'business_account_id');
 const list = await flows.list({ limit: 10 });
 ```
 
-`FlowMessageOptions` is available via `@abdelrahmannasr-wa/cloud-api/messages`, and `FlowCompletionEvent` via `@abdelrahmannasr-wa/cloud-api/webhooks`. All symbols are also accessible from the main barrel.
+`FlowMessageOptions` is available via `@abdelrahmannasr/wa-cloud-api/messages`, and `FlowCompletionEvent` via `@abdelrahmannasr/wa-cloud-api/webhooks`. All symbols are also accessible from the main barrel.
 
 ## Verification checklist
 

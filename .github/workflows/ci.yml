@@ -4,16 +4,38 @@ on:
   push:
     branches: [main, staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
-  build:
+  quality:
+    name: quality
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [18, 20, 22]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -28,17 +50,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm format:check
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Type check
-        run: pnpm typecheck
-
       - name: Test with coverage
         run: pnpm test:coverage
 
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == 22
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Build
         run: pnpm build
+
+      - name: Report dist size
+        run: du -sh dist/

@@ -5,7 +5,7 @@
  * with and without a thumbnail product pinned to the entry point.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -19,7 +19,7 @@
  * Run: npx tsx examples/commerce-send-catalog.ts
  */
 
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 async function main() {
   const wa = new WhatsApp({

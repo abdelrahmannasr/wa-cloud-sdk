@@ -21,7 +21,7 @@ import { ValidationError } from '../errors/errors.js';
  *
  * @example
  * ```typescript
- * import { WhatsAppMultiAccount } from '@abdelrahmannasr-wa/cloud-api';
+ * import { WhatsAppMultiAccount } from '@abdelrahmannasr/wa-cloud-api';
  *
  * const manager = new WhatsAppMultiAccount({
  *   // Shared base config (applies to all accounts)

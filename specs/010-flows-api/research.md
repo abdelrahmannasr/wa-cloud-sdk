@@ -235,7 +235,7 @@ Add a new discriminated event type `FlowCompletionEvent` to the `WebhookEvent` u
 
 ### 12. Subpath export naming
 
-**Decision**: The new subpath export is `@abdelrahmannasr-wa/cloud-api/flows` (literal string `./flows` in `package.json` exports map).
+**Decision**: The new subpath export is `@abdelrahmannasr/wa-cloud-api/flows` (literal string `./flows` in `package.json` exports map).
 
 **Rationale**: Matches the established convention from spec 009: subpath names mirror source directory names (`./media`, `./templates`, `./phone-numbers`, `./multi-account`). No precedent for renaming.
 

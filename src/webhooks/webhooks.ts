@@ -31,7 +31,7 @@ import type {
  *
  * @example
  * ```typescript
- * import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+ * import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
  *
  * const wa = new WhatsApp({
  *   accessToken: 'YOUR_ACCESS_TOKEN',

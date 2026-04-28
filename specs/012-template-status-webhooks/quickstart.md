@@ -1,7 +1,7 @@
 # Quickstart: Template Status Webhook Events
 
 **Feature**: 012-template-status-webhooks
-**Audience**: Consumers of `@abdelrahmannasr-wa/cloud-api` who already have webhook verification working and want to react to template approval/rejection/quality changes.
+**Audience**: Consumers of `@abdelrahmannasr/wa-cloud-api` who already have webhook verification working and want to react to template approval/rejection/quality changes.
 
 ---
 
@@ -15,7 +15,7 @@
 ## Unified-client usage (recommended)
 
 ```ts
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: process.env.WA_TOKEN!,
@@ -72,7 +72,7 @@ app.use('/webhook', wa.webhooks.createExpressMiddleware({
 For consumers not using the unified `WhatsApp` client:
 
 ```ts
-import { createWebhookHandler } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { createWebhookHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 const handler = createWebhookHandler(
   {
@@ -93,7 +93,7 @@ const handler = createWebhookHandler(
 ## Parsing payloads directly (no HTTP framework)
 
 ```ts
-import { parseWebhookPayload } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { parseWebhookPayload } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 const events = parseWebhookPayload(rawJsonBody);
 for (const event of events) {

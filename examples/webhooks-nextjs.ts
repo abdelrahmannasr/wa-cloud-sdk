@@ -4,7 +4,7 @@
  * Demonstrates: How to handle WhatsApp webhooks in Next.js App Router
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api next
+ *   - npm install @abdelrahmannasr/wa-cloud-api next
  *
  * Required environment variables:
  *   - WHATSAPP_APP_SECRET: Your Meta app secret for signature verification
@@ -19,7 +19,7 @@
  *       move the handler logic to app/api/webhook/route.ts
  */
 
-import { createNextRouteHandler } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+import { createNextRouteHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
 
 // Create the route handlers (GET for verification, POST for events)
 const { GET, POST } = createNextRouteHandler(

@@ -5,7 +5,7 @@
  * parse incoming OrderEvent objects, and use messageId for deduplication.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api express
+ *   - npm install @abdelrahmannasr/wa-cloud-api express
  *   - npm install --save-dev @types/express
  *
  * Required environment variables:
@@ -19,8 +19,8 @@
  */
 
 import express from 'express';
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
-import type { OrderEvent } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+import type { OrderEvent } from '@abdelrahmannasr/wa-cloud-api';
 
 async function main() {
   const wa = new WhatsApp({

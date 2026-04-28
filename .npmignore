@@ -1,0 +1,17 @@
+src/
+tests/
+examples/
+specs/
+.specify/
+.claude/
+.github/
+coverage/
+.releaserc.json
+eslint.config.js
+tsup.config.ts
+vitest.config.ts
+tsconfig*.json
+.prettierrc
+.npmrc
+CLAUDE.md
+.env*

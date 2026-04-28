@@ -1,6 +1,6 @@
 # API Contract: Messages
 
-**Module**: `@abdelrahmannasr-wa/cloud-api` (main) or `@abdelrahmannasr-wa/cloud-api/messages`
+**Module**: `@abdelrahmannasr/wa-cloud-api` (main) or `@abdelrahmannasr/wa-cloud-api/messages`
 
 ## Class: Messages
 
