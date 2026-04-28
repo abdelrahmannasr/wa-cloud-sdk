@@ -6,7 +6,7 @@
 ## Basic Setup
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: 'YOUR_ACCESS_TOKEN',
@@ -65,7 +65,7 @@ for (const template of templates.data.data) {
 ## Create a Template
 
 ```typescript
-import { TemplateBuilder } from '@abdelrahmannasr-wa/cloud-api';
+import { TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api';
 
 const request = new TemplateBuilder()
   .setName('order_shipped')
@@ -141,7 +141,7 @@ wa.destroy();
 ## Error Handling
 
 ```typescript
-import { WhatsApp, ValidationError, ApiError } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp, ValidationError, ApiError } from '@abdelrahmannasr/wa-cloud-api';
 
 // Construction error — missing required config
 try {
@@ -174,7 +174,7 @@ try {
 ### Before (direct imports)
 
 ```typescript
-import { HttpClient, Messages, Media, Templates } from '@abdelrahmannasr-wa/cloud-api';
+import { HttpClient, Messages, Media, Templates } from '@abdelrahmannasr/wa-cloud-api';
 
 const client = new HttpClient({
   accessToken: 'token',
@@ -192,7 +192,7 @@ await messages.sendText({ to: '1234567890', body: 'Hello!' });
 ### After (unified client)
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 const wa = new WhatsApp({
   accessToken: 'token',

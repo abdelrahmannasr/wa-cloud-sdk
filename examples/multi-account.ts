@@ -8,7 +8,7 @@
  *   - Dynamic account add/remove
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token (shared across accounts)
@@ -23,7 +23,7 @@ import {
   RoundRobinStrategy,
   WeightedStrategy,
   StickyStrategy,
-} from '@abdelrahmannasr-wa/cloud-api';
+} from '@abdelrahmannasr/wa-cloud-api';
 
 async function main() {
   // ── Basic Multi-Account Management ──────────────────────────────────

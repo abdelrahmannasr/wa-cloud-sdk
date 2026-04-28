@@ -1,5 +1,5 @@
 {
-  "name": "@abdelrahmannasr-wa/cloud-api",
+  "name": "@abdelrahmannasr/wa-cloud-api",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"

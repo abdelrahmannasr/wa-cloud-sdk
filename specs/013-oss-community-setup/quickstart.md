@@ -18,7 +18,7 @@ In GitHub: **Settings → Secrets and variables → Actions → New repository s
 
 | Secret | How to obtain | Required for |
 |---|---|---|
-| `NPM_TOKEN` | On npmjs.com: profile icon → Access Tokens → Generate New Token → "Automation" (bypasses 2FA for CI). Scope: publish for `@abdelrahmannasr-wa` scope. | `release.yml` — npm publish step |
+| `NPM_TOKEN` | On npmjs.com: profile icon → Access Tokens → Generate New Token → "Automation" (bypasses 2FA for CI). Scope: publish for `@abdelrahmannasr` scope. | `release.yml` — npm publish step |
 | `CODECOV_TOKEN` | On codecov.io: add the repo → copy the upload token. | `ci.yml` — `test` job Node 22 leg |
 
 `GITHUB_TOKEN` is provided by Actions automatically; no manual setup required.
@@ -103,7 +103,7 @@ NPM_TOKEN=<fake-but-present> GITHUB_TOKEN=$(gh auth token) \
 ## Recovery — if the first release misbehaves
 
 - **Wrong version computed**: manually tag the desired version (`git tag v1.0.0 && git push --tags`). semantic-release uses the most recent tag as the baseline for the next release. Do this BEFORE the first run if you want to force a specific starting version.
-- **npm publish failed with 401**: verify `NPM_TOKEN` scope includes publish access for `@abdelrahmannasr-wa`. Regenerate if needed.
+- **npm publish failed with 401**: verify `NPM_TOKEN` scope includes publish access for `@abdelrahmannasr`. Regenerate if needed.
 - **Release commit blocked by branch protection**: semantic-release's token doesn't have bypass; add to bypass list or use a GitHub App with write access.
 - **CHANGELOG shows an unwanted `[0.1.0]` entry**: confirm this feature's CHANGELOG rewrite actually landed (`git show HEAD -- CHANGELOG.md`). If the old entry snuck back in via a merge, delete the section and force a `chore:` commit.
 

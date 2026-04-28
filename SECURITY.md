@@ -11,7 +11,7 @@
 
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
-If you discover a security issue in `@abdelrahmannasr-wa/cloud-api`, please report it privately by email to:
+If you discover a security issue in `@abdelrahmannasr/wa-cloud-api`, please report it privately by email to:
 
 **a.nasr.yocto@gmail.com**
 
@@ -43,7 +43,7 @@ Please give us a reasonable window to fix the issue before any public disclosure
 
 ## Scope
 
-This policy covers the `@abdelrahmannasr-wa/cloud-api` npm package only — that is, the TypeScript SDK code in this repository and its published artifacts.
+This policy covers the `@abdelrahmannasr/wa-cloud-api` npm package only — that is, the TypeScript SDK code in this repository and its published artifacts.
 
 **Out of scope:**
 

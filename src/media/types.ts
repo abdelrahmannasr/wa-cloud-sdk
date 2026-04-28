@@ -64,7 +64,7 @@ export interface MediaConstraint {
  *
  * @example
  * ```typescript
- * import { MEDIA_CONSTRAINTS } from '@abdelrahmannasr-wa/cloud-api';
+ * import { MEDIA_CONSTRAINTS } from '@abdelrahmannasr/wa-cloud-api';
  *
  * // Check if a MIME type is supported for images
  * const isJpegSupported = MEDIA_CONSTRAINTS.image.mimeTypes.has('image/jpeg'); // true

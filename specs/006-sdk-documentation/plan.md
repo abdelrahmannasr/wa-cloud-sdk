@@ -5,7 +5,7 @@
 
 ## Summary
 
-Create comprehensive user-facing documentation for the `@abdelrahmannasr-wa/cloud-api` SDK: a professional README.md with badges, installation, quick start, configuration reference, per-module documentation, error handling guide, and advanced usage; 7 TypeScript reference example files covering all SDK modules; and final build/test/lint verification to confirm publishing readiness. TSDoc on all public APIs is already complete (confirmed via audit) — this phase focuses exclusively on README, examples, and verification.
+Create comprehensive user-facing documentation for the `@abdelrahmannasr/wa-cloud-api` SDK: a professional README.md with badges, installation, quick start, configuration reference, per-module documentation, error handling guide, and advanced usage; 7 TypeScript reference example files covering all SDK modules; and final build/test/lint verification to confirm publishing readiness. TSDoc on all public APIs is already complete (confirmed via audit) — this phase focuses exclusively on README, examples, and verification.
 
 ## Technical Context
 
@@ -118,7 +118,7 @@ Each example file follows this template pattern:
  * Demonstrates: [what this example shows]
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr-wa/cloud-api
+ *   - npm install @abdelrahmannasr/wa-cloud-api
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -128,7 +128,7 @@ Each example file follows this template pattern:
  * Run: npx tsx examples/[filename].ts
  */
 
-import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api';
+import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
 
 // ... self-contained example with error handling
 ```

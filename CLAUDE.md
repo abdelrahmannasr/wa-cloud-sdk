@@ -2,7 +2,7 @@
 
 ## Project Overview
 A comprehensive, zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp Cloud API.
-Published as `@abdelrahmannasr-wa/cloud-api` on npm. MIT license.
+Published as `@abdelrahmannasr/wa-cloud-api` on npm. MIT license.
 
 This is the foundation package for the Khalsa platform (a trust-based distributed WhatsApp campaign system), but the SDK is generic and usable by any project that needs WhatsApp Cloud API integration.
 

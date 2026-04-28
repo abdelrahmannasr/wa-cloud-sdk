@@ -19,7 +19,7 @@ assignees: ""
 ### Required Body Sections (H2)
 
 - `## Describe the Bug`
-- `## To Reproduce` — MUST include a fenced `typescript` code block with an `import { WhatsApp } from '@abdelrahmannasr-wa/cloud-api'` example
+- `## To Reproduce` — MUST include a fenced `typescript` code block with an `import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api'` example
 - `## Expected Behavior`
 - `## Actual Behavior`
 - `## Environment` — MUST list: SDK version, Node.js version, package manager, OS, TypeScript version

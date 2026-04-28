@@ -27,7 +27,7 @@ export interface NextRouteHandlerOptions {
  * @example
  * ```ts
  * // app/api/webhook/route.ts
- * import { createNextRouteHandler } from '@abdelrahmannasr-wa/cloud-api/webhooks';
+ * import { createNextRouteHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
  *
  * export const { GET, POST } = createNextRouteHandler(
  *   { appSecret: process.env.APP_SECRET!, verifyToken: process.env.VERIFY_TOKEN! },
