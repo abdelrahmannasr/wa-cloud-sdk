@@ -10,8 +10,6 @@ import type {
   FlowCompletionEvent,
   OrderEvent,
   OrderItem,
-  TemplateEventStatus,
-  TemplateQualityScore,
 } from './types.js';
 
 export interface ParseWebhookPayloadOptions {
@@ -326,7 +324,7 @@ function extractTemplateStatusEvents(
     templateId: base.templateId,
     templateName: base.templateName,
     language: base.language,
-    status: status as TemplateEventStatus,
+    status: status,
     ...(reason !== undefined && { reason }),
     ...(otherInfo !== undefined && { otherInfo }),
     timestamp: base.timestamp,
@@ -360,8 +358,8 @@ function extractTemplateQualityEvents(
     templateId: base.templateId,
     templateName: base.templateName,
     language: base.language,
-    newScore: newScore as TemplateQualityScore,
-    ...(previousScore !== undefined && { previousScore: previousScore as TemplateQualityScore }),
+    newScore: newScore,
+    ...(previousScore !== undefined && { previousScore: previousScore }),
     timestamp: base.timestamp,
   });
 }
