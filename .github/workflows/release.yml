@@ -27,12 +27,10 @@ jobs:
 
       - name: Check required secrets
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           SSH_SIGNING_KEY: ${{ secrets.SSH_SIGNING_KEY }}
           RELEASE_BOT_PAT: ${{ secrets.RELEASE_BOT_PAT }}
         run: |
           missing=()
-          [ -z "$NPM_TOKEN" ] && missing+=("NPM_TOKEN")
           [ -z "$SSH_SIGNING_KEY" ] && missing+=("SSH_SIGNING_KEY")
           [ -z "$RELEASE_BOT_PAT" ] && missing+=("RELEASE_BOT_PAT")
           if [ ${#missing[@]} -ne 0 ]; then
@@ -40,10 +38,11 @@ jobs:
             echo "Provision them at: Settings -> Secrets and variables -> Actions"
             exit 1
           fi
-          # NPM_TOKEN is required only until npm Trusted Publishing is
-          # configured for this package on npmjs.com. After the first
-          # release lands and you register a trusted publisher, the
-          # token can be revoked and this check can drop it.
+          # npm publish auths via Trusted Publishing (OIDC) — no
+          # NPM_TOKEN needed. The id-token: write permission on this
+          # workflow + the trusted-publisher entry registered for
+          # @abdelrahmannasr/wa-cloud-api on npmjs.com handle auth
+          # tokenlessly and attach provenance via sigstore.
           # RELEASE_BOT_PAT is the maintainer's fine-grained PAT used by
           # semantic-release to push the chore(release) commit back to
           # main, bypassing branch protection (PR-required and
@@ -99,7 +98,6 @@ jobs:
           # disabled. Required-signatures still applies — the SSH
           # signing step above ensures the commit is verified.
           GITHUB_TOKEN: ${{ secrets.RELEASE_BOT_PAT }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
 
       - name: Open release-failure tracking issue
