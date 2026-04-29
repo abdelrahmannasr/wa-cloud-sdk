@@ -9,6 +9,13 @@ updates:
     commit-message:
       prefix: "chore(deps):"
     open-pull-requests-limit: 10
+    ignore:
+      # @types/node should track the engines.node minimum LTS, not the
+      # latest Node release. We declare engines.node: ">=18.0.0", so types
+      # for Node 25+ APIs would advertise a runtime surface we do not
+      # support. Patch and minor bumps within the current major are fine.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
