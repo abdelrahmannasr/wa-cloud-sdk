@@ -144,7 +144,7 @@ export class MediaError extends WhatsAppError {
  *
  * @example
  * ```ts
- * import { ConflictError } from '@abdelrahmannasr/wa-cloud-api/errors';
+ * import { ConflictError } from 'wa-cloud-sdk/errors';
  *
  * try {
  *   await wa.catalog.createProduct(catalogId, { retailer_id: 'SKU-001', ... });

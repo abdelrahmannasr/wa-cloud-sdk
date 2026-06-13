@@ -1,6 +1,6 @@
 # API Contract: Webhooks
 
-**Module**: `@abdelrahmannasr/wa-cloud-api` (main) or `@abdelrahmannasr/wa-cloud-api/webhooks`
+**Module**: `wa-cloud-sdk` (main) or `wa-cloud-sdk/webhooks`
 
 ## Functions
 

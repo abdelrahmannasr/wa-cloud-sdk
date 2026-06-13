@@ -1,5 +1,5 @@
 {
-  "name": "@abdelrahmannasr/wa-cloud-api",
+  "name": "wa-cloud-sdk",
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"

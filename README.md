@@ -1,12 +1,12 @@
-# @abdelrahmannasr/wa-cloud-api
+# wa-cloud-sdk
 
-[![npm version](https://img.shields.io/npm/v/@abdelrahmannasr/wa-cloud-api.svg)](https://www.npmjs.com/package/@abdelrahmannasr/wa-cloud-api)
+[![npm version](https://img.shields.io/npm/v/wa-cloud-sdk.svg)](https://www.npmjs.com/package/wa-cloud-sdk)
 [![CI](https://img.shields.io/github/actions/workflow/status/abdelrahmannasr/wa-cloud-sdk/ci.yml?branch=main&label=CI)](https://github.com/abdelrahmannasr/wa-cloud-sdk/actions/workflows/ci.yml)
 [![codecov](https://img.shields.io/codecov/c/github/abdelrahmannasr/wa-cloud-sdk)](https://codecov.io/gh/abdelrahmannasr/wa-cloud-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript 5.x](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![npm downloads](https://img.shields.io/npm/dm/@abdelrahmannasr/wa-cloud-api.svg)](https://www.npmjs.com/package/@abdelrahmannasr/wa-cloud-api)
+[![npm downloads](https://img.shields.io/npm/dm/wa-cloud-sdk.svg)](https://www.npmjs.com/package/wa-cloud-sdk)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 [![semantic-release: angular](https://img.shields.io/badge/semantic--release-angular-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
 
@@ -28,19 +28,19 @@ A comprehensive, zero-dependency, type-safe TypeScript SDK for the Meta WhatsApp
 
 ```bash
 # npm
-npm install @abdelrahmannasr/wa-cloud-api
+npm install wa-cloud-sdk
 
 # pnpm
-pnpm add @abdelrahmannasr/wa-cloud-api
+pnpm add wa-cloud-sdk
 
 # yarn
-yarn add @abdelrahmannasr/wa-cloud-api
+yarn add wa-cloud-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp } from 'wa-cloud-sdk';
 
 // Initialize the client
 const wa = new WhatsApp({
@@ -263,7 +263,7 @@ await wa.media.upload({
 Create and manage message templates:
 
 ```typescript
-import { TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api';
+import { TemplateBuilder } from 'wa-cloud-sdk';
 
 // List templates
 const templates = await wa.templates.list({ limit: 10 });
@@ -580,7 +580,7 @@ Handle incoming webhook events from WhatsApp:
 
 ```typescript
 import express from 'express';
-import { createExpressMiddleware } from '@abdelrahmannasr/wa-cloud-api/webhooks';
+import { createExpressMiddleware } from 'wa-cloud-sdk/webhooks';
 
 const app = express();
 
@@ -612,7 +612,7 @@ app.listen(3000);
 
 ```typescript
 // app/api/webhook/route.ts
-import { createNextRouteHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
+import { createNextRouteHandler } from 'wa-cloud-sdk/webhooks';
 
 const { GET, POST } = createNextRouteHandler(
   {
@@ -710,7 +710,7 @@ await wa.phoneNumbers.deregister('phone_number_id');
 Manage multiple WhatsApp Business Accounts:
 
 ```typescript
-import { WhatsAppMultiAccount } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsAppMultiAccount } from 'wa-cloud-sdk';
 
 const multiAccount = new WhatsAppMultiAccount({
   // Shared base config
@@ -776,7 +776,7 @@ manager.removeAccount('marketing');
 Automatically distribute sends across accounts using built-in strategies:
 
 ```typescript
-import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new RoundRobinStrategy(),
@@ -797,7 +797,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 Route traffic proportionally based on per-account weights:
 
 ```typescript
-import { WhatsAppMultiAccount, WeightedStrategy } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsAppMultiAccount, WeightedStrategy } from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new WeightedStrategy(
@@ -823,7 +823,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 Ensure the same recipient always routes to the same account for conversation continuity:
 
 ```typescript
-import { WhatsAppMultiAccount, StickyStrategy } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsAppMultiAccount, StickyStrategy } from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new StickyStrategy(),
@@ -872,7 +872,7 @@ for (const failure of result.failures) {
 Implement the `DistributionStrategy` interface for custom routing logic:
 
 ```typescript
-import type { DistributionStrategy } from '@abdelrahmannasr/wa-cloud-api';
+import type { DistributionStrategy } from 'wa-cloud-sdk';
 
 class PriorityStrategy implements DistributionStrategy {
   select(accountNames: readonly string[], _recipient?: string): string {
@@ -955,7 +955,7 @@ WhatsAppError (base)
 **1. Handling API errors with status code checks:**
 
 ```typescript
-import { ApiError, RateLimitError } from '@abdelrahmannasr/wa-cloud-api';
+import { ApiError, RateLimitError } from 'wa-cloud-sdk';
 
 try {
   await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
@@ -975,7 +975,7 @@ try {
 **2. Handling rate limits with retry delay:**
 
 ```typescript
-import { RateLimitError } from '@abdelrahmannasr/wa-cloud-api';
+import { RateLimitError } from 'wa-cloud-sdk';
 
 try {
   await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
@@ -996,7 +996,7 @@ try {
 **3. Handling validation errors with field identification:**
 
 ```typescript
-import { ValidationError } from '@abdelrahmannasr/wa-cloud-api';
+import { ValidationError } from 'wa-cloud-sdk';
 
 try {
   await wa.media.upload({
@@ -1020,7 +1020,7 @@ try {
 **4. Handling "resource missing" responses separately from 404s:**
 
 ```typescript
-import { ApiError, NotFoundError } from '@abdelrahmannasr/wa-cloud-api';
+import { ApiError, NotFoundError } from 'wa-cloud-sdk';
 
 try {
   const profile = await wa.phoneNumbers.getBusinessProfile(phoneNumberId);
@@ -1047,34 +1047,34 @@ For advanced use cases or tree-shaking, import individual modules via dedicated 
 
 ```typescript
 // Import only what you need
-import { Messages } from '@abdelrahmannasr/wa-cloud-api/messages';
-import { Media, MEDIA_CONSTRAINTS } from '@abdelrahmannasr/wa-cloud-api/media';
-import { Templates, TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api/templates';
-import { PhoneNumbers } from '@abdelrahmannasr/wa-cloud-api/phone-numbers';
-import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr/wa-cloud-api/multi-account';
-import { Webhooks, createExpressMiddleware } from '@abdelrahmannasr/wa-cloud-api/webhooks';
-import { WhatsAppError, ApiError } from '@abdelrahmannasr/wa-cloud-api/errors';
+import { Messages } from 'wa-cloud-sdk/messages';
+import { Media, MEDIA_CONSTRAINTS } from 'wa-cloud-sdk/media';
+import { Templates, TemplateBuilder } from 'wa-cloud-sdk/templates';
+import { PhoneNumbers } from 'wa-cloud-sdk/phone-numbers';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from 'wa-cloud-sdk/multi-account';
+import { Webhooks, createExpressMiddleware } from 'wa-cloud-sdk/webhooks';
+import { WhatsAppError, ApiError } from 'wa-cloud-sdk/errors';
 ```
 
 **Available subpath exports:**
 
 | Subpath | Primary Exports |
 |---------|----------------|
-| `@abdelrahmannasr/wa-cloud-api` | `WhatsApp` (unified client), all modules |
-| `@abdelrahmannasr/wa-cloud-api/messages` | `Messages`, all message type interfaces |
-| `@abdelrahmannasr/wa-cloud-api/media` | `Media`, `MEDIA_CONSTRAINTS`, media types |
-| `@abdelrahmannasr/wa-cloud-api/templates` | `Templates`, `TemplateBuilder`, validation constants |
-| `@abdelrahmannasr/wa-cloud-api/phone-numbers` | `PhoneNumbers`, business profile types |
-| `@abdelrahmannasr/wa-cloud-api/multi-account` | `WhatsAppMultiAccount`, distribution strategies |
-| `@abdelrahmannasr/wa-cloud-api/webhooks` | `Webhooks`, middleware factories, parser |
-| `@abdelrahmannasr/wa-cloud-api/errors` | `WhatsAppError`, `ApiError`, `RateLimitError`, etc. |
+| `wa-cloud-sdk` | `WhatsApp` (unified client), all modules |
+| `wa-cloud-sdk/messages` | `Messages`, all message type interfaces |
+| `wa-cloud-sdk/media` | `Media`, `MEDIA_CONSTRAINTS`, media types |
+| `wa-cloud-sdk/templates` | `Templates`, `TemplateBuilder`, validation constants |
+| `wa-cloud-sdk/phone-numbers` | `PhoneNumbers`, business profile types |
+| `wa-cloud-sdk/multi-account` | `WhatsAppMultiAccount`, distribution strategies |
+| `wa-cloud-sdk/webhooks` | `Webhooks`, middleware factories, parser |
+| `wa-cloud-sdk/errors` | `WhatsAppError`, `ApiError`, `RateLimitError`, etc. |
 
 All subpaths support ESM (`import`), CommonJS (`require`), and include full TypeScript declarations.
 
 ```typescript
 // Direct module usage with HttpClient
-import { HttpClient } from '@abdelrahmannasr/wa-cloud-api';
-import { Messages } from '@abdelrahmannasr/wa-cloud-api/messages';
+import { HttpClient } from 'wa-cloud-sdk';
+import { Messages } from 'wa-cloud-sdk/messages';
 
 const client = new HttpClient({
   accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
@@ -1145,13 +1145,13 @@ This SDK supports both ESM and CommonJS:
 **ESM (recommended):**
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp } from 'wa-cloud-sdk';
 ```
 
 **CommonJS:**
 
 ```javascript
-const { WhatsApp } = require('@abdelrahmannasr/wa-cloud-api');
+const { WhatsApp } = require('wa-cloud-sdk');
 ```
 
 ## Contributing

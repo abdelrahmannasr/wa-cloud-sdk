@@ -5,7 +5,7 @@
 ## Prerequisites
 
 - Node.js 18 or later
-- `@abdelrahmannasr/wa-cloud-api` SDK installed
+- `wa-cloud-sdk` SDK installed
 - Valid WhatsApp Cloud API access token and phone number ID
 
 ---
@@ -13,7 +13,7 @@
 ## Upload a Media File
 
 ```typescript
-import { HttpClient, Media } from '@abdelrahmannasr/wa-cloud-api';
+import { HttpClient, Media } from 'wa-cloud-sdk';
 import { readFile } from 'node:fs/promises';
 
 const client = new HttpClient({
@@ -84,7 +84,7 @@ console.log('Deleted:', deleteResult.data.success);
 When you receive an inbound media message via webhooks, the payload contains a media ID — not the file itself. Here's how to retrieve and download it:
 
 ```typescript
-import { HttpClient, Media, createWebhookHandler } from '@abdelrahmannasr/wa-cloud-api';
+import { HttpClient, Media, createWebhookHandler } from 'wa-cloud-sdk';
 import { writeFile } from 'node:fs/promises';
 
 const client = new HttpClient({
@@ -144,7 +144,7 @@ const animatedResult = await media.upload({
 ## Error Handling
 
 ```typescript
-import { MediaError, ValidationError, ApiError } from '@abdelrahmannasr/wa-cloud-api';
+import { MediaError, ValidationError, ApiError } from 'wa-cloud-sdk';
 
 try {
   await media.upload({

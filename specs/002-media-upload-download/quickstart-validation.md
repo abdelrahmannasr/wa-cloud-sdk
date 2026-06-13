@@ -11,7 +11,7 @@ All 8 code examples in quickstart.md have been validated against the implemented
 ## Example-by-Example Validation
 
 ### 1. Upload a Media File ✅
-- **Import paths**: `HttpClient`, `Media` from `@abdelrahmannasr/wa-cloud-api` ✓
+- **Import paths**: `HttpClient`, `Media` from `wa-cloud-sdk` ✓
 - **Constructor**: `new Media(client, phoneNumberId)` ✓
 - **Method**: `media.upload({ file, mimeType, category, filename })` ✓
 - **Return type**: `ApiResponse<MediaUploadResponse>` with `.data.id` ✓

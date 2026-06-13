@@ -20,7 +20,7 @@ import type {
  *
  * @example
  * ```typescript
- * import { HttpClient, Templates } from '@abdelrahmannasr/wa-cloud-api';
+ * import { HttpClient, Templates } from 'wa-cloud-sdk';
  *
  * const client = new HttpClient({
  *   accessToken: 'YOUR_ACCESS_TOKEN',
@@ -183,7 +183,7 @@ export class Templates {
    *
    * @example
    * ```typescript
-   * import { TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api';
+   * import { TemplateBuilder } from 'wa-cloud-sdk';
    *
    * // Build the template
    * const request = new TemplateBuilder()

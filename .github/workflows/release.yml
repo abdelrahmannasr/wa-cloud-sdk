@@ -41,7 +41,7 @@ jobs:
           # npm publish auths via Trusted Publishing (OIDC) — no
           # NPM_TOKEN needed. The id-token: write permission on this
           # workflow + the trusted-publisher entry registered for
-          # @abdelrahmannasr/wa-cloud-api on npmjs.com handle auth
+          # wa-cloud-sdk on npmjs.com handle auth
           # tokenlessly and attach provenance via sigstore.
           # RELEASE_BOT_PAT is the maintainer's fine-grained PAT used by
           # semantic-release to push the chore(release) commit back to

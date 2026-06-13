@@ -16,7 +16,7 @@
 
 ### User Story 1 - Discover and Evaluate the SDK (Priority: P1)
 
-A developer discovers the `@abdelrahmannasr/wa-cloud-api` package on npm or GitHub. They visit the repository to evaluate whether it meets their needs before installing. They need a clear, professional README that communicates what the SDK does, how to install it, a quick start example, available features, and how the SDK is structured.
+A developer discovers the `wa-cloud-sdk` package on npm or GitHub. They visit the repository to evaluate whether it meets their needs before installing. They need a clear, professional README that communicates what the SDK does, how to install it, a quick start example, available features, and how the SDK is structured.
 
 **Why this priority**: The README is the first touchpoint for every potential user. Without it, developers cannot evaluate the SDK, leading to zero adoption regardless of code quality.
 

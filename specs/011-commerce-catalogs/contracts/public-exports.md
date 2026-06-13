@@ -39,7 +39,7 @@ export type {
 export { ConflictError } from './errors/index.js';
 ```
 
-Note on the `Catalog` name collision: `Catalog` is both a class (`new Catalog(client, wabaId)`) and an entity interface (the catalog metadata returned by `listCatalogs`). The class wins the bare name; the entity is re-exported as `CatalogResource` from the main barrel. Inside `src/catalog/types.ts` the entity remains named `Catalog` (consumers using the subpath import can disambiguate via `import { Catalog as CatalogClass, type Catalog as CatalogResource } from '@abdelrahmannasr/wa-cloud-api/catalog'`).
+Note on the `Catalog` name collision: `Catalog` is both a class (`new Catalog(client, wabaId)`) and an entity interface (the catalog metadata returned by `listCatalogs`). The class wins the bare name; the entity is re-exported as `CatalogResource` from the main barrel. Inside `src/catalog/types.ts` the entity remains named `Catalog` (consumers using the subpath import can disambiguate via `import { Catalog as CatalogClass, type Catalog as CatalogResource } from 'wa-cloud-sdk/catalog'`).
 
 ## Module barrel (`src/catalog/index.ts`)
 
@@ -110,7 +110,7 @@ No existing export is removed, renamed, or changed in shape. Verified by `tests/
 
 | Scenario | Asserts |
 |---|---|
-| `import { Catalog, Product, OrderEvent, ConflictError } from '@abdelrahmannasr/wa-cloud-api'` | All four resolve |
-| `import { Catalog } from '@abdelrahmannasr/wa-cloud-api/catalog'` | Resolves; instance methods present |
-| `import * as catalogMod from '@abdelrahmannasr/wa-cloud-api/catalog'` | Module shape matches expected key list |
+| `import { Catalog, Product, OrderEvent, ConflictError } from 'wa-cloud-sdk'` | All four resolve |
+| `import { Catalog } from 'wa-cloud-sdk/catalog'` | Resolves; instance methods present |
+| `import * as catalogMod from 'wa-cloud-sdk/catalog'` | Module shape matches expected key list |
 | Existing imports unchanged | All v0.3.x test imports still pass |

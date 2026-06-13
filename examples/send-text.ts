@@ -4,7 +4,7 @@
  * Demonstrates: How to send a simple text message using the WhatsApp Cloud API SDK
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr/wa-cloud-api
+ *   - npm install wa-cloud-sdk
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -14,7 +14,7 @@
  * Run: npx tsx examples/send-text.ts
  */
 
-import { WhatsApp, ApiError, RateLimitError } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp, ApiError, RateLimitError } from 'wa-cloud-sdk';
 
 async function main() {
   // Initialize the WhatsApp client
