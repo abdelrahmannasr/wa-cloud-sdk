@@ -1,7 +1,7 @@
 # Contract: `Catalog` class
 
 **Module**: `src/catalog/catalog.ts`
-**Subpath import**: `@abdelrahmannasr/wa-cloud-api/catalog`
+**Subpath import**: `wa-cloud-sdk/catalog`
 **Unified-client access**: `wa.catalog`
 
 ## Constructor

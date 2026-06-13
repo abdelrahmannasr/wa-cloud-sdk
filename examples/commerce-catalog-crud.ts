@@ -6,7 +6,7 @@
  * and confirm removal by listing again.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr/wa-cloud-api
+ *   - npm install wa-cloud-sdk
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -17,7 +17,7 @@
  * Run: npx tsx examples/commerce-catalog-crud.ts
  */
 
-import { WhatsApp, ConflictError } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp, ConflictError } from 'wa-cloud-sdk';
 
 async function main() {
   const wa = new WhatsApp({

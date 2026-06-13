@@ -82,10 +82,10 @@ await wa.messages.sendText({ to: '1234567890', body: 'Here is your result!' });
 
 ```ts
 // Import only what you need
-import { Media, MEDIA_CONSTRAINTS } from '@abdelrahmannasr/wa-cloud-api/media';
-import { Templates, TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api/templates';
-import { PhoneNumbers } from '@abdelrahmannasr/wa-cloud-api/phone-numbers';
-import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr/wa-cloud-api/multi-account';
+import { Media, MEDIA_CONSTRAINTS } from 'wa-cloud-sdk/media';
+import { Templates, TemplateBuilder } from 'wa-cloud-sdk/templates';
+import { PhoneNumbers } from 'wa-cloud-sdk/phone-numbers';
+import { WhatsAppMultiAccount, RoundRobinStrategy } from 'wa-cloud-sdk/multi-account';
 ```
 
 **Verify**: Each import resolves in both ESM and CJS. Types are available.
@@ -93,7 +93,7 @@ import { WhatsAppMultiAccount, RoundRobinStrategy } from '@abdelrahmannasr/wa-cl
 ### 6. Conversation Pricing
 
 ```ts
-import { extractConversationPricing } from '@abdelrahmannasr/wa-cloud-api';
+import { extractConversationPricing } from 'wa-cloud-sdk';
 
 // Inside webhook handler
 const handler = createWebhookHandler(config, {

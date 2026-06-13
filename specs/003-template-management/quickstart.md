@@ -6,7 +6,7 @@
 ## Prerequisites
 
 ```typescript
-import { HttpClient, Templates, TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api';
+import { HttpClient, Templates, TemplateBuilder } from 'wa-cloud-sdk';
 
 const client = new HttpClient({
   accessToken: 'YOUR_ACCESS_TOKEN',
@@ -106,7 +106,7 @@ await templates.delete('order_shipped', { hsmId: 'HSM_ID' });
 ## Error Handling
 
 ```typescript
-import { ValidationError, ApiError } from '@abdelrahmannasr/wa-cloud-api';
+import { ValidationError, ApiError } from 'wa-cloud-sdk';
 
 try {
   const request = new TemplateBuilder()

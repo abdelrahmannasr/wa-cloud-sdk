@@ -4,7 +4,7 @@
  * Demonstrates: How to list, create, and send message templates
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr/wa-cloud-api
+ *   - npm install wa-cloud-sdk
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -15,7 +15,7 @@
  * Run: npx tsx examples/templates.ts
  */
 
-import { WhatsApp, TemplateBuilder } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp, TemplateBuilder } from 'wa-cloud-sdk';
 
 async function main() {
   const wa = new WhatsApp({

@@ -6,7 +6,7 @@
  * ID map.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr/wa-cloud-api
+ *   - npm install wa-cloud-sdk
  *
  * Required environment variables:
  *   - WHATSAPP_ACCESS_TOKEN: Your Meta access token
@@ -23,7 +23,7 @@ import {
   WhatsApp,
   WhatsAppMultiAccount,
   RoundRobinStrategy,
-} from '@abdelrahmannasr/wa-cloud-api';
+} from 'wa-cloud-sdk';
 
 async function main() {
   const wa = new WhatsApp({

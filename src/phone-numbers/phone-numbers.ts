@@ -22,7 +22,7 @@ import type {
  *
  * @example
  * ```typescript
- * import { HttpClient, PhoneNumbers } from '@abdelrahmannasr/wa-cloud-api';
+ * import { HttpClient, PhoneNumbers } from 'wa-cloud-sdk';
  *
  * const client = new HttpClient({
  *   accessToken: 'YOUR_ACCESS_TOKEN',

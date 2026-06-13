@@ -317,7 +317,7 @@ describe('WhatsApp', () => {
   describe('SC-001: 5-line quickstart validation', () => {
     it('verifies import + construct + sendText compiles in ≤5 lines', () => {
       // This test validates that the quickstart example works as advertised.
-      // Line 1: import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+      // Line 1: import { WhatsApp } from 'wa-cloud-sdk';
       // Line 2: const wa = new WhatsApp({ accessToken: 'token', phoneNumberId: 'phone' });
       // Line 3: await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
       // Lines 4-5: Optional error handling or destroy

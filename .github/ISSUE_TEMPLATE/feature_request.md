@@ -15,7 +15,7 @@ assignees: ""
 <!-- Describe the API you'd like to see. Concrete code helps a lot. -->
 
 ```typescript
-import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp } from 'wa-cloud-sdk';
 
 const wa = new WhatsApp({
   accessToken: process.env.WA_ACCESS_TOKEN!,

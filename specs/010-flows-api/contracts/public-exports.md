@@ -171,8 +171,8 @@ After this change, `tsup` produces:
 
 Edit the existing subpath export verification test suite under `tests/exports/` (added in spec 009-subpath-exports) to include `./flows`:
 
-1. **ESM resolution**: `import { Flows } from '@abdelrahmannasr/wa-cloud-api/flows'` resolves and `Flows` is a class
-2. **CJS resolution**: `require('@abdelrahmannasr/wa-cloud-api/flows').Flows` is a class
+1. **ESM resolution**: `import { Flows } from 'wa-cloud-sdk/flows'` resolves and `Flows` is a class
+2. **CJS resolution**: `require('wa-cloud-sdk/flows').Flows` is a class
 3. **Type-only exports accessible**: `FlowCategory`, `FlowStatus`, `CreateFlowRequest` can be imported as types
 
 Mirror the exact shape of existing `./templates` or `./media` test cases.

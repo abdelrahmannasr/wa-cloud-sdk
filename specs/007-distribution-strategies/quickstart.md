@@ -6,7 +6,7 @@
 import {
   WhatsAppMultiAccount,
   RoundRobinStrategy,
-} from '@abdelrahmannasr/wa-cloud-api';
+} from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new RoundRobinStrategy(),
@@ -28,7 +28,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 import {
   WhatsAppMultiAccount,
   WeightedStrategy,
-} from '@abdelrahmannasr/wa-cloud-api';
+} from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new WeightedStrategy(
@@ -55,7 +55,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 import {
   WhatsAppMultiAccount,
   StickyStrategy,
-} from '@abdelrahmannasr/wa-cloud-api';
+} from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new StickyStrategy(),
@@ -76,7 +76,7 @@ await wa.messages.sendText({ to: '1234567890', body: 'Hello!' });
 import {
   WhatsAppMultiAccount,
   RoundRobinStrategy,
-} from '@abdelrahmannasr/wa-cloud-api';
+} from 'wa-cloud-sdk';
 
 const manager = new WhatsAppMultiAccount({
   strategy: new RoundRobinStrategy(),
@@ -117,7 +117,7 @@ for (const failure of result2.failures) {
 ## Custom Strategy
 
 ```typescript
-import type { DistributionStrategy } from '@abdelrahmannasr/wa-cloud-api';
+import type { DistributionStrategy } from 'wa-cloud-sdk';
 
 class PriorityStrategy implements DistributionStrategy {
   select(accountNames: readonly string[], _recipient?: string): string {

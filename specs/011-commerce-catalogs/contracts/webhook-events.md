@@ -1,7 +1,7 @@
 # Contract: `OrderEvent` webhook event
 
 **Module**: `src/webhooks/types.ts`, `src/webhooks/parser.ts`, `src/webhooks/handler.ts`
-**Subpath import**: `@abdelrahmannasr/wa-cloud-api/webhooks`
+**Subpath import**: `wa-cloud-sdk/webhooks`
 **Unified-client access**: `wa.webhooks.onOrder(callback)`
 
 ## Event shape
@@ -59,7 +59,7 @@ Two equivalent registration paths:
 **Standalone `createWebhookHandler`**:
 
 ```ts
-import { createWebhookHandler } from '@abdelrahmannasr/wa-cloud-api/webhooks';
+import { createWebhookHandler } from 'wa-cloud-sdk/webhooks';
 
 const handler = createWebhookHandler({
   appSecret: process.env.WA_APP_SECRET!,

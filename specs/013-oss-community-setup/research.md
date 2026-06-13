@@ -129,7 +129,7 @@ The Technical Context in `plan.md` contains no `NEEDS CLARIFICATION` markers (th
 **Decision**: Rewrite with `[Unreleased]` content; delete the existing `[0.1.0] - 2026-02-17` entry.
 
 **Rationale**:
-- The `0.1.0` entry was never actually published to npm (`pnpm view @abdelrahmannasr/wa-cloud-api` returns 404 as of 2026-04-20); it was an aspirational entry.
+- The `0.1.0` entry was never actually published to npm (`pnpm view wa-cloud-sdk` returns 404 as of 2026-04-20); it was an aspirational entry.
 - semantic-release's `@semantic-release/changelog` plugin expects to own the file from the first release onward; leaving an orphaned `0.1.0` section creates a confusing commit diff on first real release.
 - The `[Unreleased]` section documents what exists in the codebase today — honest and useful for the first automatic release notes to anchor against.
 

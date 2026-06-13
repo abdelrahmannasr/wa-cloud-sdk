@@ -26,7 +26,7 @@ const DEFAULT_CATALOG_FIELDS = ['id', 'name', 'vertical', 'product_count'] as co
  *
  * @example
  * ```ts
- * import { HttpClient, Catalog } from '@abdelrahmannasr/wa-cloud-api';
+ * import { HttpClient, Catalog } from 'wa-cloud-sdk';
  *
  * const client = new HttpClient({
  *   accessToken: 'YOUR_ACCESS_TOKEN',

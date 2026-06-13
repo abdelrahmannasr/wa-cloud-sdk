@@ -6,7 +6,7 @@
  * as regular messages.
  *
  * Prerequisites:
- *   - npm install @abdelrahmannasr/wa-cloud-api express
+ *   - npm install wa-cloud-sdk express
  *   - npm install --save-dev @types/express
  *   - In the Meta App Dashboard: subscribe to `message_template_status_update`
  *     and `message_template_quality_update` under your WhatsApp Business Account product.
@@ -22,7 +22,7 @@
  */
 
 import express from 'express';
-import { WhatsApp } from '@abdelrahmannasr/wa-cloud-api';
+import { WhatsApp } from 'wa-cloud-sdk';
 
 const wa = new WhatsApp({
   accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
