@@ -49,6 +49,29 @@ jobs:
           # status-checks-required) via enforce_admins=false. Rotate
           # alongside SSH_SIGNING_KEY per FR-041 / SC-016.
 
+      - name: Validate RELEASE_BOT_PAT can push
+        env:
+          RELEASE_BOT_PAT: ${{ secrets.RELEASE_BOT_PAT }}
+        run: |
+          # Fail fast (in seconds) on an expired/revoked/under-scoped PAT
+          # with an actionable message, instead of wasting the full
+          # lint/test/build run only for semantic-release's git push to
+          # die with a generic "Password authentication is not supported"
+          # error. A fine-grained PAT silently expires; non-emptiness is
+          # not enough — verify it actually authenticates AND can write.
+          repo_url="https://x-access-token:${RELEASE_BOT_PAT}@github.com/${GITHUB_REPOSITORY}.git"
+          if ! git ls-remote "$repo_url" HEAD >/dev/null 2>&1; then
+            echo "::error::RELEASE_BOT_PAT cannot authenticate to ${GITHUB_REPOSITORY} (expired, revoked, or wrong repo). Rotate it: gh secret set RELEASE_BOT_PAT"
+            exit 1
+          fi
+          # Confirm write/push scope via the dry-run push semantic-release
+          # itself performs in verifyConditions.
+          if ! git push --dry-run --no-verify "$repo_url" "HEAD:${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "::error::RELEASE_BOT_PAT authenticates but cannot push to ${GITHUB_REF_NAME}. Ensure it grants 'Contents: Read and write' on ${GITHUB_REPOSITORY}, then rotate: gh secret set RELEASE_BOT_PAT"
+            exit 1
+          fi
+          echo "RELEASE_BOT_PAT validated: authenticates and has write scope for ${GITHUB_REF_NAME}."
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
 
