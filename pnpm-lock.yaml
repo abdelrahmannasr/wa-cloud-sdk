@@ -22,10 +22,10 @@ importers:
         version: 20.19.39
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.0.0
-        version: 8.59.1(@typescript-eslint/parser@8.59.1(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3)
+        version: 8.59.1(@typescript-eslint/parser@8.61.0(eslint@9.39.2)(typescript@5.9.3))(eslint@9.39.2)(typescript@5.9.3)
       '@typescript-eslint/parser':
         specifier: ^8.59.1
-        version: 8.59.1(eslint@9.39.2)(typescript@5.9.3)
+        version: 8.61.0(eslint@9.39.2)(typescript@5.9.3)
       '@vitest/coverage-v8':
         specifier: ^3.0.0
         version: 3.2.4(vitest@3.2.4(@types/node@20.19.39))
