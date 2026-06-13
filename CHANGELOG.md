@@ -149,6 +149,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: npm package renamed** from `@abdelrahmannasr/wa-cloud-api` to the unscoped `wa-cloud-sdk`. Install with `npm i wa-cloud-sdk` and update all imports (`import { WhatsApp } from 'wa-cloud-sdk'`, subpaths such as `wa-cloud-sdk/webhooks`). The npm package name now matches the GitHub repository name. The previously published scoped package is no longer the canonical distribution.
+
 ### Added
 
 - **Messages** — Send text, image, video, audio, document, sticker, location, contacts, reactions, interactive buttons/lists, template messages, product messages, product list messages, and catalog messages
