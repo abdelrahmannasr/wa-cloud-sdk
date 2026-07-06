@@ -9,6 +9,17 @@ updates:
     commit-message:
       prefix: "chore(deps):"
     open-pull-requests-limit: 10
+    groups:
+      # The @typescript-eslint packages (parser, eslint-plugin) and the
+      # typescript-eslint meta-package are a single monorepo released in
+      # lockstep and must move together. Bumping one in isolation leaves the
+      # pnpm lockfile internally inconsistent (a dangling reference to the
+      # old version) and crashes `pnpm install --frozen-lockfile`. Grouping
+      # them into one PR keeps the lockfile consistent.
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "typescript-eslint"
     ignore:
       # @types/node should track the engines.node minimum LTS, not the
       # latest Node release. We declare engines.node: ">=18.0.0", so types
