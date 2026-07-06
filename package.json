@@ -161,7 +161,7 @@
     "prepublishOnly": "pnpm run typecheck && pnpm run build && pnpm run test"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^20.19.39",
