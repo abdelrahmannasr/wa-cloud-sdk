@@ -20,6 +20,16 @@ vi.mock('../src/phone-numbers/phone-numbers.js');
 vi.mock('../src/flows/flows.js');
 vi.mock('../src/catalog/catalog.js');
 
+// Runs fn and returns whatever it throws, so the error can be inspected.
+function thrownBy(fn: () => unknown): unknown {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  return undefined;
+}
+
 describe('WhatsApp', () => {
   const validConfig = {
     accessToken: 'test-token',
@@ -163,13 +173,9 @@ describe('WhatsApp', () => {
       expect(() => wa.templates).toThrow(ValidationError);
       expect(() => wa.templates).toThrow('businessAccountId is required for template operations');
 
-      try {
-        void wa.templates;
-        expect.fail('Expected ValidationError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).field).toBe('businessAccountId');
-      }
+      const error = thrownBy(() => wa.templates);
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).field).toBe('businessAccountId');
     });
 
     it('returns the same cached instance on repeated calls', () => {
@@ -222,13 +228,9 @@ describe('WhatsApp', () => {
         'businessAccountId is required for phone number operations',
       );
 
-      try {
-        void wa.phoneNumbers;
-        expect.fail('Expected ValidationError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).field).toBe('businessAccountId');
-      }
+      const error = thrownBy(() => wa.phoneNumbers);
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).field).toBe('businessAccountId');
     });
 
     it('returns the same cached instance on repeated calls', () => {
@@ -254,13 +256,9 @@ describe('WhatsApp', () => {
       expect(() => wa.flows).toThrow(ValidationError);
       expect(() => wa.flows).toThrow('businessAccountId is required for flow operations');
 
-      try {
-        void wa.flows;
-        expect.fail('Expected ValidationError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).field).toBe('businessAccountId');
-      }
+      const error = thrownBy(() => wa.flows);
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).field).toBe('businessAccountId');
     });
 
     it('returns the same cached instance on repeated calls', () => {
@@ -286,13 +284,9 @@ describe('WhatsApp', () => {
       expect(() => wa.catalog).toThrow(ValidationError);
       expect(() => wa.catalog).toThrow('businessAccountId is required for catalog operations');
 
-      try {
-        void wa.catalog;
-        expect.fail('Expected ValidationError to be thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).field).toBe('businessAccountId');
-      }
+      const error = thrownBy(() => wa.catalog);
+      expect(error).toBeInstanceOf(ValidationError);
+      expect((error as ValidationError).field).toBe('businessAccountId');
     });
 
     it('returns the same cached instance on repeated calls (lazy)', () => {
